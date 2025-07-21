@@ -3,7 +3,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { suppliers } from '$lib/stores/supplierStore';
+	import { suppliers } from '$lib/stores/supplierStore.svelte';
 	import type { Supplier } from '$lib/schemas/models';
 
 	let {

@@ -2,7 +2,7 @@
 	import { products } from '$lib/stores/productStore';
 	import { productBatches } from '$lib/stores/productBatchStore';
 	import { categories } from '$lib/stores/categoryStore';
-	import { suppliers } from '$lib/stores/supplierStore';
+	import { suppliers } from '$lib/stores/supplierStore.svelte';
 	import type { Product } from '$lib/schemas/models';
 	import ExportButton from '$lib/components/ui/button/ExportButton.svelte';
 

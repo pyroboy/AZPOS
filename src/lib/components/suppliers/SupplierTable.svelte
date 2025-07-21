@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { suppliers } from '$lib/stores/supplierStore';
+	import { suppliers } from '$lib/stores/supplierStore.svelte';
 	import { products } from '$lib/stores/productStore';
 	import type { PurchaseOrder, Supplier } from '$lib/schemas/models';
 	import { Button } from '$lib/components/ui/button';

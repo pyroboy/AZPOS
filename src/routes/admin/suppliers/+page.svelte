@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { suppliers } from '$lib/stores/supplierStore';
+	import { suppliers } from '$lib/stores/supplierStore.svelte';
 	import { products } from '$lib/stores/productStore';
 	import { Button } from '$lib/components/ui/button';
 	import { PlusCircle } from 'lucide-svelte';
