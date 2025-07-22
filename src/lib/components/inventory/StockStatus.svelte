@@ -12,7 +12,7 @@
     import * as Select from '$lib/components/ui/select';
     import { Input } from '$lib/components/ui/input';
     import { LayoutGrid, List, Trash2, X } from 'lucide-svelte';
-    import { SORT_OPTIONS } from '$lib/constants/inventory';
+    import { SORT_OPTIONS, STOCK_STATUS_FILTERS } from '$lib/constants/inventory';
 
     const {
         products,
@@ -34,7 +34,7 @@
     // Destructure nested stores for direct use with the '$' prefix in the template
     const { totalSKUs, totalUnits, outOfStockCount, itemsToReorderCount } = totals;
     const { selectedProductIds, areAllVisibleRowsSelected } = selection;
-    const { searchTerm, activeCategories, sortOrder } = filters;
+    const { searchTerm, activeCategories, sortOrder, stockStatusFilter } = filters;
     const { editingCell, editValue } = editing;
 
     function handleBarcodeScanned(code: string) {
@@ -58,7 +58,7 @@
         <div class="flex flex-wrap items-center justify-between gap-4">
             <div class="flex flex-1 items-center gap-4">
                 <div class="relative w-full max-w-sm">
-                    <BarcodeInput onscan={handleBarcodeScanned} />
+
                     <Input
                         class="max-w-sm"
                         placeholder="Search by name or SKU..."
@@ -87,7 +87,18 @@
             </div>
 
             <div class="flex items-center gap-2">
-                <Select.Root type="single" bind:value={$sortOrder}>
+                                <Select.Root type="single" bind:value={$stockStatusFilter}>
+                    <Select.Trigger class="w-[180px]">
+                      {STOCK_STATUS_FILTERS.find(o => o.value === $stockStatusFilter)?.label ?? ''}
+                    </Select.Trigger>
+                    <Select.Content>
+                        {#each STOCK_STATUS_FILTERS as option (option.value)}
+                            <Select.Item value={option.value}>{option.label}</Select.Item>
+                        {/each}
+                    </Select.Content>
+                </Select.Root>
+
+				<Select.Root type="single" bind:value={$sortOrder}>
                     <Select.Trigger class="w-[180px]">
                       {SORT_OPTIONS.find(o => o.value === $sortOrder)?.label ?? ''}
                     </Select.Trigger>
@@ -112,7 +123,7 @@
                 >
                     <List class="h-4 w-4" />
                 </Button>
-                <Button onclick={() => goto('/inventory/add')}>Add Product</Button>
+
             </div>
         </div>
 

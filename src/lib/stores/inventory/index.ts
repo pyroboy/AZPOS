@@ -14,7 +14,7 @@ import {
     itemsToReorderCount,
     categories
 } from './products';
-import { searchTerm, activeCategories, sortOrder, setSearchDebounced, toggleCategory, clearFilters } from './filters';
+import { searchTerm, activeCategories, sortOrder, stockStatusFilter, setSearchDebounced, toggleCategory, clearFilters } from './filters';
 import { selectedProductIds, areAllVisibleRowsSelected, handleRowSelect, toggleSelectAll } from './selection';
 import { editingCell, editValue, startEditing, cancelEdit, saveEdit } from './editing';
 import { isBulkEditModalOpen } from './modals';
@@ -30,7 +30,7 @@ export const useInventory = () => {
     categories,
     totals: { totalSKUs, totalUnits, outOfStockCount, itemsToReorderCount },
     selection: { selectedProductIds, areAllVisibleRowsSelected },
-    filters: { searchTerm, activeCategories, sortOrder },
+    filters: { searchTerm, activeCategories, sortOrder, stockStatusFilter },
     editing: { editingCell, editValue },
     isBulkEditModalOpen,
 

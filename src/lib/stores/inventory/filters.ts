@@ -5,6 +5,7 @@ import { debounce } from 'ts-debounce';
 export const searchTerm = writable('');
 export const activeCategories = writable<string[]>([]);
 export const sortOrder = writable('name_asc');
+export const stockStatusFilter = writable('all');
 
 // Actions
 export const setSearchDebounced = debounce((value: string) => searchTerm.set(value), 300);
@@ -18,4 +19,5 @@ export function toggleCategory(category: string) {
 export function clearFilters() {
 	searchTerm.set('');
 	activeCategories.set([]);
+	stockStatusFilter.set('all');
 }

@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { ProductWithStock } from '$lib/stores/inventoryStore';
-	import { inventory } from '$lib/stores/inventoryStore';
+	import { filteredProducts } from '$lib/stores/inventory/products';
 	import { products } from '$lib/stores/productStore';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Table from '$lib/components/ui/table/index.js';
@@ -15,14 +15,14 @@
     let editValue = $state<string | number>('');
 
     const areAllVisibleRowsSelected = $derived(
-        $inventory.length > 0 && selectedProductIds.length === $inventory.length
+        $filteredProducts.length > 0 && selectedProductIds.length === $filteredProducts.length
     );
 
     function toggleSelectAll() {
         if (areAllVisibleRowsSelected) {
             selectedProductIds = [];
         } else {
-            selectedProductIds = $inventory.map(p => p.id);
+            selectedProductIds = $filteredProducts.map(p => p.id);
         }
     }
 
@@ -48,7 +48,7 @@
         if (!editingCell) return;
 
         const { productId, field } = editingCell;
-        const productToUpdate = $inventory.find(p => p.id === productId);
+        const productToUpdate = $filteredProducts.find(p => p.id === productId);
         if (!productToUpdate) return;
 
         const numericValue = parseFloat(editValue as string);
@@ -94,7 +94,7 @@
             </Table.Header>
   
             <Table.Body>
-              {#each $inventory as product (product.id)}
+              {#each $filteredProducts as product (product.id)}
                 <Table.Row data-state={selectedProductIds.includes(product.id) ? 'selected' : 'none'}>
                   <Table.Cell>
                     <Checkbox
