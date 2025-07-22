@@ -38,9 +38,9 @@
 
 {#if $page.data.user}
 	<Sidebar.Provider>
-		<div class="flex h-screen bg-background text-foreground">
+		<div class="flex h-screen bg-background text-foreground w-full">
 			<AppSidebar />
-			<main class="flex-1 overflow-y-auto p-4 md:p-8">
+			<main class="flex-1 overflow-y-auto p-4 md:p-8 w-full">
 				<Sidebar.Trigger />
 				{@render children()}
 			</main>

@@ -2,17 +2,24 @@
     import { filteredProducts as products } from '$lib/stores/inventory/products';
     import { Badge } from '$lib/components/ui/badge';
     import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
-    import { Checkbox } from '$lib/components/ui/checkbox';
 
-    let selectedProductIds = $state<string[]>([]);
+    const colors = [
+		'#ffadad', '#ffd6a5', '#fdffb6', '#caffbf',
+		'#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'
+	];
 
-    function handleRowSelect(productId: string) {
-        if (selectedProductIds.includes(productId)) {
-            selectedProductIds = selectedProductIds.filter(id => id !== productId);
-        } else {
-            selectedProductIds = [...selectedProductIds, productId];
-        }
-    }
+	function getInitials(name: string) {
+		return name.substring(0, 4).toUpperCase();
+	}
+
+	function getRandomColor(id: string) {
+		let hash = 0;
+		for (let i = 0; i < id.length; i++) {
+			hash = id.charCodeAt(i) + ((hash << 5) - hash);
+		}
+		const index = Math.abs(hash % colors.length);
+		return colors[index];
+	}
 
     function getStockBadgeColor(stock: number) {
       if (stock === 0) return 'destructive';
@@ -23,21 +30,14 @@
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {#each $products as product (product.id)}
-            <Card class="relative">
-              <div class="absolute top-2 left-2 z-10">
-                <Checkbox
-                  class="bg-background/80 border-2 border-primary"
-                  checked={selectedProductIds.includes(product.id)}
-                  onCheckedChange={() => handleRowSelect(product.id)}
-                />
-              </div>
-  
+            <Card>
               <CardHeader class="p-0">
-                <img
-                  src={product.image_url}
-                  alt={product.name}
-                  class="rounded-t-lg object-cover h-40 w-full"
-                />
+                <div 
+                  class="rounded-t-lg h-40 w-full flex items-center justify-center font-bold text-4xl"
+                  style="background-color: {getRandomColor(product.id)}; color: #555;"
+                >
+                  {getInitials(product.name)}
+                </div>
               </CardHeader>
   
               <CardContent class="p-4 space-y-2">

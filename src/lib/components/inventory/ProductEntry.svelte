@@ -220,7 +220,7 @@
 	});
 </script>
 
-<div class="space-y-4">
+<div class="w-full">
 	<div class="flex items-center justify-between">
 		<div>
 			<h2 class="text-2xl font-bold tracking-tight">Recent Products</h2>

@@ -31,7 +31,7 @@
 </script>
 
 <Toaster />
-<div class="p-4 md:p-8">
+<div class="w-full">
 	<Tabs value={activeTab} onValueChange={handleTabChange} class="w-full">
 		<TabsList class="grid w-full grid-cols-2 sm:grid-cols-3 md:grid-cols-5 h-auto">
 			<TabsTrigger value="stock">Stock</TabsTrigger>
