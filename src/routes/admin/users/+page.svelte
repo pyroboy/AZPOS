@@ -49,6 +49,10 @@
                     <Input id="username" name="username" required />
                 </div>
                 <div class="grid gap-2">
+                    <Label for="pin">PIN</Label>
+                    <Input id="pin" name="pin" type="password" required />
+                </div>
+				<div class="grid gap-2">
                     <Label for="role">Role</Label>
                     <Select name="role" type="single" bind:value={role}>
 						<SelectTrigger class="w-full">

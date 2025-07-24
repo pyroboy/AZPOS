@@ -1,29 +1,30 @@
 <script lang="ts">
+	import { get } from 'svelte/store';
 	import * as Card from '$lib/components/ui/card';
 	import { users } from '$lib/stores/userStore';
 	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore';
-	import type { ProductBatch } from '$lib/types';
+	import type { ProductBatch, User } from '$lib/schemas/models';
 	import { currency } from '$lib/utils/currency';
 
 	const kpis = $derived({
 		get activeStaff() {
-			const staff = $users.filter((u) => u.role === 'pharmacist' || u.role === 'cashier');
+			const staff = get(users).filter((u: User) => u.role === 'pharmacist' || u.role === 'cashier');
 			return staff.filter((u) => u.is_active).length;
 		},
 		get totalInventoryValue() {
-			return $inventory.reduce((total: number, product: ProductWithStock) => {
+			return get(inventory).reduce((total: number, product: ProductWithStock) => {
 				return total + product.stock * (product.average_cost ?? 0);
 			}, 0);
 		},
 		get lowStockCount() {
-			return $inventory.filter((p: ProductWithStock) => p.stock < (p.reorder_point ?? 20)).length;
+			return get(inventory).filter((p: ProductWithStock) => p.stock < (p.reorder_point ?? 20)).length;
 		},
 		get nearExpiryCount() {
 			// The dashboard card mentions 'next 60 days'
 			const sixtyDaysFromNow = new Date();
 			sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
 
-			return $inventory
+			return get(inventory)
 				.flatMap((p: ProductWithStock) => p.batches)
 				.filter((b: ProductBatch) => {
 					if (!b.expiration_date) return false;

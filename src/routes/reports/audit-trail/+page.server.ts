@@ -4,7 +4,7 @@ import { get } from 'svelte/store';
 import { inventoryAdjustments } from '$lib/stores/stockTransactionStore';
 import { products } from '$lib/stores/productStore';
 import { users } from '$lib/stores/userStore';
-import type { InventoryAdjustment, Product, User } from '$lib/types';
+import type { InventoryAdjustment, Product, User } from '$lib/schemas/models';
 
 export type DetailedAdjustment = InventoryAdjustment & {
     transaction_type: string; // e.g., 'Sale', 'Adjustment', 'Return'

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { get } from 'svelte/store';
 	import { users } from '$lib/stores/userStore';
 	import type { Role, User } from '$lib/schemas/models';
 	import * as Dialog from '$lib/components/ui/dialog';
@@ -17,11 +18,11 @@
 
 	function verifyPin() {
 		error = '';
-		const allUsers = $users;
+		const allUsers = get(users);
 		const rolesToCheck = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
 
 		const matchingUser = allUsers.find(
-			(u) => u.pin_hash === pin && u.is_active && rolesToCheck.includes(u.role)
+			(u: User) => u.pin_hash === pin && u.is_active && rolesToCheck.includes(u.role)
 		);
 
 		if (matchingUser) {

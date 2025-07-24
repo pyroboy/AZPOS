@@ -1,6 +1,6 @@
 import { users } from '$lib/stores/userStore';
 import type { Actions } from './$types';
-import type { Role } from '$lib/types';
+import type { Role } from '$lib/schemas/models';
 
 export const actions: Actions = {
 	addUser: async ({ request }: { request: Request }) => {

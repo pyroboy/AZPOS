@@ -1,7 +1,5 @@
-import { writable, get } from 'svelte/store';
 import type { User, Role } from '$lib/schemas/models';
 
-// In-memory user database for the application.
 const initialUsers: User[] = [
 	{
 		id: 'c2a7e3e0-12d3-4b8e-a9a7-3f8b5b6b1f2a',
@@ -55,11 +53,32 @@ const initialUsers: User[] = [
 	}
 ];
 
+import { writable, get } from 'svelte/store';
+
 function createUserStore() {
-	const { subscribe, set, update } = writable<User[]>(initialUsers);
+	const { subscribe, update } = writable<User[]>(initialUsers);
 
 	return {
 		subscribe,
+		deactivateUser: (userId: string) => {
+			update((users) =>
+				users.map((user) =>
+					user.id === userId ? { ...user, is_active: false, updated_at: new Date().toISOString() } : user
+				)
+			);
+		},
+		getAllActiveUsers: (): User[] => {
+			return get({ subscribe }).filter((u) => u.is_active);
+		},
+		findByUsername: (username: string): User | undefined => {
+			if (!username) return undefined;
+			return get({ subscribe }).find(
+				(u) => u.username.toLowerCase() === username.toLowerCase() && u.is_active
+			);
+		},
+		findById: (userId: string): User | undefined => {
+			return get({ subscribe }).find((u) => u.id === userId);
+		},
 		addUser: (fullName: string, username: string, role: Role, pin: string) => {
 			const newUser: User = {
 				id: `user-${crypto.randomUUID()}`,
@@ -72,29 +91,9 @@ function createUserStore() {
 				updated_at: new Date().toISOString()
 			};
 			update((users) => [...users, newUser]);
-			return newUser;
-		},
-		updateUser: (userId: string, updates: Partial<Omit<User, 'id'>>) => {
-			update((users) =>
-				users.map((user) => (user.id === userId ? { ...user, ...updates, updated_at: new Date().toISOString() } : user))
-			);
-		},
-		deactivateUser: (userId: string) => {
-			update((users) =>
-				users.map((user) => (user.id === userId ? { ...user, is_active: false } : user))
-			);
-		},
-		findByUsername: (username: string): User | undefined => {
-			// Use get() for a one-time, non-reactive read of the store's value
-			const allUsers = get({ subscribe });
-			return allUsers.find((u) => u.username.toLowerCase() === username.toLowerCase() && u.is_active);
-		},
-		findById: (userId: string): User | undefined => {
-			const allUsers = get({ subscribe });
-			return allUsers.find((u) => u.id === userId);
-		},
-		reset: () => set(initialUsers)
+		}
 	};
 }
 
 export const users = createUserStore();
+

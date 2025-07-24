@@ -1,4 +1,5 @@
 import type { LayoutServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 
 import { users } from '$lib/stores/userStore';
@@ -8,20 +9,23 @@ import { productBatches } from '$lib/stores/productBatchStore';
 // A flag to ensure data is loaded only once on server start
 let isDataInitialized = false;
 
-export const load: LayoutServerLoad = async ({ locals, fetch }) => {
+export const load: LayoutServerLoad = async ({ locals, fetch, url }) => {
+	// Redirect unauthenticated users to the login page, unless they are already there.
+	if (!locals.user && url.pathname !== '/login') {
+		throw redirect(302, '/login');
+	}
+
 	// Initialize product and batch data only once
-		if (!isDataInitialized) {
+	if (!isDataInitialized) {
 		await products.loadProducts(fetch);
 		isDataInitialized = true;
 	}
 
 	// The user object is attached to 'locals' by our server hook.
 	// We pass it to the page data, which makes it available to the client.
-	// The user object is attached to 'locals' by our server hook.
-	// We pass it to the page data, which makes it available to the client.
-		return {
+	return {
 		user: locals.user,
-		users: get(users),
+		users: users.getAllActiveUsers(),
 		products: get(products),
 		productBatches: get(productBatches)
 	};

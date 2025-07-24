@@ -2,18 +2,18 @@ import type { Handle } from '@sveltejs/kit';
 import { users } from '$lib/stores/userStore';
 
 export const handle: Handle = async ({ event, resolve }) => {
-	const sessionUser = event.cookies.get('session_user');
+	const sessionUsername = event.cookies.get('session_user');
 
-	if (sessionUser) {
-		// Find the user in our mock database based on the cookie value
-		const user = users.findByUsername(sessionUser);
-		if (user) {
-			// If the user is found, attach them to `event.locals`
-			// This makes the user object available in all server-side endpoints and load functions
-			event.locals.user = user;
-		}
+	// Find the user in our mock database based on the cookie value.
+	// This is the single source of truth for the user's session.
+	const user = users.findByUsername(sessionUsername ?? '');
+
+	// If the user is found, attach them to `event.locals`.
+	// This makes the user object available in all server-side endpoints and load functions.
+	if (user) {
+		event.locals.user = user;
 	}
 
-	// Continue processing the request
+	// Continue processing the request.
 	return resolve(event);
 };

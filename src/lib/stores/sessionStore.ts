@@ -1,33 +1,28 @@
 import { writable } from 'svelte/store';
 import type { User } from '$lib/schemas/models';
-import { users } from './userStore'; // Import the user "database"
+import { goto } from '$app/navigation';
 
 interface SessionState {
 	currentUser: User | null;
 }
 
 function createSessionStore() {
-	const { subscribe, set, update } = writable<SessionState>({ currentUser: null });
+	const { subscribe, set } = writable<SessionState>({ currentUser: null });
 
 	return {
 		subscribe,
 		// This method will be called from the root layout to sync with server data
-		setSession: (user: User | null) => {
-			set({ currentUser: user });
+		setSession: (user: User | null | undefined) => {
+			set({ currentUser: user ?? null });
 		},
-		// Login is now primarily handled by server-side actions setting a cookie.
-		// This client-side login can be used for optimistic updates if needed.
-		login: (username: string): boolean => {
-			const user = users.findByUsername(username);
-			if (user) {
-				update((store) => ({ ...store, currentUser: user }));
-				users.updateUser(user.id, { updated_at: new Date().toISOString() });
-				return true;
-			}
-			return false;
-		},
-		logout: () => {
+		// Logout helper that posts to the server endpoint
+		logout: async () => {
+			await fetch('/login?/logout', {
+				method: 'POST'
+			});
+			// After logout, reset the store and redirect to login
 			set({ currentUser: null });
+			await goto('/login');
 		}
 	};
 }

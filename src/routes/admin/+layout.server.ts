@@ -2,10 +2,10 @@ import { redirect } from '@sveltejs/kit';
 import type { LayoutServerLoad } from './$types';
 
 export const load: LayoutServerLoad = async ({ locals }) => {
-    // If the user is not logged in or is not an admin, redirect them.
-    if (!locals.user || locals.user.role !== 'admin') {
-        throw redirect(302, '/');
-    }
+	// The root layout already redirects if !locals.user, so we only need to check the role here.
+	if (locals.user?.role !== 'admin' && locals.user?.role !== 'owner') {
+		throw redirect(302, '/');
+	}
 
-    return { user: locals.user };
+	return { user: locals.user };
 };

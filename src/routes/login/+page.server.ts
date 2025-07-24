@@ -1,6 +1,6 @@
 import { redirect, type Cookies } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
-import { get } from 'svelte/store';
+
 import { users } from '$lib/stores/userStore';
 
 export const load: PageServerLoad = async ({ locals }: { locals: App.Locals }) => {
@@ -9,8 +9,8 @@ export const load: PageServerLoad = async ({ locals }: { locals: App.Locals }) =
         throw redirect(302, '/');
     }
     return { 
-        // Return a list of usernames to display in the login form
-        usernames: get(users).map(u => u.username) 
+        // Return a list of active users to display in the login form
+        users: users.getAllActiveUsers()
     };
 };
 
