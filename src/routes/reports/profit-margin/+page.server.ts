@@ -1,68 +1,67 @@
-import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
+import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import { inventoryAdjustments } from '$lib/stores/stockTransactionStore';
 import { products } from '$lib/stores/productStore';
 import { productBatches } from '$lib/stores/productBatchStore';
-import type { InventoryAdjustment, Product, ProductBatch } from '$lib/types';
+import type { InventoryAdjustment, Product, ProductBatch, Role } from '$lib/schemas/models';
 
-export const load: PageServerLoad = async ({ locals }) => {
-	if (!locals.user) {
-		throw redirect(303, '/login');
-	}
+const ALLOWED_ROLES: Role[] = ['admin', 'owner'];
 
-	const allAdjustments = get(inventoryAdjustments);
-	const allProducts: Product[] = get(products);
-	const allBatches: ProductBatch[] = get(productBatches);
+export const load: PageServerLoad = async ({ parent }) => {
+    const { user } = await parent();
+    if (!ALLOWED_ROLES.includes(user.role)) {
+        throw redirect(302, '/reports');
+    }
 
-	// Filter for sales adjustments
-	const saleAdjustments = allAdjustments.filter(
-		(adj: InventoryAdjustment) =>
-			adj.adjustment_type === 'subtract' && adj.reason.startsWith('Sale')
-	);
+    const allAdjustments = get(inventoryAdjustments);
+    const allProducts: Product[] = get(products);
+    const allBatches: ProductBatch[] = get(productBatches);
 
-	// Create a mutable copy of batches for FIFO calculation
-	const tempBatches: ProductBatch[] = JSON.parse(JSON.stringify(allBatches));
+    const saleAdjustments = allAdjustments.filter(
+        (adj: InventoryAdjustment) =>
+            adj.adjustment_type === 'subtract' && adj.reason.startsWith('Sale')
+    );
 
-	const salesWithProfit = saleAdjustments.map((sale: InventoryAdjustment) => {
-		const product = allProducts.find((p: Product) => p.id === sale.product_id);
-		const saleQty = Math.abs(sale.quantity_adjusted);
-		const revenue = (product?.price ?? 0) * saleQty;
+    const tempBatches: ProductBatch[] = JSON.parse(JSON.stringify(allBatches));
 
-		// Find batches for the product, sort by date to ensure FIFO
-		const productBatchesForFifo = tempBatches
-			.filter((b: ProductBatch) => b.product_id === sale.product_id)
-			.sort(
-				(a: ProductBatch, b: ProductBatch) =>
-					new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
-			);
+    const salesWithProfit = saleAdjustments.map((sale: InventoryAdjustment) => {
+        const product = allProducts.find((p: Product) => p.id === sale.product_id);
+        const saleQty = Math.abs(sale.quantity_adjusted);
+        const revenue = (product?.price ?? 0) * saleQty;
 
-		let costOfGoodsSold = 0;
-		let qtyToFulfill = saleQty;
+        const productBatchesForFifo = tempBatches
+            .filter((b: ProductBatch) => b.product_id === sale.product_id)
+            .sort(
+                (a: ProductBatch, b: ProductBatch) =>
+                    new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
 
-		for (const batch of productBatchesForFifo) {
-			if (qtyToFulfill === 0) break;
+        let costOfGoodsSold = 0;
+        let qtyToFulfill = saleQty;
 
-			const qtyFromBatch = Math.min(qtyToFulfill, batch.quantity_on_hand);
-			costOfGoodsSold += qtyFromBatch * batch.purchase_cost;
+        for (const batch of productBatchesForFifo) {
+            if (qtyToFulfill === 0) break;
 
-			// Decrease the batch quantity for subsequent calculations
-			batch.quantity_on_hand -= qtyFromBatch;
-			qtyToFulfill -= qtyFromBatch;
-		}
+            const qtyFromBatch = Math.min(qtyToFulfill, batch.quantity_on_hand);
+            costOfGoodsSold += qtyFromBatch * batch.purchase_cost;
 
-		const profit = revenue - costOfGoodsSold;
-		const profitMargin = revenue > 0 ? profit / revenue : 0;
+            batch.quantity_on_hand -= qtyFromBatch;
+            qtyToFulfill -= qtyFromBatch;
+        }
 
-		return {
-			...sale,
-			productName: product?.name ?? 'Unknown',
-			revenue,
-			costOfGoodsSold,
-			profit,
-			profitMargin: profitMargin * 100
-		};
-	});
+        const profit = revenue - costOfGoodsSold;
+        const profitMargin = revenue > 0 ? profit / revenue : 0;
 
-	return { salesWithProfit };
+        return {
+            ...sale,
+            productName: product?.name ?? 'Unknown',
+            revenue,
+            costOfGoodsSold,
+            profit,
+            profitMargin: profitMargin * 100
+        };
+    });
+
+    return { salesWithProfit };
 };

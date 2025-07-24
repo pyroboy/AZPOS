@@ -1,4 +1,5 @@
 import { redirect } from '@sveltejs/kit';
+import type { Role } from '$lib/schemas/models';
 import type { PageServerLoad } from './$types';
 import { get } from 'svelte/store';
 import { inventoryAdjustments } from '$lib/stores/stockTransactionStore';
@@ -13,10 +14,13 @@ export type DetailedAdjustment = InventoryAdjustment & {
 	userName: string;
 };
 
-export const load: PageServerLoad = async ({ locals }) => {
+const ALLOWED_ROLES: Role[] = ['admin', 'owner', 'manager', 'pharmacist'];
+
+export const load: PageServerLoad = async ({ parent }) => {
 	// Redirect if user is not authenticated
-	if (!locals.user) {
-		throw redirect(303, '/login');
+	const { user } = await parent();
+	if (!ALLOWED_ROLES.includes(user.role)) {
+		throw redirect(302, '/reports');
 	}
 
 	const allAdjustments: InventoryAdjustment[] = get(inventoryAdjustments);

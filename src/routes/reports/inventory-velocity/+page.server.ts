@@ -1,11 +1,19 @@
 import { get } from 'svelte/store';
 import { transactions as transactionStore } from '$lib/stores/transactionStore';
 import { getTotalStockForProduct } from '$lib/stores/productBatchStore';
-import type { Product, Transaction, TransactionItem } from '$lib/schemas/models';
+import type { Product, Transaction, TransactionItem, Role } from '$lib/schemas/models';
+import { redirect } from '@sveltejs/kit';
+
+const ALLOWED_ROLES: Role[] = ['admin', 'owner', 'manager'];
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ parent }) {
-    const { products, productBatches } = await parent();
+    const { user, products, productBatches } = await parent();
+
+    if (!ALLOWED_ROLES.includes(user.role)) {
+        throw redirect(302, '/reports');
+    }
+
     const transactions = get(transactionStore);
 
     const productMap = new Map<string, Product>(products.map((p: Product) => [p.id, p]));
