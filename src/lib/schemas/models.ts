@@ -200,7 +200,8 @@ export const paymentSchema = z.object({
 	transaction_id: z.string().uuid(),
 	payment_method: z.enum(['cash', 'credit_card', 'debit_card', 'other']),
 	amount: z.coerce.number().positive(),
-	processed_at: z.string().datetime()
+	processed_at: z.string().datetime(),
+	reference_number: z.string().optional()
 });
 
 export const transactionSchema = z.object({
@@ -208,21 +209,12 @@ export const transactionSchema = z.object({
 	user_id: z.string().uuid(),
 	subtotal: z.coerce.number(),
 	tax_amount: z.coerce.number(),
+	discount_amount: z.coerce.number().optional(),
 	total_amount: z.coerce.number(),
 	status: z.enum(['completed', 'voided', 'pending']),
 	created_at: z.string().datetime(),
 	items: z.array(transactionItemSchema),
 	payments: z.array(paymentSchema)
-});
-
-
-export const fastMoverSchema = z.object({
-	id: z.string().uuid(),
-	product_id: z.string().uuid(),
-	name: z.string(),
-	sku: z.string(),
-	units_sold: z.coerce.number().int().positive(),
-	last_sale_date: z.string().datetime()
 });
 
 export const slowMoverSchema = z.object({
@@ -298,6 +290,7 @@ export const CartItemSchema = z.object({
 	productId: z.string().uuid(),
 	name: z.string(),
 	sku: z.string(),
+	discount: z.coerce.number().optional(),
 	quantity: z.coerce.number().int().positive(),
 	price: z.coerce.number().positive(),
 	batchId: z.string().uuid(),
@@ -306,6 +299,24 @@ export const CartItemSchema = z.object({
 	created_at: z.string().datetime(),
 	updated_at: z.string().datetime(),
 	image_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+});
+
+export const fastMoverSchema = z.object({
+	product_id: z.string().uuid(),
+	name: z.string(),
+	sku: z.string(),
+	units_sold: z.coerce.number().int().positive(),
+	total_revenue: z.coerce.number(),
+	last_sale_date: z.string()
+});
+
+export const dashboardStatsSchema = z.object({
+	total_sales: z.coerce.number(),
+	total_transactions: z.coerce.number().int(),
+	average_transaction_value: z.coerce.number(),
+	new_customers: z.coerce.number().int(),
+	fast_movers: z.array(fastMoverSchema),
+	slow_movers: z.array(slowMoverSchema)
 });
 
 // =======================================================================

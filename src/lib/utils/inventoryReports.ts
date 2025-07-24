@@ -34,11 +34,11 @@ function convertToCsv<T extends Record<string, unknown>>(
 
 export function exportFastMovers(data: FastMover[]): string {
 	const headers: Record<keyof FastMover, string> = {
-		id: 'ID',
 		product_id: 'Product ID',
 		sku: 'SKU',
 		name: 'Product Name',
 		units_sold: 'Total Units Sold (Last 30 days)',
+		total_revenue: 'Total Revenue',
 		last_sale_date: 'Last Sale Date'
 	};
 	const formattedData = data.map((item) => ({

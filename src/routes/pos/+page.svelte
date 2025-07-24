@@ -7,6 +7,8 @@
 	import { inventory } from '$lib/stores/inventoryStore';
 	import { transactions } from '$lib/stores/transactionStore';
 	import { cart } from '$lib/stores/cartStore';
+	import { paymentStore } from '$lib/stores/paymentStore';
+	import { receiptStore, type ReceiptData } from '$lib/stores/receiptStore';
 	import { getModifiersForProduct } from '$lib/stores/modifierStore';
 	import { productBatches } from '$lib/stores/productBatchStore';
 	import { currency } from '$lib/utils/currency';
@@ -18,6 +20,8 @@
 	import ModifierSelectionModal from '$lib/components/pos/ModifierSelectionModal.svelte';
 	import DiscountSelectionModal from '$lib/components/pos/DiscountSelectionModal.svelte';
 	import ReturnProcessingModal from '$lib/components/pos/ReturnProcessingModal.svelte';
+	import PaymentModal from '$lib/components/pos/PaymentModal.svelte';
+	import PrintReceipt from '$lib/components/pos/PrintReceipt.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
 	import { Label } from '$lib/components/ui/label';
@@ -52,6 +56,11 @@
 	// Return Modal State
 	let showReturnModal = $state(false);
 
+	// Payment & Receipt Modal State
+	let showPaymentModal = $state(false);
+	let showPrintReceiptModal = $state(false);
+	let receiptData: ReceiptData | null = $state(null);
+
 	// Price Override State
 	let itemForPriceOverride = $state<CartItem | null>(null);
 	let isPriceInputOpen = $state(false);
@@ -75,18 +84,14 @@
 		})
 	);
 
-	const subtotal = $derived($cart.reduce((sum, item) => sum + item.finalPrice * item.quantity, 0));
-	const tax = $derived(subtotal * 0.08); // 8% tax rate
+	const finalizedCart = $derived.by(() => {
+		// This ensures the derived value recalculates whenever the cart's contents or discount change.
+		const unsub = cart.subscribe(() => {});
+		unsub();
+		return cart.finalizeCart();
+	});
 
-	const discountAmount = $derived(
-		appliedDiscount
-			? appliedDiscount.type === 'fixed_amount'
-				? Math.min(appliedDiscount.value, subtotal)
-				: subtotal * (appliedDiscount.value / 100)
-			: 0
-	);
-
-	const total = $derived(subtotal + tax - discountAmount);
+	const subtotal = $derived($cart.items.reduce((sum, item) => sum + item.finalPrice * item.quantity, 0));
 
 	// --- Event Handlers ---
 	function handleProductClick(product: ProductWithStock) {
@@ -166,21 +171,32 @@
 	}
 
 	function handleDiscountApplied(discount: Discount) {
-		appliedDiscount = discount;
+		cart.applyDiscount({
+			type: discount.type === 'fixed_amount' ? 'fixed' : 'percentage',
+			value: discount.value
+		});
+		appliedDiscount = discount; // Keep for display purposes
 	}
 
 	function removeDiscount() {
+		cart.applyDiscount(null);
 		appliedDiscount = null;
 	}
 
 	function handleCharge() {
-		if ($cart.length === 0) return;
+		if ($cart.items.length === 0) return;
+		showPaymentModal = true;
+	}
 
-		// Create a deep copy for the transaction log to prevent future state changes from affecting it
-				const cartItemsForTransaction: CartItem[] = JSON.parse(JSON.stringify($cart));
+	function handlePaymentCancel() {
+		showPaymentModal = false;
+	}
 
-				const transactionId = uuidv4();
-		const transactionItems = cartItemsForTransaction.map((item) => ({
+	async function handlePaymentConfirm(paymentDetails: any) {
+
+		// 1. Create Transaction
+		const transactionId = uuidv4();
+		const transactionItems = finalizedCart.items.map((item) => ({
 			id: uuidv4(),
 			transaction_id: transactionId,
 			product_id: item.productId,
@@ -190,38 +206,64 @@
 			applied_modifiers: item.modifiers
 		}));
 
-				const transactionData: NewTransactionInput = {
-				user_id: 'c2a7e3e0-12d3-4b8e-a9a7-3f8b5b6b1f2a', // Placeholder for logged-in user
-				items: transactionItems,
-				subtotal: subtotal,
-				tax_amount: tax,
-				total_amount: total,
-				payments: [
-					{
-						id: crypto.randomUUID(),
-						transaction_id: transactionId,
-						payment_method: 'cash',
-						amount: total,
-						processed_at: new Date().toISOString()
-					}
-				]
-			};
+		const transactionData: NewTransactionInput = {
+			user_id: 'c2a7e3e0-12d3-4b8e-a9a7-3f8b5b6b1f2a', // Placeholder
+			items: transactionItems,
+			subtotal: finalizedCart.subtotal,
+			tax_amount: finalizedCart.tax,
+			discount_amount: finalizedCart.discountAmount,
+			total_amount: finalizedCart.total,
+			payments: [
+				{
+					id: crypto.randomUUID(),
+					transaction_id: transactionId,
+					payment_method: paymentDetails.paymentMethod,
+					amount: paymentDetails.total,
+					processed_at: new Date().toISOString(),
+					...(paymentDetails.paymentMethod === 'gcash' && { reference_number: paymentDetails.gcashReference })
+				}
+			]
+		};
 
-			const newTransaction = transactions.addTransaction(transactionData);
+		const newTransaction = transactions.addTransaction(transactionData);
 
-		// Deduct stock from batches
-		for (const item of cartItemsForTransaction) {
+		// 2. Deduct stock
+		for (const item of finalizedCart.items) {
 			productBatches.removeStockFromBatch(item.batchId, item.quantity);
 		}
 
-		alert(`Transaction Complete! ID: ${newTransaction.id}`);
+		// 3. Handle Receipt
+		if (paymentDetails.printReceipt) {
+			receiptData = {
+				transactionId: newTransaction.id,
+				date: newTransaction.created_at,
+				timestamp: new Date(),
+				items: finalizedCart.items.map((i) => ({ ...i, name: i.name })),
+				subtotal: finalizedCart.subtotal,
+				tax: finalizedCart.tax,
+				discount: finalizedCart.discountAmount,
+				total: finalizedCart.total,
+				paymentMethod: paymentDetails.paymentMethod,
+				amountPaid: paymentDetails.cashTendered || paymentDetails.total,
+				change: paymentDetails.change,
+				cashier: 'Admin', // Placeholder
+				customer: paymentDetails.customerName
+			};
+			showPrintReceiptModal = true;
+		}
 
-		// Reset state for the next transaction
+		// 4. Reset state
+		showPaymentModal = false;
 		cart.clearCart();
 		appliedDiscount = null;
 	}
 
-			function handlePriceClick(item: CartItem) {
+	function handleReceiptClose() {
+		showPrintReceiptModal = false;
+		receiptData = null;
+	}
+
+	function handlePriceClick(item: CartItem) {
 		itemForPriceOverride = item;
 		showPinDialog = true;
 	}
@@ -288,6 +330,13 @@
 <DiscountSelectionModal bind:open={showDiscountModal} onApply={handleDiscountApplied} />
 
 <ReturnProcessingModal bind:open={showReturnModal} />
+
+<PaymentModal
+	bind:open={showPaymentModal}
+	totalAmount={finalizedCart.total}
+	onConfirm={handlePaymentConfirm}
+	onCancel={handlePaymentCancel}
+/>
 
 <PinDialog bind:open={showPinDialog} onSuccess={handlePinSuccess} requiredRole="manager" />
 
@@ -381,19 +430,19 @@
 					variant="ghost"
 					size="sm"
 					onclick={() => cart.clearCart()}
-					disabled={$cart.length === 0}>Clear Cart</Button
+					disabled={$cart.items.length === 0}>Clear Cart</Button
 				>
 			</div>
 		</header>
 
 		<div class="flex-1 p-4 space-y-3 overflow-y-auto">
-			{#if $cart.length === 0}
+			{#if $cart.items.length === 0}
 				<div class="flex flex-col items-center justify-center h-full text-muted-foreground">
 					<p>Your cart is empty.</p>
 					<p class="text-sm">Click on a product to add it.</p>
 				</div>
 			{:else}
-				{#each $cart as item (item.cartItemId)}
+				{#each $cart.items as item (item.cartItemId)}
 					<div class="flex justify-between items-start gap-2">
 						<div class="flex items-start gap-3 flex-1">
 							<img
@@ -446,42 +495,27 @@
 		</div>
 
 		<footer class="p-4 mt-auto border-t space-y-3 flex-shrink-0">
-			<div class="flex justify-between text-sm">
+			<div class="flex justify-between">
 				<span>Subtotal</span>
 				<span>{currency(subtotal)}</span>
 			</div>
-			<div class="flex justify-between text-sm items-center">
-				{#if appliedDiscount}
-					<div class="flex items-center gap-2">
-						<span>Discount <Badge variant="secondary">{appliedDiscount.name}</Badge></span>
-						<Button
-							variant="ghost"
-							size="icon"
-							class="h-6 w-6 text-destructive"
-							onclick={removeDiscount}
-							title="Remove discount"
-						>
-							<Trash2 class="h-3 w-3" />
-						</Button>
-					</div>
-				{:else}
-					<Button variant="link" class="p-0 h-auto" onclick={() => (showDiscountModal = true)}
-						>Apply Discount</Button
-					>
-				{/if}
-				<span>-{currency(discountAmount)}</span>
+			<div class="flex justify-between">
+				<span>Tax (12%)</span>
+				<span>{currency(finalizedCart.tax)}</span>
 			</div>
-			<div class="flex justify-between text-sm">
-				<span>Tax (8%)</span>
-				<span>{currency(tax)}</span>
-			</div>
-			<div class="flex justify-between font-bold text-lg">
+			{#if finalizedCart.discountAmount > 0}
+				<div class="flex justify-between text-green-600">
+					<span>Discount</span>
+					<span>-{currency(finalizedCart.discountAmount)}</span>
+				</div>
+			{/if}
+			<div class="flex justify-between font-bold text-lg border-t pt-2 mt-2">
 				<span>Total</span>
-				<span>{currency(total)}</span>
+				<span>{currency(finalizedCart.total)}</span>
 			</div>
-			<Button size="lg" class="w-full" disabled={$cart.length === 0} onclick={handleCharge}
-				>Charge</Button
-			>
+			<Button class="w-full" size="lg" onclick={handleCharge} disabled={$cart.items.length === 0}>
+				Charge
+			</Button>
 		</footer>
 	</div>
 </div>
