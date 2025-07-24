@@ -388,7 +388,7 @@
 	class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-4 h-screen p-4 font-sans"
 
 >
-	<main class="xl:col-span-3 flex flex-col gap-4">
+	<main class="xl:col-span-3 flex flex-col gap-4 overflow-hidden h-[calc(100vh-10vh)]">
 		<Card.Root class="flex-shrink-0">
 			<Card.Header>
 				<Card.Title>Products</Card.Title>
