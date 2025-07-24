@@ -22,6 +22,9 @@
 	import ReturnProcessingModal from '$lib/components/pos/ReturnProcessingModal.svelte';
 	import PaymentModal from '$lib/components/pos/PaymentModal.svelte';
 	import PrintReceipt from '$lib/components/pos/PrintReceipt.svelte';
+	import BarcodeInput from '$lib/components/inventory/BarcodeInput.svelte';
+	import { shortcut } from '@svelte-put/shortcut';
+
 	import { Button } from '$lib/components/ui/button';
 	import * as Card from '$lib/components/ui/card';
 	import { Label } from '$lib/components/ui/label';
@@ -319,6 +322,15 @@
 	onCancel={handleOverrideCancel}
 />
 
+<svelte:window
+	use:shortcut={{
+		trigger: {
+			key: 'F8',
+			callback: handleCharge
+		}
+	}}
+/>
+
 {#if productForModifierSelection}
 	<ModifierSelectionModal
 		product={productForModifierSelection}
@@ -327,15 +339,18 @@
 	/>
 {/if}
 
-<DiscountSelectionModal bind:open={showDiscountModal} onApply={handleDiscountApplied} />
+<DiscountSelectionModal
+	bind:open={showDiscountModal}
+	onApply={handleDiscountApplied}
+/>
 
 <ReturnProcessingModal bind:open={showReturnModal} />
 
 <PaymentModal
 	bind:open={showPaymentModal}
-	totalAmount={finalizedCart.total}
+	totalAmount={cart.finalizeCart().total}
 	onConfirm={handlePaymentConfirm}
-	onCancel={handlePaymentCancel}
+	onCancel={() => (showPaymentModal = false)}
 />
 
 <PinDialog bind:open={showPinDialog} onSuccess={handlePinSuccess} requiredRole="manager" />
@@ -370,18 +385,20 @@
 {/if}
 
 <div
-	class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-4 h-[calc(100vh-var(--header-height))] p-4 font-sans"
+	class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-5 gap-4 h-screen p-4 font-sans"
+
 >
 	<main class="xl:col-span-3 flex flex-col gap-4">
 		<Card.Root class="flex-shrink-0">
 			<Card.Header>
 				<Card.Title>Products</Card.Title>
-				<div class="relative ml-auto flex-1 md:grow-0">
-					<Input
-						type="search"
-						placeholder="Search..."
-						bind:value={searchTerm}
-						class="w-full rounded-lg bg-background pl-8"
+				<div class="relative w-full max-w-sm">
+					<BarcodeInput
+						placeholder="Scan barcode..."
+						onscan={(code: string) => {
+							const hit = filteredProducts.find((p) => p.sku === code || p.id === code);
+							if (hit) handleProductClick(hit);
+						}}
 					/>
 				</div>
 			</Card.Header>
@@ -396,9 +413,7 @@
 				</div>
 			</Card.Content>
 		</Card.Root>
-		<div
-			class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto pr-2"
-		>
+		<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto pr-2 h-full">
 			{#each filteredProducts as product (product.id)}
 				<button
 					onclick={() => handleProductClick(product)}

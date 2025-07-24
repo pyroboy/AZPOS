@@ -52,10 +52,12 @@
 		"vite": "^7.0.4"
 	},
 	"dependencies": {
+		"@svelte-put/shortcut": "^4.1.0",
 		"@types/papaparse": "^5.3.16",
 		"@types/uuid": "^10.0.0",
 		"lucide-svelte": "^0.525.0",
 		"papaparse": "^5.5.3",
+		"svelte-focus-trap": "^1.2.0",
 		"ts-debounce": "^4.0.0",
 		"uuid": "^11.1.0",
 		"zod": "^3.25.76"

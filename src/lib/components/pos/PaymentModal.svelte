@@ -1,162 +1,155 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
-	import * as Dialog from '$lib/components/ui/dialog';
+	import {
+		Dialog,
+		DialogContent,
+		DialogDescription,
+		DialogFooter,
+		DialogHeader,
+		DialogTitle
+	} from '$lib/components/ui/dialog';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import * as RadioGroup from '$lib/components/ui/radio-group';
-	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { DollarSign, QrCode, User } from 'lucide-svelte';
-	import { slide } from 'svelte/transition';
-	import { quintOut } from 'svelte/easing';
+	import { RadioGroup, RadioGroupItem } from '$lib/components/ui/radio-group';
+	import { tick } from 'svelte';
 	import CustomerInputModal from './CustomerInputModal.svelte';
+	import { Checkbox } from '$lib/components/ui/checkbox';
 
-	export let open: boolean;
-	export let totalAmount: number;
+	let {
+		open = $bindable(false),
+		totalAmount,
+		onConfirm,
+		onCancel
+	} = $props();
 
-	export let onConfirm: (
-		details: {
-			paymentMethod: 'cash' | 'gcash';
-			cashTendered: number | undefined;
-			gcashReference: string;
-			customerName: string;
-			printReceipt: boolean;
-			total: number;
-			change: number;
-		}
-	) => void;
-	export let onCancel: () => void;
+	let paymentMethod: 'cash' | 'gcash' = $state('cash');
+	let cashTendered: number | undefined = $state(undefined);
+	let referenceNumber = $state('');
+	let customerName = $state('');
+	let printReceipt = $state(true);
+	let showCustomerModal = $state(false);
+	let cashTenderedInputRef = $state<HTMLInputElement | undefined>(undefined);
 
-	let paymentMethod: 'cash' | 'gcash' = 'cash';
-	let cashTendered: number | undefined = undefined;
-	let gcashReference: string = '';
-	let customerName: string = '';
-	let printReceipt: boolean = true;
-	let showCustomerModal: boolean = false;
-
-
-
-	$: change =
+	const change = $derived(
 		paymentMethod === 'cash' && cashTendered && cashTendered >= totalAmount
 			? cashTendered - totalAmount
-			: 0;
+			: 0
+	);
 
-	$: isValid =
-		(paymentMethod === 'cash' && cashTendered && cashTendered >= totalAmount) ||
-		(paymentMethod === 'gcash' && gcashReference.trim() !== '');
-
-	function handleConfirm() {
-		if (!isValid) return;
-
-		onConfirm({
-			paymentMethod,
-			cashTendered,
-			gcashReference,
-			customerName,
-			printReceipt,
-			total: totalAmount,
-			change
-		});
-		resetForm();
-	}
-
-	function handleCancel() {
-		onCancel();
-		resetForm();
-	}
-
-
+	const isValid = $derived(() => {
+		if (paymentMethod === 'cash') {
+			return cashTendered !== undefined && cashTendered >= totalAmount;
+		} else if (paymentMethod === 'gcash') {
+			return referenceNumber.trim() !== '';
+		}
+		return false;
+	});
 
 	function resetForm() {
 		paymentMethod = 'cash';
 		cashTendered = undefined;
-		gcashReference = '';
+		referenceNumber = '';
 		customerName = '';
 		printReceipt = true;
 	}
 
-	// When the dialog is closed from the outside, ensure we reset the state.
-	$: if (!open) {
-		resetForm();
+	$effect(() => {
+		if (open && paymentMethod === 'cash') {
+			tick().then(() => {
+				cashTenderedInputRef?.focus();
+			});
+		}
+
+		if (!open) {
+			resetForm();
+		}
+	});
+
+	function handleConfirm() {
+		if (isValid()) {
+			onConfirm({
+				paymentMethod,
+				cashTendered: cashTendered,
+				gcashReference: referenceNumber,
+				customerName,
+				printReceipt,
+				total: totalAmount,
+				change: change
+			});
+			open = false;
+		}
 	}
+
+
 </script>
 
-<Dialog.Root bind:open>
-	<Dialog.Content class="sm:max-w-[480px]">
-		<Dialog.Header>
-			<Dialog.Title class="text-2xl font-bold">Payment</Dialog.Title>
-			<Dialog.Description>
-				Total Amount: <span class="font-bold text-lg text-primary">₱{totalAmount.toFixed(2)}</span>
-			</Dialog.Description>
-		</Dialog.Header>
+<Dialog bind:open>
+	<DialogContent class="sm:max-w-md">
+		<DialogHeader>
+			<DialogTitle>Payment</DialogTitle>
+			<DialogDescription>Total Amount: P{totalAmount.toFixed(2)}</DialogDescription>
+		</DialogHeader>
 
-		<div class="grid gap-6 py-4">
-			<!-- Payment Method Selection -->
-			<div class="flex flex-col gap-3">
-				<Label class="font-semibold">Payment Method</Label>
-				<RadioGroup.Root bind:value={paymentMethod} class="grid grid-cols-2 gap-4">
+		<div class="grid gap-4 py-4">
+			<RadioGroup bind:value={paymentMethod} class="grid grid-cols-2 gap-4">
+				<div>
+					<RadioGroupItem value="cash" id="cash" class="peer sr-only" />
 					<Label
 						for="cash"
-						class="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
+						class="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
 					>
-						<RadioGroup.Item value="cash" id="cash" class="sr-only" />
-						<DollarSign class="mb-3 h-6 w-6" />
 						Cash
 					</Label>
+				</div>
+				<div>
+					<RadioGroupItem value="gcash" id="gcash" class="peer sr-only" />
 					<Label
 						for="gcash"
-						class="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground [&:has([data-state=checked])]:border-primary"
+						class="flex flex-col items-center justify-between rounded-md border-2 border-muted bg-popover p-4 hover:bg-accent hover:text-accent-foreground peer-data-[state=checked]:border-primary [&:has([data-state=checked])]:border-primary"
 					>
-						<RadioGroup.Item value="gcash" id="gcash" class="sr-only" />
-						<QrCode class="mb-3 h-6 w-6" />
 						GCash
 					</Label>
-				</RadioGroup.Root>
-			</div>
+				</div>
+			</RadioGroup>
 
-			<!-- Conditional Inputs -->
 			{#if paymentMethod === 'cash'}
-				<div class="grid gap-2" transition:slide={{ duration: 300, easing: quintOut }}>
-					<Label for="cash-tendered" class="font-semibold">Cash Tendered</Label>
+				<div class="grid gap-2">
+					<Label for="cash-tendered">Cash Tendered</Label>
 					<Input
+						ref={cashTenderedInputRef}
 						id="cash-tendered"
 						type="number"
 						placeholder="Enter amount"
 						bind:value={cashTendered}
-						class="text-lg"
 					/>
 					{#if change > 0}
-						<p class="text-right text-lg font-medium">
-							Change: <span class="text-green-500 font-bold">₱{change.toFixed(2)}</span>
-						</p>
+						<p class="text-sm text-muted-foreground">Change: P{change.toFixed(2)}</p>
 					{/if}
 				</div>
-			{/if}
-
-			{#if paymentMethod === 'gcash'}
-				<div class="grid gap-2" transition:slide={{ duration: 300, easing: quintOut }}>
-					<Label for="gcash-reference" class="font-semibold">GCash Reference No.</Label>
+			{:else if paymentMethod === 'gcash'}
+				<div class="grid gap-2">
+					<Label for="reference-number">Reference Number</Label>
 					<Input
-						id="gcash-reference"
-						placeholder="Enter reference number"
-						bind:value={gcashReference}
-						class="text-lg"
+						id="reference-number"
+						type="text"
+						placeholder="Enter GCash reference no."
+						bind:value={referenceNumber}
 					/>
 				</div>
 			{/if}
 
-			<!-- Optional Customer Info -->
 			<div class="grid gap-2">
-				<Label class="font-semibold">Customer</Label>
-				<div class="flex items-center justify-between rounded-md border p-3">
-					<span class="text-sm text-muted-foreground">{customerName || 'Walk-in Customer'}</span>
-					<Button variant="outline" size="sm" onclick={() => (showCustomerModal = true)}>
-						<User class="mr-2 h-4 w-4" />
-						{customerName ? 'Edit' : 'Add'}
-					</Button>
+				<Label for="customer-name">Customer Name (Optional)</Label>
+				<div class="flex items-center gap-2">
+					<Input
+						id="customer-name"
+						type="text"
+						placeholder="Enter customer name"
+						bind:value={customerName}
+					/>
+					<Button variant="outline" onclick={() => (showCustomerModal = true)}>Search</Button>
 				</div>
 			</div>
-
-			<!-- Print Receipt Toggle -->
 			<div class="flex items-center space-x-2">
 				<Checkbox id="print-receipt" bind:checked={printReceipt} />
 				<label
@@ -168,17 +161,20 @@
 			</div>
 		</div>
 
-		<Dialog.Footer class="grid grid-cols-2 gap-2">
-			<Button variant="outline" onclick={handleCancel}>Cancel</Button>
-			<Button onclick={handleConfirm}>
-				Confirm Payment
-			</Button>
-		</Dialog.Footer>
-	</Dialog.Content>
-</Dialog.Root>
+		<DialogFooter>
+			<Button variant="outline" onclick={onCancel}>Cancel</Button>
+			<Button type="submit" onclick={handleConfirm} disabled={!isValid}>Confirm Payment</Button>
+		</DialogFooter>
+	</DialogContent>
+</Dialog>
 
 <CustomerInputModal
 	bind:open={showCustomerModal}
-	onSave={(details) => (customerName = details.name)}
-	onCancel={() => {}}
+	onSave={(details) => {
+		customerName = details.name;
+		showCustomerModal = false;
+	}}
+	onCancel={() => {
+		showCustomerModal = false;
+	}}
 />
