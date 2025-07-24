@@ -1,36 +1,55 @@
-import { settingsStore } from '$lib/stores/settingsStore';
-import { settingsSchema } from '$lib/schemas/models';
 import { fail } from '@sveltejs/kit';
-import { superValidate } from 'sveltekit-superforms/server';
+import { settingsStore } from '$lib/stores/settingsStore';
+import { settingsSchema } from '$lib/schemas/settingsSchema';
+import { superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
 
-export const load: PageServerLoad = async ({ locals }) => {
-    const userRole = locals.user?.role;
+// A simple PIN check function for demonstration purposes.
+// In a real app, this would involve a secure check against a hashed PIN.
+const DUMMY_ADMIN_PIN = '1234';
+const validatePin = (pin: string) => pin === DUMMY_ADMIN_PIN;
 
-    const settings = settingsStore.get();
-    const form = await superValidate(settings, zod(settingsSchema));
-
-    return { 
-        form,
-        userRole
-    };
+export const load: PageServerLoad = async () => {
+    const form = await superValidate(settingsStore.get(), zod(settingsSchema));
+    return { form };
 };
 
 export const actions: Actions = {
-	update: async ({ request, locals }) => {
-        if (locals.user?.role !== 'admin') {
-            return fail(403, { message: 'You do not have permission to perform this action.' });
+    default: async ({ request }) => {
+        const form = await superValidate(request, zod(settingsSchema));
+
+        if (!form.valid) {
+            return fail(400, { form });
         }
 
-		const form = await superValidate(request, zod(settingsSchema));
+        const currentSettings = settingsStore.get();
+        const newSettings = form.data;
 
-		if (!form.valid) {
-			return fail(400, { form });
-		}
+        // Deep comparison of tax rates to check for changes
+        const taxRatesChanged = JSON.stringify(currentSettings.tax_rates) !== JSON.stringify(newSettings.tax_rates);
 
-		settingsStore.set(form.data);
+        if (taxRatesChanged) {
+            if (!newSettings.pin) {
+                // Add a specific error to the PIN field
+				form.errors.pin = ['PIN is required to change tax rates.'];
+                return fail(400, { form });
+            }
 
-		return { form };
-	}
+            if (!validatePin(newSettings.pin ?? '')) {
+                form.errors.pin = ['Invalid PIN.'];
+                return fail(401, { form });
+            }
+        }
+
+        // Remove PIN from the data before saving
+        // The linter will complain that 'pin' is unused, which is the point.
+        // We are destructuring it out so it doesn't get saved.
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { pin, ...settingsToSave } = newSettings;
+
+        settingsStore.updateSettings(settingsToSave);
+
+        return { form };
+    }
 };

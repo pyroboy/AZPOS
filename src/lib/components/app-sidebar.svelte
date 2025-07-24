@@ -54,12 +54,14 @@
               {/snippet}
             </DropdownMenu.Trigger>
             <DropdownMenu.Content side="top" class="w-[--sidebar-width]">
-              <DropdownMenu.Item class="p-0">
-                <a href="/settings" class="flex items-center gap-2 w-full px-2 py-1.5">
-                  <Settings class="h-4 w-4" />
-                  <span>Settings</span>
-                </a>
-              </DropdownMenu.Item>
+              {#if user.role === 'admin'}
+                <DropdownMenu.Item class="p-0">
+                  <a href="/admin/settings" class="flex items-center gap-2 w-full px-2 py-1.5">
+                    <Settings class="h-4 w-4" />
+                    <span>Settings</span>
+                  </a>
+                </DropdownMenu.Item>
+              {/if}
               <DropdownMenu.Separator />
               <DropdownMenu.Item class="p-0">
                 <form method="POST" action="/login?/logout" use:enhance class="w-full">

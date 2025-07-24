@@ -1,25 +1,38 @@
 import { writable } from 'svelte/store';
-import type { Settings } from '$lib/schemas/models';
+import type { Settings } from '$lib/schemas/settingsSchema';
+
+// Default settings object
+const defaultSettings: Omit<Settings, 'pin'> = {
+    store_name: 'AZPOS Demo Store',
+    address: '123 Tech Lane, Silicon Valley, CA',
+    tin: '00-0000000',
+    currency: 'USD',
+    tax_rates: [
+        { name: 'VAT', rate: 12 },
+        { name: 'Sales Tax', rate: 8.25 }
+    ],
+    timezone: 'America/Los_Angeles',
+    language: 'en'
+};
 
 function createSettingsStore() {
-	const { subscribe, set, update } = writable<Settings>({
-		store_name: 'AZPOS',
-		address: '123 Main St',
-		tin: '123-456-789-000',
-		currency: 'PHP',
-		tax_rates: [{ name: 'VAT', rate: 12 }]
-	});
+    const { subscribe, set, update } = writable<Settings>(defaultSettings);
 
-	return {
-		subscribe,
-		set,
-		update,
-		get: () => {
-			let value: Settings | undefined;
-			subscribe((v) => (value = v))();
-			return value as Settings;
-		}
-	};
+    return {
+        subscribe,
+        set,
+        update,
+        updateSettings: (partialSettings: Partial<Settings>) => {
+            update(s => ({ ...s, ...partialSettings }));
+        },
+        // Helper to get the current value non-reactively (for server-side use)
+        get: () => {
+            let value: Settings = defaultSettings; // Initialize with default
+            const unsubscribe = subscribe(v => value = v);
+            unsubscribe();
+            return value;
+        }
+    };
 }
 
 export const settingsStore = createSettingsStore();
