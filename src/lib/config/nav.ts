@@ -39,7 +39,7 @@ export const navLinks: NavLink[] = [
         href: '/reports',
         label: 'Reports',
         icon: FileText,
-        roles: ['admin', 'owner', 'manager']
+        roles: ['admin', 'owner', 'manager', 'pharmacist']
     },
     {
         href: '/admin/users',

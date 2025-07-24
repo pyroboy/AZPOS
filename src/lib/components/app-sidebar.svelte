@@ -1,44 +1,12 @@
 <script lang="ts">
-  import * as Sidebar from "$lib/components/ui/sidebar/index.js";
-  import HouseIcon from "@lucide/svelte/icons/house";
-  import BarChartIcon from '@lucide/svelte/icons/bar-chart';
-  import SettingsIcon from '@lucide/svelte/icons/settings';
-  import UsersIcon from '@lucide/svelte/icons/users';
-  import PackageIcon from '@lucide/svelte/icons/package';
-  import ShoppingCartIcon from '@lucide/svelte/icons/shopping-cart';
-  import * as DropdownMenu from "$lib/components/ui/dropdown-menu/index.js";
-  import ChevronUp from "@lucide/svelte/icons/chevron-up";
-  import { session } from "$lib/stores/sessionStore";
+  import * as Sidebar from '$lib/components/ui/sidebar/index.js';
+  import * as DropdownMenu from '$lib/components/ui/dropdown-menu/index.js';
+  import ChevronUp from '@lucide/svelte/icons/chevron-up';
+  import { page } from '$app/stores';
+  import { navLinks } from '$lib/config/nav';
 
-  // Menu items.
-  const items = [
-    {
-      title: "Dashboard",
-      url: "/",
-      icon: HouseIcon,
-    },
-    {
-      title: "POS",
-      url: "/pos",
-      icon: ShoppingCartIcon,
-    },
-    {
-      title: "Inventory",
-      url: "/inventory",
-      icon: PackageIcon,
-    },
-    {
-      title: "Customers",
-      url: "/customers",
-      icon: UsersIcon,
-    },
-    {
-      title: "Reports",
-      url: "/reports",
-      icon: BarChartIcon,
-    },
-
-  ];
+  $: user = $page.data.user;
+  $: filteredLinks = user ? navLinks.filter((link) => link.roles.includes(user.role)) : [];
 </script>
 
 <Sidebar.Root>
@@ -50,13 +18,13 @@
       <Sidebar.GroupLabel>Application</Sidebar.GroupLabel>
       <Sidebar.GroupContent>
         <Sidebar.Menu>
-          {#each items as item (item.title)}
+                    {#each filteredLinks as link (link.href)}
             <Sidebar.MenuItem>
               <Sidebar.MenuButton>
                 {#snippet child({ props })}
-                  <a href={item.url} {...props}>
-                    <item.icon class="h-4 w-4" />
-                    <span>{item.title}</span>
+                  <a href={link.href} {...props}>
+                    <link.icon class="h-4 w-4" />
+                    <span>{link.label}</span>
                   </a>
                 {/snippet}
               </Sidebar.MenuButton>
@@ -67,7 +35,7 @@
     </Sidebar.Group>
   </Sidebar.Content>
   <Sidebar.Footer>
-    {#if $session.currentUser}
+        {#if user}
       <Sidebar.Menu>
         <Sidebar.MenuItem>
           <DropdownMenu.Root>
@@ -75,8 +43,8 @@
               {#snippet child({ props })}
                 <Sidebar.MenuButton {...props} class="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground">
                   <div class="flex flex-col items-start text-sm">
-                    <span>{$session.currentUser!.username}</span>
-                    <span class="text-xs text-muted-foreground">{$session.currentUser!.role}</span>
+                                        <span>{user.full_name}</span>
+                    <span class="text-xs text-muted-foreground">{user.role}</span>
                   </div>
                   <ChevronUp class="ml-auto" />
                 </Sidebar.MenuButton>
