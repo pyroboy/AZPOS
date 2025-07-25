@@ -39,7 +39,7 @@ export const actions: Actions = {
 	// Action to load the master product list from a predefined path
 	loadMasterCsv: async () => {
 		try {
-			const filePath = path.resolve('./src/lib/assets/master_products.csv');
+			const filePath = path.resolve('./static', 'products_master.csv');
 			const csvText = await fs.readFile(filePath, 'utf-8');
 			const products = await parseCsv(csvText);
 			const productsWithStatus: ProductWithStatus[] = products.map((p) => ({ ...p, status: 'initial' }));
@@ -70,14 +70,32 @@ export const actions: Actions = {
 		}
 	},
 
-	// Action to export product data to a CSV file
 	exportCsv: async ({ request }) => {
 		const formData = await request.formData();
 		const productsJson = formData.get('products') as string;
 
 		try {
 			const products: ProductWithStatus[] = JSON.parse(productsJson);
-			const csv = Papa.unparse(products);
+			
+			const productsToExport = products.map(p => {
+				const fileExtension = p.image_url?.split('.').pop() || 'jpg';
+				return {
+					id: p.id,
+					sku: p.sku,
+					name: p.name,
+					description: p.description,
+					stock: p.stock,
+					price: p.price,
+					category_id: p.category_id,
+					supplier_id: p.supplier_id,
+					image_url: p.image_url ? `images/products/${p.sku}.${fileExtension}` : ''
+				}
+			});
+
+			const csv = Papa.unparse(productsToExport, {
+				columns: ['id', 'sku', 'name', 'description', 'stock', 'price', 'category_id', 'supplier_id', 'image_url']
+			});
+
 			return { success: true, csv };
 		} catch (e) {
 			console.error('Failed to export CSV:', e);
@@ -94,23 +112,34 @@ export const actions: Actions = {
 			const products: ProductWithStatus[] = JSON.parse(productsJson);
 			const zip = new JSZip();
 
-			const imageProducts = products.filter((p) => p.status === 'selected' && p.imageUrl);
+			const imageProducts = products.filter((p) => p.status === 'selected' && p.image_url);
+			const successfulDownloads: string[] = [];
+			const failedDownloads: string[] = [];
 
 			for (const product of imageProducts) {
 				try {
-					const response = await fetch(product.imageUrl!);
+					const response = await fetch(product.image_url!);
 					if (response.ok) {
 						const buffer = await response.arrayBuffer();
-						const fileExtension = product.imageUrl!.split('.').pop() || 'jpg';
+						const fileExtension = product.image_url!.split('.').pop() || 'jpg';
 						zip.file(`${product.sku}.${fileExtension}`, buffer);
+						successfulDownloads.push(product.sku);
+					} else {
+						failedDownloads.push(product.sku);
 					}
 				} catch (fetchError) {
 					console.error(`Failed to fetch image for ${product.sku}:`, fetchError);
+					failedDownloads.push(product.sku);
 				}
 			}
 
 			const zipAsBase64 = await zip.generateAsync({ type: 'base64' });
-			return { success: true, zip: zipAsBase64 };
+			return {
+				success: true,
+				zip: zipAsBase64,
+				successfulDownloads,
+				failedDownloads
+			};
 		} catch (e) {
 			console.error('Failed to create ZIP:', e);
 			return fail(500, { error: 'Failed to generate ZIP file.' });

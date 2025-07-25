@@ -40,11 +40,8 @@ export const GET: RequestHandler = async ({ url }) => {
 	console.log(`[/search] Searching Google for: "${q}"`);
 
 	try {
-		const res = await fetch(
-			`${BASE}?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(
-				q
-			)}&searchType=image&num=10&safe=active`
-		);
+		const searchUrl = `${BASE}?key=${API_KEY}&cx=${CX}&q=${encodeURIComponent(q)}&searchType=image&num=10&safe=active`;
+		const res = await fetch(searchUrl);
 
 		if (!res.ok) {
 			const errorBody = await res.text();
@@ -65,10 +62,10 @@ export const GET: RequestHandler = async ({ url }) => {
 		const images: FoundImage[] = data.items
 			.map((item: GoogleSearchItem) => ({
 				thumbnailUrl: item.image?.thumbnailLink ?? '', // Ensure thumbnailUrl is always a string
-				imageUrl: item.link,
+				image_url: item.link,
 				contextLink: item.image?.contextLink
 			}))
-			.filter((img) => img.imageUrl);
+			.filter((img) => img.image_url);
 
 		console.log(`[/search] Found ${images.length} images for "${q}".`);
 		return json({ images });

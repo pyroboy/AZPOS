@@ -4,51 +4,72 @@
 <script lang="ts">
     import type { FoundImage } from './types';
     import * as Dialog from "$lib/components/ui/dialog";
-    import * as Carousel from "$lib/components/ui/carousel";
     import { Button } from '$lib/components/ui/button';
+    import { Input } from '$lib/components/ui/input';
+    import Search from 'lucide-svelte/icons/search';
 
-    export let open = false;
-    export let images: FoundImage[] = [];
-    export let onselect: (image: FoundImage) => void;
-    export let onclose: () => void;
+    let { open = false, images = [], productName = '', onselect = (image: FoundImage) => {}, onclose = () => {}, onsearch = (term: string) => {} } = $props<{ 
+        open: boolean;
+        images: FoundImage[];
+        productName: string;
+        onselect: (image: FoundImage) => void;
+        onclose: () => void;
+        onsearch: (searchTerm: string) => void;
+    }>();
+
+    let searchTerm = $state(productName);
 
     function handleSelect(image: FoundImage) {
-        if (onselect) onselect(image);
-        if (onclose) onclose();
+        onselect(image);
+        onclose();
+    }
+
+    function handleSearch() {
+        onsearch(searchTerm);
+    }
+
+    function handleKeydown(event: KeyboardEvent) {
+        if (event.key === 'Enter') {
+            handleSearch();
+        }
     }
 </script>
 
-<Dialog.Root bind:open onOpenChange={(isOpen) => !isOpen && onclose && onclose()}>
-    <Dialog.Content class="sm:max-w-[600px]">
+<Dialog.Root bind:open onOpenChange={(isOpen) => !isOpen && onclose()}>
+    <Dialog.Content class="sm:max-w-[600px] overflow-hidden">
         <Dialog.Header>
-            <Dialog.Title>Select an Image</Dialog.Title>
+            <Dialog.Title>Select an Image for {productName}</Dialog.Title>
             <Dialog.Description>
-                Click on an image to select it for the product.
+                Review the images below or enter a new search term.
             </Dialog.Description>
         </Dialog.Header>
 
-        <Carousel.Root class="w-full max-w-lg mx-auto">
-            <Carousel.Content>
-                {#each images as image, i}
-                    <Carousel.Item class="md:basis-1/2 lg:basis-1/3">
-                        <div class="p-1">
-                            <!-- @ts-ignore -->
-                            <button
-                                onclick={() => handleSelect(image)}
-                                class="group relative block w-full h-full cursor-pointer overflow-hidden rounded-md border-2 border-transparent focus:border-primary focus:outline-none"
-                            >
-                                <img src={image.imageUrl} alt={`Search result ${i + 1}`} class="w-full h-auto object-cover rounded-md aspect-square"/>
-                                <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
-                                    <span class="text-white font-bold">Select</span>
-                                </div>
-                            </button>
-                        </div>
-                    </Carousel.Item>
+                        <div class="flex w-full items-center space-x-2 pt-2">
+            <Input type="text" placeholder="Enter a search term..." bind:value={searchTerm} onkeydown={handleKeydown} />
+            <Button type="button" onclick={handleSearch}><Search class="mr-2 h-4 w-4" /> Search</Button>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 pt-4">
+            {#if images.length > 0}
+                {#each images.slice(0, 10) as image, i (image.image_url)}
+                    <div class="p-1">
+                        <button
+                            onclick={() => handleSelect(image)}
+                            class="group relative block w-full h-full cursor-pointer overflow-hidden rounded-md border-2 border-transparent focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                        >
+                            <img src={image.image_url} alt={`Search result ${i + 1}`} class="w-full h-auto object-cover rounded-md aspect-square"/>
+                            <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
+                                <span class="text-white font-bold">Select</span>
+                            </div>
+                        </button>
+                    </div>
                 {/each}
-            </Carousel.Content>
-            <Carousel.Previous />
-            <Carousel.Next />
-        </Carousel.Root>
+            {:else}
+                <div class="col-span-full flex items-center justify-center h-48 text-muted-foreground">
+                    <p>No images found. Try a different search term.</p>
+                </div>
+            {/if}
+        </div>
 
     </Dialog.Content>
 </Dialog.Root>

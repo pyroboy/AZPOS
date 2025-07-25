@@ -30,7 +30,7 @@
 
 		// A 'found' image is one that has been selected and is different from the original
 		const found = products.filter(
-			(p) => p.status === 'selected' || (p.imageUrl && p.imageUrl !== p.image_url)
+			(p) => p.status === 'selected' || (p.image_url && p.image_url !== p.image_url)
 		).length;
 		const percent = total > 0 ? Math.round((found / total) * 100) : 0;
 		return { found, total, percent };

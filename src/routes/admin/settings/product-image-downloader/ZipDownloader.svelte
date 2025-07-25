@@ -3,12 +3,13 @@
 -->
 <script lang="ts">
     import { Button } from '$lib/components/ui/button';
+    import { toast } from 'svelte-sonner';
     import { enhance, applyAction } from '$app/forms';
     import type { ProductWithStatus } from './types';
 
         let { products }: { products: ProductWithStatus[] } = $props();
 
-    const downloadableProducts = $derived(products.filter(p => p.status === 'selected' && p.imageUrl));
+    const downloadableProducts = $derived(products.filter(p => p.status === 'selected' && p.image_url));
 
     function b64toBlob(b64Data: string, contentType = '', sliceSize = 512) {
         const byteCharacters = atob(b64Data);
@@ -32,16 +33,36 @@
     use:enhance={() => {
         return async ({ result }) => {
             if (result.type === 'success' && result.data?.zip) {
-                const blob = b64toBlob(result.data.zip as string, 'application/zip');
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = `product-images-${Date.now()}.zip`;
-                document.body.appendChild(a);
-                a.click();
-                window.URL.revokeObjectURL(url);
-                document.body.removeChild(a);
-            }
+					const { zip, successfulDownloads, failedDownloads } = result.data as {
+						zip: string;
+						successfulDownloads: string[];
+						failedDownloads: string[];
+					};
+
+					if (failedDownloads.length > 0) {
+						toast.warning('Download Complete with Errors',
+							{
+								description: `${successfulDownloads.length} images succeeded, ${failedDownloads.length} failed.`
+							});
+					} else {
+						toast.success('All Images Downloaded',
+							{
+								description: `${successfulDownloads.length} images have been successfully downloaded and zipped.`
+							});
+					}
+
+					const blob = b64toBlob(zip as string, 'application/zip');
+					const url = URL.createObjectURL(blob);
+					const a = document.createElement('a');
+					a.href = url;
+					a.download = `product-images-${Date.now()}.zip`;
+					document.body.appendChild(a);
+					a.click();
+					window.URL.revokeObjectURL(url);
+					document.body.removeChild(a);
+				} else if (result.type === 'error') {
+					toast.error('Download Failed', { description: result.error.message });
+				}
             await applyAction(result);
         };
     }}>

@@ -47,11 +47,36 @@
 		const currentProductSku = activeProduct.sku;
 		products = products.map((p: ProductWithStatus) => {
 			if (p.sku === currentProductSku) {
-				return { ...p, imageUrl: image.imageUrl, status: 'selected', foundImages: [] };
+				return { ...p, image_url: image.image_url, status: 'selected', foundImages: [] };
 			}
 			return p;
 		});
 		activeProduct = null; // Close dialog
+	}
+
+	async function handleDialogSearch(searchTerm: string) {
+		if (!activeProduct) return;
+
+		isLoading = true;
+		foundImages = [];
+
+		try {
+			const response = await fetch(
+				`/admin/settings/product-image-downloader/search?name=${encodeURIComponent(searchTerm)}`
+			);
+			if (response.ok) {
+				const data = await response.json();
+				foundImages = data.images;
+			} else {
+				console.error('Search failed');
+				foundImages = [];
+			}
+		} catch (error) {
+			console.error('Error during search:', error);
+			foundImages = [];
+		} finally {
+			isLoading = false;
+		}
 	}
 
 	async function autoFindAllImages() {
@@ -75,7 +100,7 @@
 					if (firstImage) {
 						updatedProducts = updatedProducts.map((p) =>
 							p.sku === product.sku
-								? { ...p, imageUrl: firstImage.imageUrl, status: 'found' }
+								? { ...p, image_url: firstImage.image_url, status: 'found' }
 								: p
 						);
 					} else {
@@ -121,7 +146,11 @@
 				<Table.Cell>{product.sku}</Table.Cell>
 				<Table.Cell>{product.name}</Table.Cell>
 				<Table.Cell>
-					<ImagePreview src={product.imageUrl || product.image_url} alt={product.name} />
+					<ImagePreview
+						src={product.image_url}
+						fallbackSrc={product.selected_image_url}
+						alt={product.name}
+					/>
 				</Table.Cell>
 				<Table.Cell class="capitalize">{product.status}</Table.Cell>
 				<Table.Cell>
@@ -136,7 +165,9 @@
 	<ImageSelectionDialog
 		open={activeProduct !== null}
 		images={foundImages}
+		productName={activeProduct.name}
 		onselect={selectImage}
 		onclose={() => (activeProduct = null)}
+		onsearch={handleDialogSearch}
 	/>
 {/if}

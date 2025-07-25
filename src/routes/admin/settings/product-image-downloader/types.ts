@@ -22,7 +22,7 @@ export interface Product {
  */
 export interface FoundImage {
 	thumbnailUrl: string;
-	imageUrl: string;
+	image_url: string;
 	contextLink?: string;
 }
 
@@ -31,6 +31,6 @@ export interface FoundImage {
  */
 export interface ProductWithStatus extends Product {
 	status: 'initial' | 'pending' | 'searching' | 'found' | 'error' | 'selected';
-	imageUrl?: string; // The URL of the new, selected image
+	image_url: string; // The URL of the new, selected image
 	foundImages?: FoundImage[];
 }
