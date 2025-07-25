@@ -1,9 +1,8 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import * as Table from '$lib/components/ui/table';
-	import { localImagePath } from '$lib/utils/image';
 	import type { ProductWithStatus, FoundImage } from './types';
-	import ImagePreview from './ImagePreview.svelte';
+	import ImagePreview from '../../../../lib/components/inventory/ImagePreview.svelte';
 	import ImageSelectionDialog from './ImageSelectionDialog.svelte';
 
 	let { products = $bindable() } = $props<{ products: ProductWithStatus[] }>();
@@ -150,6 +149,7 @@
 						src={product.image_url}
 						fallbackSrc={product.selected_image_url}
 						alt={product.name}
+						product={product}
 					/>
 				</Table.Cell>
 				<Table.Cell class="capitalize">{product.status}</Table.Cell>

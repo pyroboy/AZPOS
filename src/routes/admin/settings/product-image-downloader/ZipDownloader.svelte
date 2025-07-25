@@ -33,25 +33,12 @@
     use:enhance={() => {
         return async ({ result }) => {
             if (result.type === 'success' && result.data?.zip) {
-					const { zip, successfulDownloads, failedDownloads } = result.data as {
-						zip: string;
-						successfulDownloads: string[];
-						failedDownloads: string[];
-					};
+					const { zip } = result.data as { zip: string };
+					toast.success('Download Successful', {
+						description: 'All selected images have been zipped.'
+					});
 
-					if (failedDownloads.length > 0) {
-						toast.warning('Download Complete with Errors',
-							{
-								description: `${successfulDownloads.length} images succeeded, ${failedDownloads.length} failed.`
-							});
-					} else {
-						toast.success('All Images Downloaded',
-							{
-								description: `${successfulDownloads.length} images have been successfully downloaded and zipped.`
-							});
-					}
-
-					const blob = b64toBlob(zip as string, 'application/zip');
+					const blob = b64toBlob(zip, 'application/zip');
 					const url = URL.createObjectURL(blob);
 					const a = document.createElement('a');
 					a.href = url;

@@ -1,7 +1,7 @@
 <script lang="ts">
     import { filteredProducts } from '$lib/stores/inventory/products';
 	import * as Table from '$lib/components/ui/table/index.js';
-
+	import ImagePreview from '$lib/components/inventory/ImagePreview.svelte';
 	const colors = [
 		'#ffadad', '#ffd6a5', '#fdffb6', '#caffbf',
 		'#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'
@@ -38,12 +38,8 @@
       {#each $filteredProducts as product (product.id)}
         <Table.Row>
           <Table.Cell>
-            <div 
-              class="h-10 w-10 rounded-md flex items-center justify-center font-bold text-lg"
-              style="background-color: {getRandomColor(product.id)}; color: #555;"
-            >
-              {getInitials(product.name)}
-            </div>
+            <ImagePreview src={product.image_url} fallbackSrc={product.image_url} alt={product.name} product={product} />
+
           </Table.Cell>
           <Table.Cell class="font-medium">{product.name}</Table.Cell>
           <Table.Cell>{product.sku}</Table.Cell>

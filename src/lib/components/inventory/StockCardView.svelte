@@ -2,7 +2,7 @@
     import { filteredProducts as products } from '$lib/stores/inventory/products';
     import { Badge } from '$lib/components/ui/badge';
     import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
-
+    import ImagePreview from '$lib/components/inventory/ImagePreview.svelte';
     const colors = [
 		'#ffadad', '#ffd6a5', '#fdffb6', '#caffbf',
 		'#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'
@@ -32,12 +32,8 @@
           {#each $products as product (product.id)}
             <Card>
               <CardHeader class="p-0">
-                <div 
-                  class="rounded-t-lg h-40 w-full flex items-center justify-center font-bold text-4xl"
-                  style="background-color: {getRandomColor(product.id)}; color: #555;"
-                >
-                  {getInitials(product.name)}
-                </div>
+                <ImagePreview src={product.image_url} product={product} fallbackSrc={product.image_url} />
+
               </CardHeader>
   
               <CardContent class="p-4 space-y-2">
