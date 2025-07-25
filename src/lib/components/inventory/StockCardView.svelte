@@ -1,5 +1,7 @@
 <script lang="ts">
-    import { filteredProducts as products } from '$lib/stores/inventory/products';
+	import { onMount } from 'svelte';
+	import { products } from '$lib/stores/productStore'; // The base store with the loader method
+	import { filteredProducts } from '$lib/stores/inventory/products';
     import { Badge } from '$lib/components/ui/badge';
     import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
     import ImagePreview from '$lib/components/inventory/ImagePreview.svelte';
@@ -26,10 +28,30 @@
       if (stock < 20) return 'secondary';
       return 'outline';
     }
+
+	let sentinel: HTMLDivElement;
+
+	onMount(() => {
+		const observer = new IntersectionObserver(entries => {
+			if (entries[0].isIntersecting) {
+				products.loadMoreProducts();
+			}
+		});
+
+		if (sentinel) {
+			observer.observe(sentinel);
+		}
+
+		return () => {
+			if (sentinel) {
+				observer.unobserve(sentinel);
+			}
+		};
+	});
 </script>
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {#each $products as product (product.id)}
+          {#each $filteredProducts as product (product.id)}
             <Card>
               <CardHeader class="p-0">
                 <ImagePreview src={product.image_url} product={product} fallbackSrc={product.image_url} />
@@ -56,4 +78,5 @@
             </Card>
           {/each}
         </div>
+<div bind:this={sentinel} class="h-1"></div>
 

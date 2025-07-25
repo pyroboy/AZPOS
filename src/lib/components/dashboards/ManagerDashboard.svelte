@@ -1,36 +1,36 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
+	import { onMount } from 'svelte';
 	import * as Card from '$lib/components/ui/card';
 	import { users } from '$lib/stores/userStore';
-	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore';
-	import type { ProductBatch, User } from '$lib/schemas/models';
+	import type { User } from '$lib/schemas/models';
 	import { currency } from '$lib/utils/currency';
 
-	const kpis = $derived({
-		get activeStaff() {
-			const staff = get(users).filter((u: User) => u.role === 'pharmacist' || u.role === 'cashier');
-			return staff.filter((u) => u.is_active).length;
-		},
-		get totalInventoryValue() {
-			return get(inventory).reduce((total: number, product: ProductWithStock) => {
-				return total + product.stock * (product.average_cost ?? 0);
-			}, 0);
-		},
-		get lowStockCount() {
-			return get(inventory).filter((p: ProductWithStock) => p.stock < (p.reorder_point ?? 20)).length;
-		},
-		get nearExpiryCount() {
-			// The dashboard card mentions 'next 60 days'
-			const sixtyDaysFromNow = new Date();
-			sixtyDaysFromNow.setDate(sixtyDaysFromNow.getDate() + 60);
+	let kpis = {
+		totalInventoryValue: 0,
+		lowStockCount: 0,
+		nearExpiryCount: 0,
+		activeStaff: 0
+	};
 
-			return get(inventory)
-				.flatMap((p: ProductWithStock) => p.batches)
-				.filter((b: ProductBatch) => {
-					if (!b.expiration_date) return false;
-					const expiryDate = new Date(b.expiration_date);
-					return expiryDate > new Date() && expiryDate <= sixtyDaysFromNow;
-				}).length;
+	// Subscribe to the user store to keep activeStaff count reactive
+	users.subscribe((userList) => {
+		kpis.activeStaff = userList.filter((u: User) => (u.role === 'pharmacist' || u.role === 'cashier') && u.is_active).length;
+		// Trigger reactivity by reassigning the object
+		kpis = { ...kpis };
+	});
+
+	onMount(async () => {
+		try {
+			const response = await fetch('/api/kpis');
+			if (!response.ok) throw new Error('Failed to fetch KPIs');
+			const inventoryData = await response.json();
+			// Combine fetched data with existing reactive state
+			kpis = {
+				...kpis, // a
+				...inventoryData
+			};
+		} catch (error) {
+			console.error('Error loading dashboard KPIs:', error);
 		}
 	});
 </script>

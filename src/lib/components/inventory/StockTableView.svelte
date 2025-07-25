@@ -1,4 +1,6 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
+	import { products } from '$lib/stores/productStore'; // The base store with the loader method
     import { filteredProducts } from '$lib/stores/inventory/products';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import ImagePreview from '$lib/components/inventory/ImagePreview.svelte';
@@ -20,6 +22,26 @@
 		const index = Math.abs(hash % colors.length);
 		return colors[index];
 	}
+
+	let sentinel: HTMLDivElement;
+
+	onMount(() => {
+		const observer = new IntersectionObserver(entries => {
+			if (entries[0].isIntersecting) {
+				products.loadMoreProducts();
+			}
+		});
+
+		if (sentinel) {
+			observer.observe(sentinel);
+		}
+
+		return () => {
+			if (sentinel) {
+				observer.unobserve(sentinel);
+			}
+		};
+	});
 </script>
 
   <Table.Root class="rounded-lg border bg-card text-card-foreground shadow-sm">
@@ -50,4 +72,6 @@
       {/each}
     </Table.Body>
   </Table.Root>
+
+  <div bind:this={sentinel} class="h-1"></div>
 

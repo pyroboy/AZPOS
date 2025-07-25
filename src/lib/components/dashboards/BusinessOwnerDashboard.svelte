@@ -1,29 +1,35 @@
 <script lang="ts">
+	import { onMount } from 'svelte';
 	import * as Card from '$lib/components/ui/card';
-    import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore';
+	import { currency } from '$lib/utils/currency';
 
-    const kpis = $derived.by(() => {
-        const allProducts = $inventory;
+	let kpis = {
+		potentialRevenue: 0,
+		totalInventoryValue: 0,
+		grossProfitMargin: 0
+	};
 
-        const totalInventoryValue = allProducts.reduce((total: number, product: ProductWithStock) => {
-            return total + (product.stock * (product.average_cost ?? 0));
-        }, 0);
+	onMount(async () => {
+		try {
+			const response = await fetch('/api/kpis');
+			if (!response.ok) throw new Error('Failed to fetch KPIs');
+			const data = await response.json();
 
-        const potentialRevenue = allProducts.reduce((total: number, product: ProductWithStock) => {
-            if (product.is_archived) return total;
-            return total + (product.stock * (product.price ?? 0));
-        }, 0);
+			const grossProfitMargin =
+				data.potentialRevenue > 0
+					? ((data.potentialRevenue - data.totalInventoryValue) / data.potentialRevenue) * 100
+					: 0;
 
-        const grossProfitMargin = potentialRevenue > 0
-            ? ((potentialRevenue - totalInventoryValue) / potentialRevenue) * 100
-            : 0;
-
-        return {
-            potentialRevenue,
-            totalInventoryValue,
-            grossProfitMargin
-        };
-    });
+			// Re-assign the whole object to ensure reactivity
+			kpis = {
+				potentialRevenue: data.potentialRevenue,
+				totalInventoryValue: data.totalInventoryValue,
+				grossProfitMargin
+			};
+		} catch (error) {
+			console.error('Error loading dashboard KPIs:', error);
+		}
+	});
 </script>
 
 <div class="space-y-4">

@@ -9,7 +9,16 @@ function createProductStore() {
 	const store = writable<Product[]>([]);
 	const { subscribe, set, update } = store;
 
+	let isLoading = false;
+	let currentPage = 1;
+	let totalProducts = 0;
+	let hasMore = true;
+
 	async function loadProductsCached(fetchFn: typeof fetch = fetch) {
+		// Reset state for a fresh load
+		currentPage = 1;
+		hasMore = true;
+		isLoading = false;
 		// On the server, this store acts as a request-level cache.
 		// On the client, it's a long-lived cache.
 		if (get(store).length > 0) {
@@ -38,6 +47,7 @@ function createProductStore() {
 
 			const data = await response.json();
 			const initialProducts: Product[] = data.products;
+			totalProducts = data.total;
 
 			if (initialProducts && initialProducts.length > 0) {
 				productBatches.clear(); // Reset batches for a clean import
@@ -71,10 +81,47 @@ function createProductStore() {
 		}
 	}
 
+	async function loadMoreProducts(fetchFn: typeof fetch = fetch) {
+		if (isLoading || !hasMore) return;
+
+		isLoading = true;
+		console.log(`[productStore] Loading more products, page: ${currentPage + 1}`);
+
+		try {
+			const nextPage = currentPage + 1;
+			const response = await fetchFn(`/api/products?page=${nextPage}&limit=100`);
+			if (!response.ok) throw new Error('Network response was not ok.');
+
+			const data = await response.json();
+			const newProducts: Product[] = data.products;
+
+			if (newProducts.length > 0) {
+				update(existingProducts => {
+					const updatedProducts = [...existingProducts, ...newProducts];
+					if (browser) {
+						setToIdb('products', updatedProducts);
+					}
+					return updatedProducts;
+				});
+				currentPage = nextPage;
+			} 
+
+			if (get(store).length >= totalProducts) {
+				hasMore = false;
+			}
+
+		} catch (error) {
+			console.error('Failed to load more products:', error);
+		} finally {
+			isLoading = false;
+		}
+	}
+
 	return {
 		subscribe,
 		set,
 		loadProducts: loadProductsCached,
+		loadMoreProducts,
 		addProduct: (product: Omit<Product, 'id'>) => {
 			const newProduct: Product = {
 				id: crypto.randomUUID(),
