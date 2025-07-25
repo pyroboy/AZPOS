@@ -40,6 +40,27 @@
 	</div>
 	<Separator />
 
+	<Card.Root class="mb-6">
+		<Card.Header>
+			<Card.Title>Product Images</Card.Title>
+			<Card.Description>Manage product images and download them for external use.</Card.Description>
+		</Card.Header>
+		<Card.Content>
+			{#if data.totalProducts > 0}
+				<div class="text-sm text-muted-foreground">
+					<span class="font-bold text-foreground">{data.productsWithImages} / {data.totalProducts}</span> products have images ({Math.round(data.productsWithImages / data.totalProducts * 100)}%).
+				</div>
+			{:else}
+				<div class="text-sm text-muted-foreground">Could not load product stats.</div>
+			{/if}
+		</Card.Content>
+		<Card.Footer>
+			<a href="/admin/settings/product-image-downloader">
+				<Button>Manage Images</Button>
+			</a>
+		</Card.Footer>
+	</Card.Root>
+
 	<form method="POST" use:enhance class="space-y-8">
 		<Card.Root>
 			<Card.Header>
