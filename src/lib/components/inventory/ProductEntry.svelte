@@ -138,6 +138,7 @@
 		reorder_point: 0,
 		requires_batch_tracking: false,
 		is_archived: false,
+		stock: 0,
 		created_at: '',
 		updated_at: ''
 	};

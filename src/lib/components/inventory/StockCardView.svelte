@@ -36,17 +36,11 @@
 			if (entries[0].isIntersecting) {
 				products.loadMoreProducts();
 			}
-		});
+		}, { rootMargin: '20%' });
 
 		if (sentinel) {
 			observer.observe(sentinel);
 		}
-
-		return () => {
-			if (sentinel) {
-				observer.unobserve(sentinel);
-			}
-		};
 	});
 </script>
 

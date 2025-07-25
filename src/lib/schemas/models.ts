@@ -51,7 +51,7 @@ export const productSchema = z.object({
 	storage_requirement: z
 		.enum(['room_temperature', 'refrigerated', 'frozen'])
 		.default('room_temperature'),
-
+	stock: z.coerce.number().int().nonnegative('Stock quantity must be a whole number').default(0),
 	// Batch Tracking
 	requires_batch_tracking: z.boolean().default(false),
 

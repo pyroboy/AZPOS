@@ -13,7 +13,6 @@
     import { Input } from '$lib/components/ui/input';
     import { LayoutGrid, List, Trash2, X } from 'lucide-svelte';
     import { SORT_OPTIONS, STOCK_STATUS_FILTERS } from '$lib/constants/inventory';
-
     const {
         products,
         categories,
@@ -45,14 +44,9 @@
 <div class="space-y-6">
     <!-- KPI Cards -->
     <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <StockKPI 
-            totalSKUs={$totalSKUs} 
-            totalUnits={$totalUnits} 
-            itemsToReorderCount={$itemsToReorderCount} 
-            outOfStockCount={$outOfStockCount} 
-        />
+        <StockKPI />
     </div>
-
+    
     <!-- Controls -->
     <div class="space-y-4">
         <div class="flex flex-wrap items-center justify-between gap-4">

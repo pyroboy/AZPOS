@@ -1,35 +1,14 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import * as Card from '$lib/components/ui/card';
-	import { currency } from '$lib/utils/currency';
+    import { page } from '$app/stores';
+    import * as Card from '$lib/components/ui/card';
 
-	let kpis = {
-		potentialRevenue: 0,
-		totalInventoryValue: 0,
-		grossProfitMargin: 0
-	};
-
-	onMount(async () => {
-		try {
-			const response = await fetch('/api/kpis');
-			if (!response.ok) throw new Error('Failed to fetch KPIs');
-			const data = await response.json();
-
-			const grossProfitMargin =
-				data.potentialRevenue > 0
-					? ((data.potentialRevenue - data.totalInventoryValue) / data.potentialRevenue) * 100
-					: 0;
-
-			// Re-assign the whole object to ensure reactivity
-			kpis = {
-				potentialRevenue: data.potentialRevenue,
-				totalInventoryValue: data.totalInventoryValue,
-				grossProfitMargin
-			};
-		} catch (error) {
-			console.error('Error loading dashboard KPIs:', error);
-		}
-	});
+    $: kpis = {
+        potentialRevenue: ($page.data.meta?.potentialRevenue || 0),
+        totalInventoryValue: ($page.data.meta?.totalInventoryValue || 0),
+        grossProfitMargin: ($page.data.meta?.potentialRevenue || 0) > 0 
+            ? ((($page.data.meta?.potentialRevenue || 0) - ($page.data.meta?.totalInventoryValue || 0)) / ($page.data.meta?.potentialRevenue || 0)) * 100 
+            : 0
+    };
 </script>
 
 <div class="space-y-4">

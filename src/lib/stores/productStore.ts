@@ -14,6 +14,25 @@ function createProductStore() {
 	let totalProducts = 0;
 	let hasMore = true;
 
+	const meta = writable({
+		totalProducts: 0,
+		totalInventoryValue: 0,
+		potentialRevenue: 0,
+		lowStockCount: 0,
+		outOfStockCount: 0
+	});
+
+	async function loadMeta(fetchFn: typeof fetch = fetch) {
+		try {
+			const res = await fetchFn('/api/products/meta');
+			if (!res.ok) throw new Error('Failed to fetch meta');
+			const data = await res.json();
+			meta.set(data);
+		} catch (e) {
+			console.error('Failed to load product meta', e);
+		}
+	}
+
 	async function loadProductsCached(fetchFn: typeof fetch = fetch) {
 		// Reset state for a fresh load
 		currentPage = 1;
@@ -74,6 +93,7 @@ function createProductStore() {
 					await setToIdb('products', initialProducts);
 					console.log('[productStore] Fetched, processed, and cached initial 100 products.');
 				}
+				await loadMeta(fetchFn); // Fetch metadata after initial products are loaded
 			}
 		} catch (error) {
 			console.error('Failed to load and parse products from API:', error);
@@ -107,7 +127,7 @@ function createProductStore() {
 			} 
 
 			if (get(store).length >= totalProducts) {
-				hasMore = false;
+				hasMore = newProducts.length === 100; // 100 == full page
 			}
 
 		} catch (error) {
@@ -119,6 +139,9 @@ function createProductStore() {
 
 	return {
 		subscribe,
+		meta: {
+			subscribe: meta.subscribe
+		},
 		set,
 		loadProducts: loadProductsCached,
 		loadMoreProducts,
@@ -214,7 +237,7 @@ function createProductStore() {
 }
 
 export const products = createProductStore();
-
+export const meta = products.meta;
 export function getProductById(id: string): Product | undefined {
     return get(products).find(p => p.id === id);
 }

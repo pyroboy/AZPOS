@@ -1,38 +1,15 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import * as Card from '$lib/components/ui/card';
-	import { users } from '$lib/stores/userStore';
-	import type { User } from '$lib/schemas/models';
-	import { currency } from '$lib/utils/currency';
+    import { page } from '$app/stores';
+    import * as Card from '$lib/components/ui/card';
+    import type { User } from '$lib/schemas/models';
+    import { currency } from '$lib/utils/currency';
 
-	let kpis = {
-		totalInventoryValue: 0,
-		lowStockCount: 0,
-		nearExpiryCount: 0,
-		activeStaff: 0
-	};
-
-	// Subscribe to the user store to keep activeStaff count reactive
-	users.subscribe((userList) => {
-		kpis.activeStaff = userList.filter((u: User) => (u.role === 'pharmacist' || u.role === 'cashier') && u.is_active).length;
-		// Trigger reactivity by reassigning the object
-		kpis = { ...kpis };
-	});
-
-	onMount(async () => {
-		try {
-			const response = await fetch('/api/kpis');
-			if (!response.ok) throw new Error('Failed to fetch KPIs');
-			const inventoryData = await response.json();
-			// Combine fetched data with existing reactive state
-			kpis = {
-				...kpis, // a
-				...inventoryData
-			};
-		} catch (error) {
-			console.error('Error loading dashboard KPIs:', error);
-		}
-	});
+    $: kpis = {
+        totalInventoryValue: ($page.data.meta?.totalInventoryValue || 0),
+        lowStockCount: ($page.data.meta?.lowStockCount || 0),
+        nearExpiryCount: ($page.data.meta?.nearExpiryCount || 0),
+        activeStaff: ($page.data.users || []).filter((u: User) => ['pharmacist', 'cashier'].includes(u.role) && u.is_active).length
+    };
 </script>
 
 <div class="space-y-4">
@@ -54,7 +31,7 @@
                 <Card.Title class="text-sm font-medium">Active Staff</Card.Title>
             </Card.Header>
             <Card.Content>
-                                <div class="text-2xl font-bold">{kpis.activeStaff}</div>
+                <div class="text-2xl font-bold">{kpis.activeStaff}</div>
                 <p class="text-xs text-muted-foreground">Total active employees</p>
             </Card.Content>
         </Card.Root>
