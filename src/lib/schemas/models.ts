@@ -31,16 +31,17 @@ export const bundleComponentSchema = z.object({
 
 export const productSchema = z.object({
 	// Core fields
-	id: z.string().uuid('ID must be a valid UUID'),
+	id: z.string(), // Relaxed from uuid() to handle non-compliant data
 	name: z.string().min(2, 'Product name is required'),
 	sku: z.string().min(3, 'SKU must be at least 3 characters'),
 	description: z.string().optional(),
 	category_id: z.string().min(1, 'Category is required'),
 	price: z.coerce.number().positive('Price must be a positive number'),
-	image_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+	image_url: z.string().optional().or(z.literal('')), // Relaxed from url() to handle non-compliant data
 
+	expiration_date: z.string().optional(),
 	// Supplier & Cost
-	supplier_id: z.string().min(1, 'Supplier is required'),
+	supplier_id: z.string().min(1, 'Supplier is required').optional(),
 	average_cost: z.coerce.number().nonnegative('Average cost must be non-negative').default(0),
 
 	// Inventory & Location
@@ -61,9 +62,10 @@ export const productSchema = z.object({
 
 	// Status & Timestamps
 	is_archived: z.boolean().default(false),
-	created_at: z.string().datetime(),
-	updated_at: z.string().datetime()
+	created_at: z.string().datetime().optional(),
+	updated_at: z.string().datetime().optional()
 });
+
 
 export const productBatchSchema = z.object({
 	id: z.string().uuid(),

@@ -24,7 +24,8 @@
     async function handleSelect(image: FoundImage) {
         isFetching = true;
         try {
-            const response = await fetch(image.image_url);
+            const proxyUrl = `/api/image-proxy?url=${encodeURIComponent(image.image_url)}`;
+            const response = await fetch(proxyUrl);
             if (!response.ok) {
                 throw new Error(`Failed to fetch image: ${response.statusText}`);
             }
@@ -75,7 +76,7 @@
                             onclick={() => handleSelect(image)}
                             class="group relative block w-full h-full cursor-pointer overflow-hidden rounded-md border-2 border-transparent focus-visible:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                         >
-                            <img src={image.image_url} alt={`Search result ${i + 1}`} class="w-full h-auto object-cover rounded-md aspect-square"/>
+                            <img src={`/api/image-proxy?url=${encodeURIComponent(image.image_url)}`} alt={`Search result ${i + 1}`} class="w-full h-auto object-cover rounded-md aspect-square"/>
                             <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-md">
                                 <span class="text-white font-bold">Select</span>
                             </div>

@@ -9,7 +9,7 @@ import { productBatches } from '$lib/stores/productBatchStore';
 // A flag to ensure data is loaded only once on server start
 let isDataInitialized = false;
 
-export const load: LayoutServerLoad = async ({ locals, fetch, url }) => {
+export const load: LayoutServerLoad = async ({ locals, url }) => {
 	// Redirect unauthenticated users to the login page, unless they are already there.
 	if (!locals.user && url.pathname !== '/login') {
 		throw redirect(302, '/login');
@@ -17,7 +17,7 @@ export const load: LayoutServerLoad = async ({ locals, fetch, url }) => {
 
 	// Initialize product and batch data only once
 	if (!isDataInitialized) {
-		await products.loadProducts(fetch);
+		// await products.loadProducts(); // NOTE: This is now handled by loadProductsCached in the store or streamed in routes
 		isDataInitialized = true;
 	}
 

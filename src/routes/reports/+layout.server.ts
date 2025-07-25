@@ -11,7 +11,10 @@ const ROLE_REPORTS: Record<Role, string[]> = {
     cashier:  []
 };
 
-export const load: LayoutServerLoad = ({ locals }) => {
+import { products } from '$lib/stores/productStore';
+import { get } from 'svelte/store';
+
+export const load: LayoutServerLoad = async ({ locals, fetch }) => {
     if (!locals.user) {
         throw redirect(302, '/login');
     }
@@ -23,5 +26,11 @@ export const load: LayoutServerLoad = ({ locals }) => {
         throw redirect(302, '/');
     }
 
-    return { allowedReports: allowed, user: locals.user };
+    await products.loadProducts(fetch); // This uses the new loadProductsCached method
+
+    return { 
+        allowedReports: allowed, 
+        user: locals.user,
+        products: get(products)
+    };
 };

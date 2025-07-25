@@ -70,65 +70,60 @@ export const actions: Actions = {
 	},
 
 	exportCsv: async ({ request }) => {
-		const formData = await request.formData();
-		const productsJson = formData.get('products') as string;
-	
-		try {
-			const products: ProductWithStatus[] = JSON.parse(productsJson);
-	
-			// Process all products in parallel to determine their correct image file extension
-			const productsToExport = await Promise.all(
-				products.map(async (p) => {
-					let finalImageUrl = '';
+        const formData = await request.formData();
+        const productsJson = formData.get('products') as string;
 
-					if (p.image_url) {
-						// Check if the URL already has a valid extension
-						const hasExtension = /\.(jpe?g|png|webp)$/i.test(p.image_url);
+        try {
+            const products: ProductWithStatus[] = JSON.parse(productsJson);
 
-						if (hasExtension) {
-							finalImageUrl = p.image_url;
-						} else {
-							// If no extension, fetch headers to determine the correct one
-							try {
-								const response = await fetch(p.image_url, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
-								if (response.ok) {
-									const contentType = response.headers.get('content-type');
-									if (contentType && contentType.startsWith('image/')) {
-										const fileExtension = contentType.split('/')[1] || 'jpg';
-										finalImageUrl = `/images/products/${p.sku}.${fileExtension}`;
-									}
-								}
-							} catch (fetchError) {
-								console.error(`Could not fetch headers for ${p.image_url}:`, fetchError);
-							}
-						}
-					}
+            const productsToExport = await Promise.all(
+                products.map(async (p) => {
+                    // Start with the existing URL, or a blank string if null/undefined
+                    let finalImageUrl = p.image_url || '';
 
-					// Return the product data with the accurately determined image path
-					return {
-						id: p.id,
-						sku: p.sku,
-						name: p.name,
-						description: p.description,
-						stock: p.stock,
-						price: p.price,
-						category_id: p.category_id,
-						supplier_id: p.supplier_id,
-						image_url: finalImageUrl
-					};
-				})
-			);
-	
-			const csv = Papa.unparse(productsToExport, {
-				columns: ['id', 'sku', 'name', 'description', 'stock', 'price', 'category_id', 'supplier_id', 'image_url']
-			});
-	
-			return { success: true, csv };
-		} catch (e) {
-			console.error('Failed to export CSV:', e);
-			return fail(500, { error: 'Failed to generate CSV for export.' });
-		}
-	},
+                    // ONLY process the URL if it's a full online link
+                    if (finalImageUrl && finalImageUrl.startsWith('http')) {
+                        try {
+                            const response = await fetch(finalImageUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+                            if (response.ok) {
+                                const contentType = response.headers.get('content-type');
+                                if (contentType && contentType.startsWith('image/')) {
+                                    const fileExtension = contentType.split('/')[1] || 'jpg';
+                                    // Overwrite with the new local path
+                                    finalImageUrl = `/images/products/${p.sku}.${fileExtension}`;
+                                }
+                            }
+                        } catch (fetchError) {
+                            console.error(`Could not fetch headers for ${finalImageUrl}:`, fetchError);
+                            // If fetching fails, you might want to keep the original URL or clear it.
+                            // Here we clear it to avoid broken links in the export.
+                            finalImageUrl = '';
+                        }
+                    }
 
+                    // Return the product data, preserving existing local paths or blanks
+                    return {
+                        id: p.id,
+                        sku: p.sku,
+                        name: p.name,
+                        description: p.description,
+                        stock: p.stock,
+                        price: p.price,
+                        category_id: p.category_id,
+                        supplier_id: p.supplier_id,
+                        image_url: finalImageUrl
+                    };
+                })
+            );
 
+            const csv = Papa.unparse(productsToExport, {
+                columns: ['id', 'sku', 'name', 'description', 'stock', 'price', 'category_id', 'supplier_id', 'image_url']
+            });
+
+            return { success: true, csv };
+        } catch (e) {
+            console.error('Failed to export CSV:', e);
+            return fail(500, { error: 'Failed to generate CSV for export.' });
+        }
+    }
 };

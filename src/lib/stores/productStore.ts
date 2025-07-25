@@ -1,80 +1,72 @@
 import { writable, get } from 'svelte/store';
-import Papa from 'papaparse';
+import { get as getFromIdb, set as setToIdb } from 'idb-keyval';
 import type { Product, BundleComponent } from '$lib/schemas/models';
 import { productBatches } from './productBatchStore';
+import { browser } from '$app/environment';
 
 // --- Store ---
 function createProductStore() {
 	const store = writable<Product[]>([]);
 	const { subscribe, set, update } = store;
 
-	// loadProducts must be called from a server-side context
-	// with event.fetch to load data during SSR.
-		async function loadProducts(fetcher: typeof fetch) {
-		try {
-			const response = await fetcher('/products_master.csv');
-						const csvText = await response.text();
-			Papa.parse(csvText, {
-				header: true,
-				dynamicTyping: true,
-				skipEmptyLines: true,
-								complete: (results) => {
-										if (results.errors.length > 0) {
-						console.error('[productStore] Papaparse errors:', results.errors);
-					}
+	async function loadProductsCached(fetchFn: typeof fetch = fetch) {
+		// On the server, this store acts as a request-level cache.
+		// On the client, it's a long-lived cache.
+		if (get(store).length > 0) {
+			return;
+		}
 
-					if (results.data) {
-						productBatches.clear(); // Reset batches for a clean import
-						const productsData = results.data as Record<string, unknown>[];
-						const parsedProducts: Product[] = [];
-
-						productsData.forEach((item: Record<string, unknown>) => {
-							const pType = item.product_type as string;
-							const now = new Date().toISOString();
-
-							const product: Product = {
-								id: String(item.id ?? crypto.randomUUID()),
-								sku: String(item.sku ?? ''),
-								name: String(item.name ?? 'Unknown Product'),
-								description: item.description ? String(item.description) : undefined,
-								category_id: String(item.category_id ?? 'uncategorized'),
-								price: Number(item.price) || 0,
-								image_url: (item.image_url as string | undefined) ?? undefined,
-								supplier_id: String(item.supplier_id ?? 'default-supplier'),
-								average_cost: Number(item.average_cost) || 0,
-								base_unit: (item.base_unit as Product['base_unit']) ?? 'piece',
-								reorder_point: item.reorder_point ? Number(item.reorder_point) : undefined,
-								aisle: item.aisle ? String(item.aisle) : undefined,
-								requires_batch_tracking: String(item.requires_batch_tracking).toUpperCase() === 'TRUE',
-								product_type: pType === 'variant' || pType === 'bundle' ? pType : 'standard',
-								master_product_id: item.master_product_id ? String(item.master_product_id) : undefined,
-								is_archived: Boolean(item.is_archived ?? false),
-								storage_requirement: (item.storage_requirement as Product['storage_requirement']) ?? 'room_temperature',
-								created_at: (item.created_at as string) ?? now,
-								updated_at: (item.updated_at as string) ?? now
-							};
-							parsedProducts.push(product);
-
-							// Create initial stock batch if stock is provided
-							const initialStock = Number(item.stock);
-							if (initialStock > 0) {
-								productBatches.addBatch({
-									product_id: product.id,
-									batch_number: String(item.batch_number ?? 'INITIAL-STOCK'),
-									expiration_date: item.expiration_date ? new Date(item.expiration_date as string).toISOString() : undefined,
-									quantity_on_hand: initialStock,
-									purchase_cost: product.average_cost
-								});
-							}
-						});
-
-						console.log('Parsed products from CSV:', parsedProducts);
-						set(parsedProducts);
-					}
+		// 2. Check IndexedDB (only in browser)
+		if (browser) {
+			try {
+				const cachedProducts = await getFromIdb<Product[]>('products');
+				if (cachedProducts && cachedProducts.length > 0) {
+					console.log('[productStore] Loading products from IndexedDB cache.');
+					set(cachedProducts);
+					return;
 				}
-			});
+			} catch (e) {
+				console.error('[productStore] Could not read from IndexedDB.', e);
+			}
+		}
+
+		// 3. Fetch from API if cache is empty or on server
+		try {
+			console.log('[productStore] No cache found. Fetching from API...');
+			const response = await fetchFn('/api/products?page=1&limit=100'); // Use injected fetch
+			if (!response.ok) throw new Error('Network response was not ok.');
+
+			const data = await response.json();
+			const initialProducts: Product[] = data.products;
+
+			if (initialProducts && initialProducts.length > 0) {
+				productBatches.clear(); // Reset batches for a clean import
+
+				// The batch creation logic from the old function is preserved here
+				initialProducts.forEach((product) => {
+					// Type-safe check for non-schema properties from a potentially old data source
+					// eslint-disable-next-line @typescript-eslint/no-explicit-any
+					const initialStock = Number((product as any).stock);
+					if (initialStock > 0) {
+						productBatches.addBatch({
+							product_id: product.id,
+							// eslint-disable-next-line @typescript-eslint/no-explicit-any
+							batch_number: String((product as any).batch_number ?? 'INITIAL-STOCK'),
+							expiration_date: product.expiration_date ? new Date(product.expiration_date as string).toISOString() : undefined,
+							quantity_on_hand: initialStock,
+							purchase_cost: product.average_cost
+						});
+					}
+				});
+
+				set(initialProducts);
+				if (browser) {
+					await setToIdb('products', initialProducts);
+					console.log('[productStore] Fetched, processed, and cached initial 100 products.');
+				}
+			}
 		} catch (error) {
-			console.error('Failed to load and parse products:', error);
+			console.error('Failed to load and parse products from API:', error);
 			set([]); // Set to empty array on error
 		}
 	}
@@ -82,7 +74,7 @@ function createProductStore() {
 	return {
 		subscribe,
 		set,
-		loadProducts,
+		loadProducts: loadProductsCached,
 		addProduct: (product: Omit<Product, 'id'>) => {
 			const newProduct: Product = {
 				id: crypto.randomUUID(),
@@ -122,7 +114,7 @@ function createProductStore() {
 			});
 		},
 		archiveProduct: (productId: string) => {
-			const productsList = get({ subscribe });
+			const productsList = get(store);
 			const productToArchive = productsList.find(p => p.id === productId);
 			if (!productToArchive) {
 				throw new Error('Product not found');
@@ -165,10 +157,10 @@ function createProductStore() {
 			);
 		},
 		getActiveProducts: () => {
-			return get({ subscribe }).filter(p => !p.is_archived);
+			return get(store).filter(p => !p.is_archived);
 		},
 		findById: (productId: string) => {
-			return get({ subscribe }).find(p => p.id === productId);
+			return get(store).find(p => p.id === productId);
 		},
 		reset: () => set([])
 	};

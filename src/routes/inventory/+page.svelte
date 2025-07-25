@@ -4,15 +4,16 @@
 	import { page } from "$app/stores";
 	import { goto } from "$app/navigation";
 
-	// Placeholder components for each tab
-	// We will create these files next.
-	import StockStatus from '$lib/components/inventory/StockStatus.svelte';
-	import ProductEntry from "$lib/components/inventory/ProductEntry.svelte";
-	import ReturnsProcessing from '$lib/components/inventory/ReturnsProcessing.svelte';
-	import InventoryReceiving from "$lib/components/inventory/InventoryReceiving.svelte";
-	import InventoryAdjustment from "$lib/components/inventory/InventoryAdjustment.svelte";
+	// Dynamically import tab components for code-splitting
+	const tabComponents = {
+		stock: () => import('$lib/components/inventory/StockStatus.svelte'),
+		products: () => import('$lib/components/inventory/ProductEntry.svelte'),
+		returns: () => import('$lib/components/inventory/ReturnsProcessing.svelte'),
+		receiving: () => import('$lib/components/inventory/InventoryReceiving.svelte'),
+		adjustments: () => import('$lib/components/inventory/InventoryAdjustment.svelte')
+	};
 
-	type Tab = "stock" | "products" | "returns" | "receiving" | "adjustments";
+	type Tab = keyof typeof tabComponents;
 
 	let activeTab: Tab;
 
@@ -41,20 +42,16 @@
 			<TabsTrigger value="adjustments">Adjustments</TabsTrigger>
 		</TabsList>
 
-		<TabsContent value="stock" class="pt-6">
-			<StockStatus />
-		</TabsContent>
-		<TabsContent value="products" class="pt-6">
-			<ProductEntry />
-		</TabsContent>
-		<TabsContent value="returns" class="pt-6">
-			<ReturnsProcessing />
-		</TabsContent>
-		<TabsContent value="receiving" class="pt-6">
-			<InventoryReceiving />
-		</TabsContent>
-		<TabsContent value="adjustments" class="pt-6">
-			<InventoryAdjustment />
-		</TabsContent>
+		{#each Object.entries(tabComponents) as [tabName, componentPromise]}
+			<TabsContent value={tabName} class="pt-6">
+				{#if activeTab === tabName}
+					{#await componentPromise() then { default: Component }}
+						<svelte:component this={Component} />
+					{:catch error}
+						<p class="text-destructive">Error loading component: {error.message}</p>
+					{/await}
+				{/if}
+			</TabsContent>
+		{/each}
 	</Tabs>
 </div>

@@ -55,6 +55,7 @@
 		"@svelte-put/shortcut": "^4.1.0",
 		"@types/papaparse": "^5.3.16",
 		"@types/uuid": "^10.0.0",
+		"idb-keyval": "^6.2.2",
 		"jszip": "^3.10.1",
 		"lucide-svelte": "^0.525.0",
 		"papaparse": "^5.5.3",

@@ -71,6 +71,8 @@ console.log(sanitizedSrc, sanitizedFallback);
 	{/if}
 	<img
 		src={currentSrc}
+		loading="lazy"
+		decoding="async"
 		{alt}
 		onerror={handleError}
 		onload={handleLoad}
