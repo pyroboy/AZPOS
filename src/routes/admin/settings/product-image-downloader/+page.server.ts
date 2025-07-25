@@ -2,7 +2,6 @@ import { fail } from '@sveltejs/kit';
 import type { Actions, PageServerLoad } from './$types';
 import type { Product, ProductWithStatus } from './types';
 import Papa from 'papaparse';
-import JSZip from 'jszip';
 import { promises as fs } from 'fs';
 import path from 'path';
 
@@ -126,50 +125,5 @@ export const actions: Actions = {
 		}
 	},
 
-	// Action to download selected images as a ZIP file
-	downloadZip: async ({ request }) => {
-		const formData = await request.formData();
-		const productsJson = formData.get('products') as string;
 
-		try {
-			const products: ProductWithStatus[] = JSON.parse(productsJson);
-			const zip = new JSZip();
-
-			const imageProducts = products.filter((p) => p.status === 'selected' && p.image_url);
-			for (const product of imageProducts) {
-				try {
-					const response = await fetch(product.image_url!);
-					if (!response.ok) {
-						return fail(400, {
-							error: `Failed to download image for SKU ${product.sku}. Server responded with ${response.status}.`
-						});
-					}
-
-					const contentType = response.headers.get('content-type');
-					if (!contentType || !contentType.startsWith('image/')) {
-						return fail(400, {
-							error: `URL for SKU ${product.sku} did not return an image. Content-Type: ${contentType}`
-						});
-					}
-
-					const fileExtension = contentType.split('/')[1] || 'jpg';
-					const buffer = await response.arrayBuffer();
-					zip.file(`${product.sku}.${fileExtension}`, buffer);
-				} catch (fetchError: unknown) {
-					console.error(`Failed to fetch image for ${product.sku}:`, fetchError);
-					const message = fetchError instanceof Error ? fetchError.message : 'An unknown error occurred.';
-					return fail(500, {
-						error: `A network error occurred while downloading image for SKU ${product.sku}: ${message}`
-					});
-				}
-			}
-
-			// If all downloads succeed, generate the zip
-			const zipAsBase64 = await zip.generateAsync({ type: 'base64' });
-			return { success: true, zip: zipAsBase64 };
-		} catch (e) {
-			console.error('Failed to create ZIP:', e);
-			return fail(500, { error: 'Failed to generate ZIP file.' });
-		}
-	}
 };

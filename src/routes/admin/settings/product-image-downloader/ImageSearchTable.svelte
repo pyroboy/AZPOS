@@ -40,13 +40,13 @@
 		}
 	}
 
-	function selectImage(image: FoundImage) {
+	function selectImage(image: FoundImage, blob: Blob) {
 		if (!activeProduct) return;
 
 		const currentProductSku = activeProduct.sku;
 		products = products.map((p: ProductWithStatus) => {
 			if (p.sku === currentProductSku) {
-				return { ...p, image_url: image.image_url, status: 'selected', foundImages: [] };
+				return { ...p, image_url: image.image_url, status: 'selected', foundImages: [], imageBlob: blob };
 			}
 			return p;
 		});
@@ -166,7 +166,7 @@
 		open={activeProduct !== null}
 		images={foundImages}
 		productName={activeProduct.name}
-		onselect={selectImage}
+		onselect={(image, blob) => selectImage(image, blob)}
 		onclose={() => (activeProduct = null)}
 		onsearch={handleDialogSearch}
 	/>

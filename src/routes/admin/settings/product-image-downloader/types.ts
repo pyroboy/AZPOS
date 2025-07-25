@@ -33,4 +33,5 @@ export interface ProductWithStatus extends Product {
 	status: 'initial' | 'pending' | 'searching' | 'found' | 'error' | 'selected';
 	image_url: string; // The URL of the new, selected image
 	foundImages?: FoundImage[];
+	imageBlob?: Blob;
 }

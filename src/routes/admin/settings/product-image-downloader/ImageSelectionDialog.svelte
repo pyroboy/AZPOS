@@ -8,20 +8,34 @@
     import { Input } from '$lib/components/ui/input';
     import Search from 'lucide-svelte/icons/search';
 
-    let { open = false, images = [], productName = '', onselect = (image: FoundImage) => {}, onclose = () => {}, onsearch = (term: string) => {} } = $props<{ 
+    let { open = false, images = [], productName = '', onselect = (image: FoundImage, blob: Blob) => {}, onclose = () => {}, onsearch = (term: string) => {} } = $props<{ 
         open: boolean;
         images: FoundImage[];
         productName: string;
-        onselect: (image: FoundImage) => void;
+        onselect: (image: FoundImage, blob: Blob) => void;
         onclose: () => void;
         onsearch: (searchTerm: string) => void;
     }>();
 
     let searchTerm = $state(productName);
+    let isFetching = $state(false);
 
-    function handleSelect(image: FoundImage) {
-        onselect(image);
-        onclose();
+    async function handleSelect(image: FoundImage) {
+        isFetching = true;
+        try {
+            const response = await fetch(image.image_url);
+            if (!response.ok) {
+                throw new Error(`Failed to fetch image: ${response.statusText}`);
+            }
+            const blob = await response.blob();
+            onselect(image, blob);
+            onclose();
+        } catch (error) {
+            console.error('Error fetching image as blob:', error);
+            // Optionally, show a toast notification to the user
+        } finally {
+            isFetching = false;
+        }
     }
 
     function handleSearch() {
