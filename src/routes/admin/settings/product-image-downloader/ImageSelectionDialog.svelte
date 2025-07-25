@@ -7,6 +7,7 @@
     import { Button } from '$lib/components/ui/button';
     import { Input } from '$lib/components/ui/input';
     import Search from 'lucide-svelte/icons/search';
+    import { toast } from 'svelte-sonner';
 
     let { open = false, images = [], productName = '', onselect = (image: FoundImage, blob: Blob) => {}, onclose = () => {}, onsearch = (term: string) => {} } = $props<{ 
         open: boolean;
@@ -32,7 +33,10 @@
             onclose();
         } catch (error) {
             console.error('Error fetching image as blob:', error);
-            // Optionally, show a toast notification to the user
+            const message = error instanceof Error ? error.message : 'An unknown error occurred.';
+            toast.error('Failed to Select Image', {
+                description: 'Could not fetch the image. This may be due to a network issue or a cross-origin security restriction (CORS).'
+            });
         } finally {
             isFetching = false;
         }

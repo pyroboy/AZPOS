@@ -8,23 +8,23 @@ a6b7c8d9-0afb-2345-fabc-6789012345fa,AJI51,Ajinomoto Crispy Fry Original 30 g,Aj
 a7b8c9da-1bfc-3456-abcd-7890123456ab,ALP02,Alpine Sterilized Milk 200 ml,Alpine Sterilized Milk 200 ml,36,25.79,dairy,,/images/products/ALP02.webp
 a8b9cadb-2cfd-4567-bcde-8901234567bc,AME01,American Garden Coconut Milk 400 ml,American Garden Coconut Milk 400 ml,24,40.59,condiment,,/images/products/AME01.jpeg
 a9bacbdc-3dfe-5678-cdef-9012345678cd,AND03,Andok’s Litson Sauce 340 g,Andok’s Litson Sauce 340 g,24,37.18,condiment,,/images/products/AND03.jpeg
-aabacbdd-4eff-6789-defa-0123456789de,ANG12,Angel All-Purpose Creamer 250 ml,Angel All-Purpose Creamer 250 ml,24,46.46,dairy,,
-acbacdbe-5fff-789a-efab-1234567890ef,ANL04C,Anlene Milk 3× Plain 30 g,Anlene Milk 3× Plain 30 g,12,90.24,dairy,,
-adbacebf-6000-890b-fabc-2345678901fa,ANL20Y,Anlene Milk Gold 990 g,Anlene Milk Gold 990 g,1,693.5,dairy,,
-aebacfcf-7111-901c-abcd-3456789012ab,APO14B,Apollo Petroleum Jelly 25 g,Apollo Petroleum Jelly 25 g,12,40.73,personal_care,,
-afbad0d0-8222-012d-bcde-4567890123bc,ARI63,Ariel Powder Fresh Garden Bloom 64 g,Ariel Powder Fresh Garden Bloom 64 g,216,7.91,laundry,,
-b0bad1d1-9333-123e-cdef-5678901234cd,ARI32,Ariel Powder Surface Fresh 1.19 kg,Ariel Powder Surface Fresh 1.19 kg,12,143.25,laundry,,
-b1bad2d2-a444-234f-defa-6789012345de,ARI41,Ariel Liquid Power Gel Downy 60 ml,Ariel Liquid Power Gel Downy 60 ml,18,26.04,laundry,,
-b2bad3d3-b555-3450-efab-7890123456ef,ARI54,Ariel Liquid Power Gel Fresh 730 g,Ariel Liquid Power Gel Fresh 730 g,8,91.19,laundry,,
-b3bad4d4-c666-4561-fabc-8901234567fa,ARI70,Ariel Powder Clean & Bright 66 g,Ariel Powder Clean & Bright 66 g,216,13.08,laundry,,
-b4bad5d5-d777-5672-abcd-9012345678ab,ARI71,Ariel Powder Clean & Bright 90 g,Ariel Powder Clean & Bright 90 g,168,22.93,laundry,,
-b5bad6d6-e888-6783-bcde-0123456789bc,ARI74,Ariel Bar Scrubber 125 g,Ariel Bar Scrubber 125 g,96,29.4,laundry,,
-b6bad7d7-f999-7894-cdef-1234567890cd,ARI20O,Ariel Powder Surface Fresh Jumbo 66 g,Ariel Powder Surface Fresh Jumbo 66 g,30,78.54,laundry,,
-b7bad8d8-0aaa-8905-defa-2345678901de,AXI63H,Axion Paste Kalamansi 550 g,Axion Paste Kalamansi 550 g,12,118.24,dish,,
-b8bad9d9-1bbb-9016-efab-3456789012ef,AXI66H,Axion Paste Lemon 550 g,Axion Paste Lemon 550 g,12,118.24,dish,,
-b9badaaa-2ccc-0127-fabc-4567890123fa,BLU21,B'lue Drink Cucumber Lime 500 ml,B'lue Drink Cucumber Lime 500 ml,15,35.24,beverage,,
-babadbab-3ddd-1238-abcd-5678901234ab,BLU08,B'lue Drink Orange 500 ml,B'lue Drink Orange 500 ml,15,35.24,beverage,,
-bbbadcac-4eee-2349-bcde-6789012345bc,BLU09,B'lue Drink Calamansi 500 ml,B'lue Drink Calamansi 500 ml,15,35.24,beverage,,
+aabacbdd-4eff-6789-defa-0123456789de,ANG12,Angel All-Purpose Creamer 250 ml,Angel All-Purpose Creamer 250 ml,24,46.46,dairy,,/images/products/ANG12.png
+acbacdbe-5fff-789a-efab-1234567890ef,ANL04C,Anlene Milk 3× Plain 30 g,Anlene Milk 3× Plain 30 g,12,90.24,dairy,,https://i.ebayimg.com/images/g/l~MAAOSwbxllU5Uu/s-l400.jpg
+adbacebf-6000-890b-fabc-2345678901fa,ANL20Y,Anlene Milk Gold 990 g,Anlene Milk Gold 990 g,1,693.5,dairy,,https://img.lazcdn.com/g/p/b39c10a1da1a71f7035090fc20897319.jpg_720x720q80.jpg
+aebacfcf-7111-901c-abcd-3456789012ab,APO14B,Apollo Petroleum Jelly 25 g,Apollo Petroleum Jelly 25 g,12,40.73,personal_care,,/images/products/APO14B.jpeg
+afbad0d0-8222-012d-bcde-4567890123bc,ARI63,Ariel Powder Fresh Garden Bloom 64 g,Ariel Powder Fresh Garden Bloom 64 g,216,7.91,laundry,,/images/products/ARI63.png
+b0bad1d1-9333-123e-cdef-5678901234cd,ARI32,Ariel Powder Surface Fresh 1.19 kg,Ariel Powder Surface Fresh 1.19 kg,12,143.25,laundry,,/images/products/ARI32.png
+b1bad2d2-a444-234f-defa-6789012345de,ARI41,Ariel Liquid Power Gel Downy 60 ml,Ariel Liquid Power Gel Downy 60 ml,18,26.04,laundry,,"https://m.media-amazon.com/images/I/71Q8PA76D6L._UF1000,1000_QL80_.jpg"
+b2bad3d3-b555-3450-efab-7890123456ef,ARI54,Ariel Liquid Power Gel Fresh 730 g,Ariel Liquid Power Gel Fresh 730 g,8,91.19,laundry,,/images/products/ARI54.png
+b3bad4d4-c666-4561-fabc-8901234567fa,ARI70,Ariel Powder Clean & Bright 66 g,Ariel Powder Clean & Bright 66 g,216,13.08,laundry,,/images/products/ARI70.jpeg
+b4bad5d5-d777-5672-abcd-9012345678ab,ARI71,Ariel Powder Clean & Bright 90 g,Ariel Powder Clean & Bright 90 g,168,22.93,laundry,,/images/products/ARI71.jpeg
+b5bad6d6-e888-6783-bcde-0123456789bc,ARI74,Ariel Bar Scrubber 125 g,Ariel Bar Scrubber 125 g,96,29.4,laundry,,/images/products/ARI74.jpeg
+b6bad7d7-f999-7894-cdef-1234567890cd,ARI20O,Ariel Powder Surface Fresh Jumbo 66 g,Ariel Powder Surface Fresh Jumbo 66 g,30,78.54,laundry,,/images/products/ARI20O.png
+b7bad8d8-0aaa-8905-defa-2345678901de,AXI63H,Axion Paste Kalamansi 550 g,Axion Paste Kalamansi 550 g,12,118.24,dish,,/images/products/AXI63H.png
+b8bad9d9-1bbb-9016-efab-3456789012ef,AXI66H,Axion Paste Lemon 550 g,Axion Paste Lemon 550 g,12,118.24,dish,,/images/products/AXI66H.jpeg
+b9badaaa-2ccc-0127-fabc-4567890123fa,BLU21,B'lue Drink Cucumber Lime 500 ml,B'lue Drink Cucumber Lime 500 ml,15,35.24,beverage,,https://ph-test-11.slatic.net/p/22aa6643e6817c77dddf80b8f7a4cfd4.png
+babadbab-3ddd-1238-abcd-5678901234ab,BLU08,B'lue Drink Orange 500 ml,B'lue Drink Orange 500 ml,15,35.24,beverage,,/images/products/BLU08.jpeg
+bbbadcac-4eee-2349-bcde-6789012345bc,BLU09,B'lue Drink Calamansi 500 ml,B'lue Drink Calamansi 500 ml,15,35.24,beverage,,/images/products/BLU09.jpeg
 bcbadadb-5fff-345a-cdef-7890123456cd,BAC03B,Bactidol 60 ml,Bactidol 60 ml,6,61.58,healthcare,,
 bdbadaec-6000-456b-defa-8901234567de,BAB08B,Baby Bench Cologne Jellybean 100 ml,Baby Bench Cologne Jellybean 100 ml,6,57.42,personal_care,,
 bebadbed-7111-567c-efab-9012345678ef,BAG09,Baguio Oil 1 Gallon Plastic,Baguio Oil 1 Gallon Plastic 3.2 kg,6,684.33,cooking_oil,,

@@ -79,26 +79,31 @@ export const actions: Actions = {
 			// Process all products in parallel to determine their correct image file extension
 			const productsToExport = await Promise.all(
 				products.map(async (p) => {
-					let fileExtension = 'jpg'; // A sensible default
-	
+					let finalImageUrl = '';
+
 					if (p.image_url) {
-						try {
-							// Use a HEAD request to efficiently get headers without downloading the full image
-							const response = await fetch(p.image_url, { method: 'HEAD' });
-	
-							if (response.ok) {
-								const contentType = response.headers.get('content-type');
-								// Check if we got a valid image MIME type
-								if (contentType && contentType.startsWith('image/')) {
-									fileExtension = contentType.split('/')[1];
+						// Check if the URL already has a valid extension
+						const hasExtension = /\.(jpe?g|png|webp)$/i.test(p.image_url);
+
+						if (hasExtension) {
+							finalImageUrl = p.image_url;
+						} else {
+							// If no extension, fetch headers to determine the correct one
+							try {
+								const response = await fetch(p.image_url, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
+								if (response.ok) {
+									const contentType = response.headers.get('content-type');
+									if (contentType && contentType.startsWith('image/')) {
+										const fileExtension = contentType.split('/')[1] || 'jpg';
+										finalImageUrl = `/images/products/${p.sku}.${fileExtension}`;
+									}
 								}
+							} catch (fetchError) {
+								console.error(`Could not fetch headers for ${p.image_url}:`, fetchError);
 							}
-						} catch (fetchError) {
-							// Log error but don't block the entire export; fallback to the default extension
-							console.error(`Could not fetch headers for ${p.image_url}:`, fetchError);
 						}
 					}
-	
+
 					// Return the product data with the accurately determined image path
 					return {
 						id: p.id,
@@ -109,7 +114,7 @@ export const actions: Actions = {
 						price: p.price,
 						category_id: p.category_id,
 						supplier_id: p.supplier_id,
-						image_url: p.image_url ? `/images/products/${p.sku}.${fileExtension}` : ''
+						image_url: finalImageUrl
 					};
 				})
 			);
