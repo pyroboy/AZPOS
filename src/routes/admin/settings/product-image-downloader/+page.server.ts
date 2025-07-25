@@ -73,29 +73,52 @@ export const actions: Actions = {
 	exportCsv: async ({ request }) => {
 		const formData = await request.formData();
 		const productsJson = formData.get('products') as string;
-
+	
 		try {
 			const products: ProductWithStatus[] = JSON.parse(productsJson);
-			
-			const productsToExport = products.map(p => {
-				const fileExtension = p.image_url?.split('.').pop() || 'jpg';
-				return {
-					id: p.id,
-					sku: p.sku,
-					name: p.name,
-					description: p.description,
-					stock: p.stock,
-					price: p.price,
-					category_id: p.category_id,
-					supplier_id: p.supplier_id,
-					image_url: p.image_url ? `images/products/${p.sku}.${fileExtension}` : ''
-				}
-			});
-
+	
+			// Process all products in parallel to determine their correct image file extension
+			const productsToExport = await Promise.all(
+				products.map(async (p) => {
+					let fileExtension = 'jpg'; // A sensible default
+	
+					if (p.image_url) {
+						try {
+							// Use a HEAD request to efficiently get headers without downloading the full image
+							const response = await fetch(p.image_url, { method: 'HEAD' });
+	
+							if (response.ok) {
+								const contentType = response.headers.get('content-type');
+								// Check if we got a valid image MIME type
+								if (contentType && contentType.startsWith('image/')) {
+									fileExtension = contentType.split('/')[1];
+								}
+							}
+						} catch (fetchError) {
+							// Log error but don't block the entire export; fallback to the default extension
+							console.error(`Could not fetch headers for ${p.image_url}:`, fetchError);
+						}
+					}
+	
+					// Return the product data with the accurately determined image path
+					return {
+						id: p.id,
+						sku: p.sku,
+						name: p.name,
+						description: p.description,
+						stock: p.stock,
+						price: p.price,
+						category_id: p.category_id,
+						supplier_id: p.supplier_id,
+						image_url: p.image_url ? `/images/products/${p.sku}.${fileExtension}` : ''
+					};
+				})
+			);
+	
 			const csv = Papa.unparse(productsToExport, {
 				columns: ['id', 'sku', 'name', 'description', 'stock', 'price', 'category_id', 'supplier_id', 'image_url']
 			});
-
+	
 			return { success: true, csv };
 		} catch (e) {
 			console.error('Failed to export CSV:', e);

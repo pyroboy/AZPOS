@@ -1,58 +1,81 @@
 <script lang="ts">
-	let { src, fallbackSrc, alt = 'Product image', product } = $props<{
-		src: string | undefined;
-		fallbackSrc: string | undefined;
-		alt?: string;
-		product: any;
-	}>();
+	import { getInitialsSvg, sanitizeImageUrl } from '$lib/utils/image';
+	import { cn } from "$lib/utils";
 
+	type $$Props = {
+		src: string | undefined | null;
+		fallbackSrc?: string | undefined | null;
+		alt?: string;
+		product: { name: string; id: string };
+		size?: keyof typeof sizeClasses;
+		class?: string;
+	};
+
+	let { src, fallbackSrc, alt = 'Product image', product, size = 'md', class: className = '' }: $$Props = $props();
+
+	let loading = $state(true);
 	let error = $state(false);
+	let attemptCount = $state(0);
+	let currentSrc = $state('');
+
+	const sizeClasses = {
+		xs: 'size-8',
+		sm: 'size-12',
+		md: 'size-16',
+		lg: 'size-24',
+		xl: 'size-32'
+	};
+
+	const initialsSvg = getInitialsSvg(product.name, product.id);
+
+	function updateSource() {
+		loading = true;
+		error = false;
+		const sanitizedSrc = sanitizeImageUrl(src);
+		const sanitizedFallback = sanitizeImageUrl(fallbackSrc);
+console.log(sanitizedSrc, sanitizedFallback);
+		if (attemptCount === 0 && sanitizedSrc) {
+			currentSrc = sanitizedSrc;
+		} else if (attemptCount === 1 && sanitizedSrc) {
+			// Retry with a cache-busting query param
+			currentSrc = `${sanitizedSrc}?retry=${Date.now()}`;
+		} else if (attemptCount === 2 && sanitizedFallback) {
+			currentSrc = sanitizedFallback;
+		} else {
+			currentSrc = initialsSvg;
+			loading = false; // No loading for SVG
+		}
+	}
+
+	function handleError() {
+		error = true;
+		loading = false;
+		attemptCount += 1;
+		updateSource();
+	}
+
+	function handleLoad() {
+		loading = false;
+		error = false;
+	}
 
 	$effect(() => {
-		// Reset error state when src changes
-		// to allow re-rendering the image.
-		src; // depend on src
-		error = false;
+		attemptCount = 0;
+		updateSource();
 	});
-
-	function handleError(event: Event) {
-		const imgElement = event.target as HTMLImageElement;
-		if (fallbackSrc && imgElement.src !== fallbackSrc) {
-			imgElement.src = fallbackSrc;
-			return; // Attempt to load fallback
-		}
-		// If fallback also fails or doesn't exist, set error
-		error = true;
-	}
-
-
-	const colors = [
-		'#ffadad', '#ffd6a5', '#fdffb6', '#caffbf',
-		'#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'
-	];
-
-	function getInitials(name: string) {
-		return name.substring(0, 2).toUpperCase();
-	}
-
-	function getRandomColor(id: string) {
-		// Simple hash function to get a consistent color based on product ID
-		let hash = 0;
-		for (let i = 0; i < id.length; i++) {
-			hash = id.charCodeAt(i) + ((hash << 5) - hash);
-		}
-		const index = Math.abs(hash % colors.length);
-		return colors[index];
-	}
 </script>
 
-{#if src && !error}
-  <img {src} {alt} class="h-16 w-16 object-cover rounded-md" onerror={handleError} />
-{:else}
-<div 
-class="h-10 w-10 rounded-md flex items-center justify-center font-bold text-lg"
-style="background-color: {getRandomColor(product.id)}; color: #555;"
->
-{getInitials(product.name)}
+<div class={cn('relative overflow-hidden rounded-md bg-muted', sizeClasses[size], className)}>
+	{#if loading}
+		<div class="h-full w-full animate-pulse bg-secondary"></div>
+	{/if}
+	<img
+		src={currentSrc}
+		{alt}
+		onerror={handleError}
+		onload={handleLoad}
+		class={cn('h-full w-full object-cover transition-opacity',
+      loading ? 'opacity-0' : 'opacity-100'
+    )}
+	/>
 </div>
-{/if}

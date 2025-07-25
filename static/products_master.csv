@@ -1,10 +1,10 @@
 id,sku,name,description,stock,price,category_id,supplier_id,image_url
-a1b2c3d4-e5f6-7890-abcd-1234567890ab,AJI05,Ajinomoto Ginisa Mix 16 g,Ajinomoto Ginisa Mix 16 g,54,31.65,seasoning,,../images/products/AJI05.jpeg
-a2b3c4d5-e6f7-8901-bcde-2345678901bc,AJI08,Ajinomoto Ginisa Mix 100 g,Ajinomoto Ginisa Mix 100 g,48,36.9,seasoning,,../images/products/AJI08.png
-a3b4c5d6-e7f8-9012-cdef-3456789012cd,AJI26,Ajinomoto Crispy Fry Garlic 62 g,Ajinomoto Crispy Fry Garlic 62 g,13,249.23,seasoning,,../images/products/AJI26.jpg?v=1593152655
-a4b5c6d7-e8f9-0123-defa-4567890123de,AJI25,Ajinomoto Sarsaya Oyster Sauce 30 g,Ajinomoto Sarsaya Oyster Sauce 30 g,24,32.35,condiment,,../images/products/AJI25.jpg
-a5b6c7d8-f9fa-1234-efab-5678901234ef,AJI45,Ajinomoto Crispy Fry Gravy Mix 20 g,Ajinomoto Crispy Fry Gravy Mix 20 g,12,43.48,seasoning,,
-a6b7c8d9-0afb-2345-fabc-6789012345fa,AJI51,Ajinomoto Crispy Fry Original 30 g,Ajinomoto Crispy Fry Original 30 g,21,82.13,seasoning,,
+a1b2c3d4-e5f6-7890-abcd-1234567890ab,AJI05,Ajinomoto Ginisa Mix 16 g,Ajinomoto Ginisa Mix 16 g,54,31.65,seasoning,,/images/products/AJI05.jpeg
+a2b3c4d5-e6f7-8901-bcde-2345678901bc,AJI08,Ajinomoto Ginisa Mix 100 g,Ajinomoto Ginisa Mix 100 g,48,36.9,seasoning,,/images/products/AJI08.png
+a3b4c5d6-e7f8-9012-cdef-3456789012cd,AJI26,Ajinomoto Crispy Fry Garlic 62 g,Ajinomoto Crispy Fry Garlic 62 g,13,249.23,seasoning,,/images/products/AJI26.jpeg
+a4b5c6d7-e8f9-0123-defa-4567890123de,AJI25,Ajinomoto Sarsaya Oyster Sauce 30 g,Ajinomoto Sarsaya Oyster Sauce 30 g,24,32.35,condiment,,/images/products/AJI25.jpeg
+a5b6c7d8-f9fa-1234-efab-5678901234ef,AJI45,Ajinomoto Crispy Fry Gravy Mix 20 g,Ajinomoto Crispy Fry Gravy Mix 20 g,12,43.48,seasoning,,/images/products/AJI45.jpeg
+a6b7c8d9-0afb-2345-fabc-6789012345fa,AJI51,Ajinomoto Crispy Fry Original 30 g,Ajinomoto Crispy Fry Original 30 g,21,82.13,seasoning,,/images/products/AJI51.jpeg
 a7b8c9da-1bfc-3456-abcd-7890123456ab,ALP02,Alpine Sterilized Milk 200 ml,Alpine Sterilized Milk 200 ml,36,25.79,dairy,,
 a8b9cadb-2cfd-4567-bcde-8901234567bc,AME01,American Garden Coconut Milk 400 ml,American Garden Coconut Milk 400 ml,24,40.59,condiment,,
 a9bacbdc-3dfe-5678-cdef-9012345678cd,AND03,Andok’s Litson Sauce 340 g,Andok’s Litson Sauce 340 g,24,37.18,condiment,,
