@@ -89,39 +89,39 @@ export function useModifiers() {
   
   // Filtered modifiers
   const activeModifiers = $derived(
-    modifiers.filter(modifier => modifier.is_active)
+    modifiers.filter((modifier: Modifier) => modifier.is_active)
   );
   
   const requiredModifiers = $derived(
-    modifiers.filter(modifier => modifier.is_required)
+    modifiers.filter((modifier: Modifier) => modifier.is_required)
   );
   
   const singleSelectModifiers = $derived(
-    modifiers.filter(modifier => modifier.type === 'single_select')
+    modifiers.filter((modifier: Modifier) => modifier.type === 'single_select')
   );
   
   const multiSelectModifiers = $derived(
-    modifiers.filter(modifier => modifier.type === 'multi_select')
+    modifiers.filter((modifier: Modifier) => modifier.type === 'multi_select')
   );
   
   const textInputModifiers = $derived(
-    modifiers.filter(modifier => modifier.type === 'text_input')
+    modifiers.filter((modifier: Modifier) => modifier.type === 'text_input')
   );
   
   const numberInputModifiers = $derived(
-    modifiers.filter(modifier => modifier.type === 'number_input')
+    modifiers.filter((modifier: Modifier) => modifier.type === 'number_input')
   );
 
   // Get modifiers for specific product or category
   function getModifiersForProduct(productId: string) {
-    return modifiers.filter(modifier => 
+    return modifiers.filter((modifier: Modifier) => 
       modifier.applies_to === 'all_products' ||
       (modifier.applies_to === 'specific_products' && modifier.product_ids?.includes(productId))
     );
   }
 
   function getModifiersForCategory(categoryId: string) {
-    return modifiers.filter(modifier => 
+    return modifiers.filter((modifier: Modifier) => 
       modifier.applies_to === 'all_products' ||
       (modifier.applies_to === 'specific_categories' && modifier.category_ids?.includes(categoryId))
     );

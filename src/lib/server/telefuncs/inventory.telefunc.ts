@@ -5,7 +5,6 @@ import {
   createStockCountSchema,
   type InventoryItem,
   type InventoryMovement,
-  type InventoryLocation,
   type InventoryFilters,
   type InventoryValuation,
   type StockCount,
@@ -223,7 +222,7 @@ export async function onGetInventoryValuation(): Promise<InventoryValuation> {
 
     if (item.quantity_available === 0) {
       acc.out_of_stock_items++;
-    } else if (item.product?.min_stock_level && item.quantity_available < item.product.min_stock_level) {
+    } else if (item.product?.[0]?.min_stock_level && item.quantity_available < item.product[0].min_stock_level) {
       acc.low_stock_items++;
     }
 
@@ -369,7 +368,7 @@ export async function onGetInventoryAlerts(): Promise<InventoryAlert[]> {
 }
 
 // Helper function to update inventory quantities
-async function updateInventoryQuantities(supabase: any, productId: string, locationId?: string) {
+async function updateInventoryQuantities(supabase: ReturnType<typeof createSupabaseClient>, productId: string, locationId?: string) {
   // Recalculate quantities based on movements
   const { data: movements } = await supabase
     .from('inventory_movements')
@@ -380,12 +379,12 @@ async function updateInventoryQuantities(supabase: any, productId: string, locat
   if (!movements) return;
 
   const totalIn = movements
-    .filter((m: any) => m.movement_type === 'in')
-    .reduce((sum: number, m: any) => sum + m.quantity, 0);
+    .filter((m: { movement_type: string; quantity: number }) => m.movement_type === 'in')
+    .reduce((sum: number, m: { movement_type: string; quantity: number }) => sum + m.quantity, 0);
 
   const totalOut = movements
-    .filter((m: any) => m.movement_type === 'out')
-    .reduce((sum: number, m: any) => sum + m.quantity, 0);
+    .filter((m: { movement_type: string; quantity: number }) => m.movement_type === 'out')
+    .reduce((sum: number, m: { movement_type: string; quantity: number }) => sum + m.quantity, 0);
 
   const quantityOnHand = totalIn - totalOut;
   const quantityAvailable = Math.max(0, quantityOnHand); // Assuming no reservations for now

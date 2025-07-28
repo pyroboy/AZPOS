@@ -14,7 +14,7 @@ import {
 import { createSupabaseClient } from '$lib/server/db';
 
 // Helper function to create auth session
-function createAuthSession(user: any, accessToken: string, refreshToken: string): AuthSession {
+function createAuthSession(user: AuthUser, accessToken: string, refreshToken: string): AuthSession {
   return {
     user: {
       id: user.id,
@@ -241,7 +241,7 @@ export async function onUpdateProfile(profileData: unknown): Promise<AuthUser> {
   const validatedData = profileUpdateSchema.parse(profileData);
   const supabase = createSupabaseClient();
 
-  const updateData: any = {
+  const updateData: Partial<AuthUser> = {
     updated_at: new Date().toISOString()
   };
 
@@ -250,7 +250,20 @@ export async function onUpdateProfile(profileData: unknown): Promise<AuthUser> {
   }
 
   if (validatedData.profile) {
-    updateData.profile = validatedData.profile;
+    const prefs = validatedData.profile.preferences ?? {};
+    updateData.profile = {
+      ...validatedData.profile,
+      preferences: {
+        language: prefs.language ?? 'en',
+        timezone: prefs.timezone ?? 'UTC',
+        currency: prefs.currency ?? 'USD',
+        notifications: {
+          push: prefs.notifications?.push ?? false,
+          email: prefs.notifications?.email ?? false,
+          sms: prefs.notifications?.sms ?? false
+        }
+      }
+    };
   }
 
   const { data: updatedUser, error } = await supabase

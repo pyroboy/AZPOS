@@ -45,10 +45,20 @@ export async function onGetSuppliers(filters?: SupplierFilters): Promise<Paginat
   }
   
   if (validatedFilters.has_products) {
-    // Join with products to filter suppliers that have products
-    query = query.in('id', 
-      supabase.from('products').select('supplier_id').not('supplier_id', 'is', null)
-    );
+    // Get supplier IDs that have products
+    const { data: supplierIds } = await supabase
+      .from('products')
+      .select('supplier_id')
+      .not('supplier_id', 'is', null);
+    
+    const uniqueSupplierIds = [...new Set(supplierIds?.map(p => p.supplier_id).filter(Boolean) || [])];
+    
+    if (uniqueSupplierIds.length > 0) {
+      query = query.in('id', uniqueSupplierIds);
+    } else {
+      // If no suppliers have products, return empty result
+      query = query.eq('id', 'no-match');
+    }
   }
 
   // Apply sorting
@@ -366,11 +376,16 @@ export async function onGetSupplierPerformance(supplierId: string, period: 'mont
     case 'month':
       startDate = new Date(now.getFullYear(), now.getMonth(), 1);
       break;
-    case 'quarter':
+    case 'quarter': {
       const quarter = Math.floor(now.getMonth() / 3);
       startDate = new Date(now.getFullYear(), quarter * 3, 1);
       break;
+    }
     case 'year':
+      startDate = new Date(now.getFullYear(), 0, 1);
+      break;
+    default:
+      // This should never happen due to TypeScript types, but ensures startDate is assigned
       startDate = new Date(now.getFullYear(), 0, 1);
       break;
   }

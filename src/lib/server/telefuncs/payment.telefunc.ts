@@ -1,15 +1,11 @@
 import { getContext } from 'telefunc';
 import { 
   paymentProcessingSchema,
-  refundProcessingSchema,
   paymentFiltersSchema,
   type PaymentResult,
   type PaymentProcessing,
-  type RefundProcessing,
   type PaginatedPayments,
-  type PaymentStats,
-  type PaymentMethodConfig,
-  type PaymentTerminal
+  type PaymentStats
 } from '$lib/types/payment.schema';
 import { createSupabaseClient } from '$lib/server/db';
 
@@ -56,19 +52,19 @@ export async function onProcessPayment(paymentData: unknown): Promise<PaymentRes
     // Process payment based on method type
     switch (validatedData.payment_method_type) {
       case 'cash':
-        paymentResult = await processCashPayment(validatedData, paymentResult, paymentMethod);
+        paymentResult = await processCashPayment(validatedData, paymentResult);
         break;
       case 'card':
-        paymentResult = await processCardPayment(validatedData, paymentResult, paymentMethod);
+        paymentResult = await processCardPayment(validatedData, paymentResult);
         break;
       case 'digital_wallet':
-        paymentResult = await processDigitalWalletPayment(validatedData, paymentResult, paymentMethod);
+        paymentResult = await processDigitalWalletPayment(validatedData, paymentResult);
         break;
       case 'store_credit':
-        paymentResult = await processStoreCreditPayment(validatedData, paymentResult, paymentMethod);
+        paymentResult = await processStoreCreditPayment(validatedData, paymentResult);
         break;
       case 'gift_card':
-        paymentResult = await processGiftCardPayment(validatedData, paymentResult, paymentMethod);
+        paymentResult = await processGiftCardPayment(validatedData, paymentResult);
         break;
       default:
         throw new Error(`Unsupported payment method: ${validatedData.payment_method_type}`);
@@ -79,7 +75,7 @@ export async function onProcessPayment(paymentData: unknown): Promise<PaymentRes
     paymentResult.fees = fees;
 
     // Save payment record
-    const { data: savedPayment, error: saveError } = await supabase
+    const { error: saveError } = await supabase
       .from('payments')
       .insert({
         id: paymentResult.id,
@@ -130,12 +126,11 @@ export async function onProcessPayment(paymentData: unknown): Promise<PaymentRes
 
 // Helper function to process cash payment
 async function processCashPayment(
-  paymentData: PaymentProcessing,
-  paymentResult: PaymentResult,
-  paymentMethod: any
+  _paymentData: PaymentProcessing,
+  paymentResult: PaymentResult
 ): Promise<PaymentResult> {
   // Cash payments are always successful if amount is valid
-  if (paymentData.amount <= 0) {
+  if (_paymentData.amount <= 0) {
     throw new Error('Invalid cash amount');
   }
 
@@ -147,9 +142,8 @@ async function processCashPayment(
 
 // Helper function to process card payment
 async function processCardPayment(
-  paymentData: PaymentProcessing,
-  paymentResult: PaymentResult,
-  paymentMethod: any
+  _paymentData: PaymentProcessing,
+  paymentResult: PaymentResult
 ): Promise<PaymentResult> {
   // In a real implementation, this would integrate with a payment gateway
   // For now, we'll simulate the process
@@ -178,9 +172,8 @@ async function processCardPayment(
 
 // Helper function to process digital wallet payment
 async function processDigitalWalletPayment(
-  paymentData: PaymentProcessing,
-  paymentResult: PaymentResult,
-  paymentMethod: any
+  _paymentData: PaymentProcessing,
+  paymentResult: PaymentResult
 ): Promise<PaymentResult> {
   // Similar to card payment but with different processing
   await new Promise(resolve => setTimeout(resolve, 500));
@@ -205,8 +198,7 @@ async function processDigitalWalletPayment(
 // Helper function to process store credit payment
 async function processStoreCreditPayment(
   paymentData: PaymentProcessing,
-  paymentResult: PaymentResult,
-  paymentMethod: any
+  paymentResult: PaymentResult
 ): Promise<PaymentResult> {
   const supabase = createSupabaseClient();
   
@@ -248,8 +240,7 @@ async function processStoreCreditPayment(
 // Helper function to process gift card payment
 async function processGiftCardPayment(
   paymentData: PaymentProcessing,
-  paymentResult: PaymentResult,
-  paymentMethod: any
+  paymentResult: PaymentResult
 ): Promise<PaymentResult> {
   const supabase = createSupabaseClient();
   
@@ -293,7 +284,7 @@ async function processGiftCardPayment(
 }
 
 // Helper function to calculate payment fees
-function calculatePaymentFees(amount: number, paymentMethod: any): any {
+function calculatePaymentFees(amount: number, paymentMethod: { settings?: { fixed_fee?: number; percentage_fee?: number } }): { fixed_fee: number; percentage_fee: number; total_fee: number } {
   const settings = paymentMethod.settings || {};
   const fixedFee = settings.fixed_fee || 0;
   const percentageFee = settings.percentage_fee || 0;
@@ -309,7 +300,7 @@ function calculatePaymentFees(amount: number, paymentMethod: any): any {
 }
 
 // Telefunc to get paginated payments
-export async function onGetPayments(filters?: any): Promise<PaginatedPayments> {
+export async function onGetPayments(filters?: unknown): Promise<PaginatedPayments> {
   const { user } = getContext();
   if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
     throw new Error('Not authorized - admin/manager access required');
@@ -443,7 +434,7 @@ export async function onGetPaymentStats(dateFrom?: string, dateTo?: string): Pro
     total_refunds: 0,
     net_amount: 0,
     avg_payment_amount: 0,
-    payment_method_breakdown: {} as Record<string, any>
+    payment_method_breakdown: {} as Record<string, { count: number; total_amount: number; percentage: number; avg_amount: number }>
   }) || {
     total_payments: 0,
     total_amount: 0,

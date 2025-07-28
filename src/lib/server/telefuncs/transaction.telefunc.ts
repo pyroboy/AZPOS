@@ -7,7 +7,6 @@ import {
   type TransactionFilters,
   type PaginatedTransactions,
   type TransactionStats,
-  type RefundRequest,
   type Receipt
 } from '$lib/types/transaction.schema';
 import { createSupabaseClient } from '$lib/server/db';
@@ -321,7 +320,7 @@ export async function onGetTransactionStats(dateFrom?: string, dateTo?: string):
     
     // Count items sold
     if (transaction.items) {
-      acc.total_items_sold += transaction.items.reduce((sum: number, item: any) => sum + item.quantity, 0);
+      acc.total_items_sold += transaction.items.reduce((sum: number, item: {quantity: number}) => sum + item.quantity, 0);
     }
     
     // Track unique customers
@@ -332,7 +331,7 @@ export async function onGetTransactionStats(dateFrom?: string, dateTo?: string):
     
     // Payment method breakdown
     if (transaction.payment_methods) {
-      transaction.payment_methods.forEach((payment: any) => {
+      transaction.payment_methods.forEach((payment: {type: string, amount: number}) => {
         if (!acc.payment_method_breakdown[payment.type]) {
           acc.payment_method_breakdown[payment.type] = { count: 0, total_amount: 0, percentage: 0 };
         }
@@ -380,8 +379,7 @@ export async function onGetTransactionStats(dateFrom?: string, dateTo?: string):
       stats.total_revenue > 0 ? (stats.payment_method_breakdown[method].total_amount / stats.total_revenue) * 100 : 0;
   });
 
-  // Remove the Set from the return object
-  const { customer_ids, ...finalStats } = stats;
+  const finalStats = stats;
 
   return finalStats;
 }

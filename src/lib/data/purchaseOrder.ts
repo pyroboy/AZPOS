@@ -181,13 +181,13 @@ export function usePurchaseOrders(filters?: PurchaseOrderFilters) {
   const stats = $derived(statsQuery.data);
   
   // Derived filtered states
-  const draftOrders = $derived(purchaseOrders.filter(po => po.status === 'draft'));
-  const pendingOrders = $derived(purchaseOrders.filter(po => po.status === 'pending'));
-  const approvedOrders = $derived(purchaseOrders.filter(po => po.status === 'approved'));
-  const orderedOrders = $derived(purchaseOrders.filter(po => po.status === 'ordered'));
-  const partiallyReceivedOrders = $derived(purchaseOrders.filter(po => po.status === 'partially_received'));
-  const receivedOrders = $derived(purchaseOrders.filter(po => po.status === 'received'));
-  const cancelledOrders = $derived(purchaseOrders.filter(po => po.status === 'cancelled'));
+  const draftOrders = $derived(purchaseOrders.filter((po: PurchaseOrder) => po.status === 'draft'));
+  const pendingOrders = $derived(purchaseOrders.filter((po: PurchaseOrder) => po.status === 'pending'));
+  const approvedOrders = $derived(purchaseOrders.filter((po: PurchaseOrder) => po.status === 'approved'));
+  const orderedOrders = $derived(purchaseOrders.filter((po: PurchaseOrder) => po.status === 'ordered'));
+  const partiallyReceivedOrders = $derived(purchaseOrders.filter((po: PurchaseOrder) => po.status === 'partially_received'));
+  const receivedOrders = $derived(purchaseOrders.filter((po: PurchaseOrder) => po.status === 'received'));
+  const cancelledOrders = $derived(purchaseOrders.filter((po: PurchaseOrder) => po.status === 'cancelled'));
 
   // Loading and error states
   const isLoading = $derived(purchaseOrdersQuery.isPending);

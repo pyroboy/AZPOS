@@ -2,16 +2,11 @@ import { getContext } from 'telefunc';
 import { 
   receiptGenerationSchema,
   receiptFiltersSchema,
-  receiptCustomizationSchema,
-  receiptPreviewSchema,
   type GeneratedReceipt,
   type ReceiptGeneration,
   type ReceiptFilters,
   type PaginatedReceipts,
-  type ReceiptStats,
-  type ReceiptTemplate,
-  type ReceiptCustomization,
-  type ReceiptPreview
+  type ReceiptStats
 } from '$lib/types/receipt.schema';
 import { createSupabaseClient } from '$lib/server/db';
 
@@ -107,7 +102,7 @@ export async function onGenerateReceipt(receiptData: unknown): Promise<Generated
   }
 
   // Save receipt record
-  const { data: savedReceipt, error: saveError } = await supabase
+  const { error: saveError } = await supabase
     .from('generated_receipts')
     .insert({
       id: generatedReceipt.id,
@@ -133,7 +128,7 @@ export async function onGenerateReceipt(receiptData: unknown): Promise<Generated
 }
 
 // Helper function to generate receipt content
-function generateReceiptContent(transaction: any, template: any, businessInfo: any): string {
+function generateReceiptContent(transaction: { transaction_number: string; processed_at: string; processed_by: string; items: Array<{ product_name: string; quantity: number; unit_price: number; total_amount: number; modifiers?: Array<{ modifier_name: string }> }>; subtotal: number; discount_amount: number; tax_amount: number; tip_amount: number; total_amount: number; payment_methods: Array<{ type: string; amount: number }> }, template: { sections: { header: { show_business_name: boolean; show_address: boolean; show_contact: boolean; custom_text?: string }; transaction_info: { show_receipt_number: boolean; show_date_time: boolean; show_cashier: boolean }; items: { show_description: boolean; show_quantity: boolean; show_unit_price: boolean; show_total_price: boolean; show_modifiers: boolean }; totals: { show_subtotal: boolean; show_discounts: boolean; show_tax_breakdown: boolean; show_tip: boolean; show_total: boolean; show_payment_methods: boolean }; footer: { show_thank_you: boolean; custom_text?: string } } }, businessInfo: { name: string; address: { street: string; city: string; state: string; postal_code: string }; contact: { phone?: string } }): string {
   const sections = template.sections;
   let content = '';
 
@@ -170,7 +165,7 @@ function generateReceiptContent(transaction: any, template: any, businessInfo: a
   content += 'ITEMS:\n';
   content += '-'.repeat(40) + '\n';
   
-  transaction.items.forEach((item: any) => {
+  transaction.items.forEach((item: { product_name: string; quantity: number; unit_price: number; total_amount: number; modifiers?: Array<{ modifier_name: string }> }) => {
     let itemLine = '';
     if (sections.items.show_description) {
       itemLine += `${item.product_name}`;
@@ -188,7 +183,7 @@ function generateReceiptContent(transaction: any, template: any, businessInfo: a
     
     // Show modifiers if enabled
     if (sections.items.show_modifiers && item.modifiers) {
-      item.modifiers.forEach((modifier: any) => {
+      item.modifiers.forEach((modifier: { modifier_name: string }) => {
         content += `  + ${modifier.modifier_name}\n`;
       });
     }
@@ -217,7 +212,7 @@ function generateReceiptContent(transaction: any, template: any, businessInfo: a
   // Payment methods
   if (sections.totals.show_payment_methods) {
     content += 'PAYMENT:\n';
-    transaction.payment_methods.forEach((payment: any) => {
+    transaction.payment_methods.forEach((payment: { type: string; amount: number }) => {
       content += `${payment.type.toUpperCase()}: $${payment.amount.toFixed(2)}\n`;
     });
     content += '\n';
@@ -263,7 +258,7 @@ async function processReceiptDelivery(receipt: GeneratedReceipt, options: Receip
 }
 
 // Helper function to get default receipt template
-function getDefaultReceiptTemplate(): any {
+function getDefaultReceiptTemplate(): { id: string; name: string; type: string; sections: Record<string, Record<string, boolean | string>> } {
   return {
     id: 'default',
     name: 'Default Template',
@@ -312,7 +307,7 @@ function getDefaultReceiptTemplate(): any {
 }
 
 // Helper function to get default business info
-function getDefaultBusinessInfo(): any {
+function getDefaultBusinessInfo(): { name: string; address: { street: string; city: string; state: string; postal_code: string; country: string }; contact: { phone: string; email: string } } {
   return {
     name: 'AZPOS Store',
     address: {
@@ -466,7 +461,7 @@ export async function onGetReceiptStats(): Promise<ReceiptStats> {
     downloaded_receipts: 0,
     failed_deliveries: 0,
     delivery_success_rate: 0,
-    format_breakdown: {} as Record<string, any>
+    format_breakdown: {} as Record<string, { count: number; percentage: number }>
   }) || {
     total_receipts: 0,
     receipts_today: 0,

@@ -67,25 +67,25 @@ export function usePayments() {
   
   // Filtered payments
   const successfulPayments = $derived(
-    payments.filter(payment => payment.status === 'completed')
+    payments.filter((payment: { status: string; }) => payment.status === 'completed')
   );
   
   const failedPayments = $derived(
-    payments.filter(payment => payment.status === 'failed')
+    payments.filter((payment: { status: string; }) => payment.status === 'failed')
   );
   
   const pendingPayments = $derived(
-    payments.filter(payment => payment.status === 'pending' || payment.status === 'processing')
+    payments.filter((payment: { status: string; }) => payment.status === 'pending' || payment.status === 'processing')
   );
   
   const refundedPayments = $derived(
-    payments.filter(payment => payment.status === 'refunded')
+    payments.filter((payment: { status: string; }) => payment.status === 'refunded')
   );
   
   const todaysPayments = $derived(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return payments.filter(payment => {
+    return payments.filter((payment: { processed_at: string | number | Date; }) => {
       const paymentDate = new Date(payment.processed_at);
       paymentDate.setHours(0, 0, 0, 0);
       return paymentDate.getTime() === today.getTime();
@@ -96,7 +96,7 @@ export function usePayments() {
   const paymentMethodBreakdown = $derived(() => {
     const breakdown: Record<string, { count: number; total: number }> = {};
     
-    payments.forEach(payment => {
+    payments.forEach((payment: { status: string; payment_method_type: string | number; amount: number; }) => {
       if (payment.status === 'completed') {
         if (!breakdown[payment.payment_method_type]) {
           breakdown[payment.payment_method_type] = { count: 0, total: 0 };
@@ -158,9 +158,9 @@ export function usePayments() {
 
   // Calculate totals for current view
   const currentViewTotals = $derived(() => {
-    const successful = payments.filter(p => p.status === 'completed');
-    const total_amount = successful.reduce((sum, p) => sum + p.amount, 0);
-    const total_fees = successful.reduce((sum, p) => sum + (p.fees?.total_fee || 0), 0);
+    const successful = payments.filter((p: { status: string; }) => p.status === 'completed');
+    const total_amount = successful.reduce((sum: any, p: { amount: any; }) => sum + p.amount, 0);
+    const total_fees = successful.reduce((sum: any, p: { fees: { total_fee: any; }; }) => sum + (p.fees?.total_fee || 0), 0);
     const net_amount = total_amount - total_fees;
     const payment_count = successful.length;
     

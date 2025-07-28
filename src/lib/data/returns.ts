@@ -116,11 +116,11 @@ export function useReturns(filters?: ReturnFilters) {
   const stats = $derived(statsQuery.data);
   
   // Derived filtered states
-  const pendingReturns = $derived(returns.filter(r => r.status === 'pending'));
-  const approvedReturns = $derived(returns.filter(r => r.status === 'approved'));
-  const rejectedReturns = $derived(returns.filter(r => r.status === 'rejected'));
-  const completedReturns = $derived(returns.filter(r => r.status === 'completed'));
-  const processingReturns = $derived(returns.filter(r => r.status === 'processing'));
+  const pendingReturns = $derived(returns.filter((r: EnhancedReturnRecord) => r.status === 'pending'));
+  const approvedReturns = $derived(returns.filter((r: EnhancedReturnRecord) => r.status === 'approved'));
+  const rejectedReturns = $derived(returns.filter((r: EnhancedReturnRecord) => r.status === 'rejected'));
+  const completedReturns = $derived(returns.filter((r: EnhancedReturnRecord) => r.status === 'completed'));
+  const processingReturns = $derived(returns.filter((r: EnhancedReturnRecord) => r.status === 'processing'));
 
   // Loading and error states
   const isLoading = $derived(returnsQuery.isPending);

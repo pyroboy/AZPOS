@@ -3,17 +3,10 @@ import {
   userInputSchema,
   userFiltersSchema,
   changePasswordSchema,
-  resetPasswordSchema,
-  bulkUserUpdateSchema,
-  userInvitationSchema,
   type User,
   type UserFilters,
   type PaginatedUsers,
   type UserStats,
-  type ChangePassword,
-  type ResetPassword,
-  type BulkUserUpdate,
-  type UserInvitation,
   type UserActivity
 } from '$lib/types/user.schema';
 import { createSupabaseClient } from '$lib/server/db';
@@ -263,7 +256,16 @@ export async function onUpdateUser(userId: string, userData: unknown): Promise<U
   }
 
   // Users updating their own profile have limited permissions
-  const updateData: any = {
+  const updateData: Partial<{
+    email: string;
+    full_name: string;
+    role: string;
+    is_active: boolean;
+    permissions: string[];
+    profile: Record<string, unknown>;
+    updated_by: string;
+    updated_at: string;
+  }> = {
     updated_by: user.id,
     updated_at: new Date().toISOString()
   };
@@ -324,7 +326,7 @@ export async function onChangePassword(passwordData: unknown): Promise<{ success
   const { user } = getContext();
   if (!user) throw new Error('Not authenticated');
 
-  const validatedData = changePasswordSchema.parse(passwordData);
+  changePasswordSchema.parse(passwordData);
   const supabase = createSupabaseClient();
 
   // Verify current password (this would typically use Supabase Auth)
@@ -360,7 +362,7 @@ export async function onGetUserStats(): Promise<UserStats> {
 
   const { data: users, error } = await supabase
     .from('users')
-    .select('is_active, is_verified, role, created_at, last_login_at, login_count, full_name, email');
+    .select('id, is_active, is_verified, role, created_at, last_login_at, login_count, full_name, email');
 
   if (error) throw error;
 

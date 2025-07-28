@@ -221,13 +221,13 @@ export function useProducts(filters?: ProductFilters) {
   const meta = $derived(metaQuery.data);
   
   // Derived filtered states
-  const activeProducts = $derived(products.filter(p => p.is_active && !p.is_archived));
-  const archivedProducts = $derived(products.filter(p => p.is_archived));
-  const bundleProducts = $derived(products.filter(p => p.is_bundle));
-  const lowStockProducts = $derived(products.filter(p => 
+  const activeProducts = $derived(products.filter((p: Product) => p.is_active && !p.is_archived));
+  const archivedProducts = $derived(products.filter((p: Product) => p.is_archived));
+  const bundleProducts = $derived(products.filter((p: Product) => p.is_bundle));
+  const lowStockProducts = $derived(products.filter((p: Product) => 
     p.min_stock_level && p.stock_quantity < p.min_stock_level
   ));
-  const outOfStockProducts = $derived(products.filter(p => p.stock_quantity === 0));
+  const outOfStockProducts = $derived(products.filter((p: Product) => p.stock_quantity === 0));
 
   // Loading and error states
   const isLoading = $derived(productsQuery.isPending);
@@ -377,12 +377,12 @@ export function useOptimisticProductUpdate() {
 
 // Hook for product search with debouncing
 export function useProductSearch(searchTerm: string, debounceMs: number = 300) {
-  const [debouncedSearchTerm, setDebouncedSearchTerm] = $state(searchTerm);
+  let debouncedSearchTerm = $state(searchTerm);
 
   // Debounce search term
   $effect(() => {
     const timer = setTimeout(() => {
-      setDebouncedSearchTerm(searchTerm);
+      debouncedSearchTerm = searchTerm;
     }, debounceMs);
 
     return () => clearTimeout(timer);

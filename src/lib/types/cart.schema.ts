@@ -71,6 +71,8 @@ export const cartTotalsSchema = z.object({
 });
 
 // Export inferred types
+export type CartItemModifier = z.infer<typeof cartItemModifierSchema>;
+export type AppliedDiscount = z.infer<typeof appliedDiscountSchema>;
 export type AddCartItemInput = z.infer<typeof addCartItemSchema>;
 export type UpdateCartItemInput = z.infer<typeof updateCartItemSchema>;
 export type CartDiscount = z.infer<typeof cartDiscountSchema>;

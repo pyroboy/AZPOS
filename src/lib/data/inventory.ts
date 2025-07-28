@@ -13,7 +13,6 @@ import type {
   CreateInventoryMovement,
   InventoryFilters,
   InventoryValuation,
-  StockCount,
   CreateStockCount,
   InventoryAlert
 } from '$lib/types/inventory.schema';
@@ -98,19 +97,19 @@ export function useInventory(filters?: InventoryFilters) {
   const alerts = $derived(alertsQuery.data ?? []);
   
   // Derived filtered states
-  const lowStockItems = $derived(inventoryItems.filter(item => {
+  const lowStockItems = $derived(inventoryItems.filter((item: InventoryItem) => {
     // Assuming we have product info with min_stock_level
     return item.quantity_available > 0 && item.quantity_available < 10; // Placeholder logic
   }));
   
-  const outOfStockItems = $derived(inventoryItems.filter(item => item.quantity_available === 0));
+  const outOfStockItems = $derived(inventoryItems.filter((item: InventoryItem) => item.quantity_available === 0));
   
-  const expiredItems = $derived(inventoryItems.filter(item => {
+  const expiredItems = $derived(inventoryItems.filter((item: InventoryItem) => {
     if (!item.expiry_date) return false;
     return new Date(item.expiry_date) < new Date();
   }));
   
-  const expiringSoonItems = $derived(inventoryItems.filter(item => {
+  const expiringSoonItems = $derived(inventoryItems.filter((item: InventoryItem) => {
     if (!item.expiry_date) return false;
     const expiryDate = new Date(item.expiry_date);
     const thirtyDaysFromNow = new Date();

@@ -18,7 +18,7 @@ import type {
 import { browser } from '$app/environment';
 import { v4 as uuidv4 } from 'uuid';
 import type { Product } from '$lib/types/product.schema';
-import type { Modifier } from '$lib/types/modifier.schema';
+import type { CartItemModifier } from '$lib/types/cart.schema';
 
 const cartQueryKey = ['cart'];
 const cartTotalsQueryKey = ['cart', 'totals'];
@@ -117,7 +117,7 @@ export function useCart() {
   const itemCount = $derived(cartTotals.item_count);
 
   // Helper methods that wrap mutations
-  const addItem = (product: Product, quantity: number = 1, modifiers?: Modifier[], notes?: string) => {
+  const addItem = (product: Product, quantity: number = 1, modifiers?: CartItemModifier[], notes?: string) => {
     const itemData: AddCartItemInput = {
       product_id: product.id,
       quantity,
@@ -176,7 +176,7 @@ export function useCart() {
           product_id: product.id,
           product_name: product.name,
           product_sku: product.sku,
-          base_price: product.selxwling_price,
+          base_price: product.selling_price,
           quantity,
           subtotal: product.selling_price * quantity,
           final_price: product.selling_price,

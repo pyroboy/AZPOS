@@ -8,9 +8,7 @@ import {
   type PurchaseOrder,
   type PurchaseOrderFilters,
   type PurchaseOrderStats,
-  type PaginatedPurchaseOrders,
-  type ReceiveItems,
-  type ApprovePurchaseOrder
+  type PaginatedPurchaseOrders
 } from '$lib/types/purchaseOrder.schema';
 import { createSupabaseClient } from '$lib/server/db';
 
@@ -230,7 +228,7 @@ export async function onUpdatePurchaseOrder(poId: string, poData: unknown): Prom
   const supabase = createSupabaseClient();
 
   // Recalculate totals if items are updated
-  let updatePayload: any = {
+  let updatePayload: Record<string, unknown> = {
     ...validatedData,
     updated_at: new Date().toISOString()
   };
@@ -289,7 +287,7 @@ export async function onApprovePurchaseOrder(approvalData: unknown): Promise<Pur
   const supabase = createSupabaseClient();
 
   const status = validatedData.approved ? 'approved' : 'cancelled';
-  const updatePayload: any = {
+  const updatePayload: Record<string, unknown> = {
     status,
     approved_by: user.id,
     approved_at: new Date().toISOString(),
@@ -350,7 +348,7 @@ export async function onReceiveItems(receiveData: unknown): Promise<PurchaseOrde
   if (fetchError) throw fetchError;
 
   // Update received quantities
-  const updatedItems = currentPO.items.map((item: any) => {
+  const updatedItems = currentPO.items.map((item: { product_id: string; quantity_received?: number; quantity_ordered: number }) => {
     const receivedItem = validatedData.items.find(ri => ri.product_id === item.product_id);
     if (receivedItem) {
       return {
@@ -362,8 +360,8 @@ export async function onReceiveItems(receiveData: unknown): Promise<PurchaseOrde
   });
 
   // Determine new status
-  const allReceived = updatedItems.every((item: any) => item.quantity_received >= item.quantity_ordered);
-  const someReceived = updatedItems.some((item: any) => item.quantity_received > 0);
+  const allReceived = updatedItems.every((item: { quantity_received?: number; quantity_ordered: number }) => (item.quantity_received || 0) >= item.quantity_ordered);
+  const someReceived = updatedItems.some((item: { quantity_received?: number }) => (item.quantity_received || 0) > 0);
   
   let newStatus = currentPO.status;
   if (allReceived) {

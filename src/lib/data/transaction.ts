@@ -13,8 +13,7 @@ import type {
   TransactionFilters, 
   PaginatedTransactions, 
   TransactionStats,
-  RefundRequest,
-  Receipt
+  RefundRequest
 } from '$lib/types/transaction.schema';
 
 const transactionsQueryKey = ['transactions'];
@@ -107,27 +106,27 @@ export function useTransactions() {
   
   // Filtered transactions
   const completedTransactions = $derived(
-    transactions.filter(transaction => transaction.status === 'completed')
+    transactions.filter((transaction: Transaction) => transaction.status === 'completed')
   );
   
   const pendingTransactions = $derived(
-    transactions.filter(transaction => transaction.status === 'pending')
+    transactions.filter((transaction: Transaction) => transaction.status === 'pending')
   );
   
   const refundedTransactions = $derived(
-    transactions.filter(transaction => 
+    transactions.filter((transaction: Transaction) => 
       transaction.status === 'refunded' || transaction.status === 'partially_refunded'
     )
   );
   
   const cancelledTransactions = $derived(
-    transactions.filter(transaction => transaction.status === 'cancelled')
+    transactions.filter((transaction: Transaction) => transaction.status === 'cancelled')
   );
   
   const todaysTransactions = $derived(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return transactions.filter(transaction => {
+    return transactions.filter((transaction: Transaction) => {
       const transactionDate = new Date(transaction.processed_at);
       transactionDate.setHours(0, 0, 0, 0);
       return transactionDate.getTime() === today.getTime();
@@ -212,8 +211,8 @@ export function useTransactions() {
 
   // Calculate totals for current view
   const currentViewTotals = $derived(() => {
-    const total_amount = transactions.reduce((sum, t) => sum + t.total_amount, 0);
-    const refund_amount = transactions.reduce((sum, t) => sum + t.refund_amount, 0);
+    const total_amount = transactions.reduce((sum: number, t: Transaction) => sum + t.total_amount, 0);
+    const refund_amount = transactions.reduce((sum: number, t: Transaction) => sum + t.refund_amount, 0);
     const net_amount = total_amount - refund_amount;
     const transaction_count = transactions.length;
     

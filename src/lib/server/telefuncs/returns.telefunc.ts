@@ -9,6 +9,23 @@ import {
 } from '$lib/types/returns.schema';
 import { createSupabaseClient } from '$lib/server/db';
 
+// Type guard for Supabase errors
+interface SupabaseError {
+  code?: string;
+  message: string;
+  details?: string;
+  hint?: string;
+}
+
+function isSupabaseError(error: unknown): error is SupabaseError {
+  return (
+    typeof error === 'object' && 
+    error !== null && 
+    'message' in error &&
+    typeof (error as Record<string, unknown>).message === 'string'
+  );
+}
+
 // Telefunc to get all returns with optional filters
 export async function onGetReturns(filters?: ReturnFilters): Promise<EnhancedReturnRecord[]> {
   const { user } = getContext();
@@ -151,7 +168,7 @@ export async function onUpdateReturnStatus(updateData: unknown): Promise<Enhance
   const supabase = createSupabaseClient();
 
   // Update the return with new status and admin info
-  const updatePayload: any = {
+  const updatePayload: Record<string, unknown> = {
     status: validatedData.status,
     updated_at: new Date().toISOString()
   };
@@ -217,7 +234,9 @@ export async function onGetReturnById(returnId: string): Promise<EnhancedReturnR
   const { data: returnRecord, error } = await query.single();
   
   if (error) {
-    if (error.code === 'PGRST116') return null; // Not found
+    if (isSupabaseError(error) && error.code === 'PGRST116') {
+      return null; // Not found
+    }
     throw error;
   }
 

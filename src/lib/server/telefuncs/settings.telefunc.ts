@@ -1,11 +1,10 @@
 import { getContext } from 'telefunc';
 import { 
   settingsUpdateSchema,
-  settingsBackupSchema,
   type Settings,
-  type SettingsUpdate,
   type SettingsBackup
 } from '$lib/types/settings.schema';
+import { z } from 'zod';
 import { createSupabaseClient } from '$lib/server/db';
 
 // Default settings configuration
@@ -245,7 +244,7 @@ export async function onUpdateSettings(settingsData: unknown): Promise<Settings>
   }
 
   // Save settings
-  const { data: savedSettings, error } = await supabase
+  const { error } = await supabase
     .from('settings')
     .upsert({
       id: 1, // Single row for global settings
@@ -292,7 +291,7 @@ export async function onResetSettings(): Promise<Settings> {
     updated_by: user.id
   };
 
-  const { data: savedSettings, error } = await supabase
+  const { error } = await supabase
     .from('settings')
     .upsert({
       id: 1,
@@ -337,7 +336,7 @@ export async function onCreateSettingsBackup(name: string, description?: string)
     created_by: user.id
   };
 
-  const { data: savedBackup, error } = await supabase
+  const { error } = await supabase
     .from('settings_backups')
     .insert(backup)
     .select()
@@ -375,7 +374,7 @@ export async function onRestoreSettingsBackup(backupId: string): Promise<Setting
     updated_by: user.id
   };
 
-  const { data: savedSettings, error } = await supabase
+  const { error } = await supabase
     .from('settings')
     .upsert({
       id: 1,
@@ -447,8 +446,9 @@ export async function onValidateSettings(settingsData: unknown): Promise<{ isVal
   try {
     settingsUpdateSchema.parse(settingsData);
     return { isValid: true, errors: [] };
-  } catch (error: any) {
-    const errors = error.errors?.map((err: any) => `${err.path.join('.')}: ${err.message}`) || ['Invalid settings data'];
+  } catch (error) {
+    const zodError = error as z.ZodError;
+    const errors = zodError.errors?.map((err) => `${err.path.join('.')}: ${err.message}`) || ['Invalid settings data'];
     return { isValid: false, errors };
   }
 }

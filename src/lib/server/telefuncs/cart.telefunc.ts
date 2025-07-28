@@ -197,29 +197,45 @@ export async function onAddCartItem(itemData: unknown, sessionId?: string): Prom
 }
 
 // Telefunc to update cart item quantity
-export async function onUpdateCartItem(updateData: unknown): Promise<void> {
+export async function onUpdateCartItem(updateData: unknown, sessionId?: string): Promise<void> {
   const { user } = getContext();
+  if (!user && !sessionId) throw new Error('User or session required');
   const validatedData = updateCartItemSchema.parse(updateData);
   const supabase = createSupabaseClient();
 
+
   if (validatedData.quantity === 0) {
     // Remove item from cart
-    const { error } = await supabase
+    let deleteQuery = supabase
       .from('cart_items')
       .delete()
       .eq('id', validatedData.cart_item_id);
+
+    if (user) {
+      deleteQuery = deleteQuery.eq('user_id', user.id);
+    } else {
+      deleteQuery = deleteQuery.eq('session_id', sessionId);
+    }
     
+    const { error } = await deleteQuery;
     if (error) throw error;
   } else {
     // Update item quantity
-    const { error } = await supabase
+    let updateQuery = supabase
       .from('cart_items')
       .update({
         quantity: validatedData.quantity,
         updated_at: new Date().toISOString()
       })
       .eq('id', validatedData.cart_item_id);
+
+    if (user) {
+      updateQuery = updateQuery.eq('user_id', user.id);
+    } else {
+      updateQuery = updateQuery.eq('session_id', sessionId);
+    }
     
+    const { error } = await updateQuery;
     if (error) throw error;
   }
 }

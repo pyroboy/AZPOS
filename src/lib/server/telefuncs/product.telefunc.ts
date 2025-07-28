@@ -7,9 +7,7 @@ import {
   type Product,
   type ProductFilters,
   type ProductMeta,
-  type PaginatedProducts,
-  type BulkProductUpdate,
-  type StockAdjustment
+  type PaginatedProducts
 } from '$lib/types/product.schema';
 import { createSupabaseClient } from '$lib/server/db';
 

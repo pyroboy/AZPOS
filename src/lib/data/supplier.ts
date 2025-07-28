@@ -155,9 +155,9 @@ export function useSuppliers(filters?: SupplierFilters) {
   const stats = $derived(statsQuery.data);
   
   // Derived filtered states
-  const activeSuppliers = $derived(suppliers.filter(s => s.is_active));
-  const inactiveSuppliers = $derived(suppliers.filter(s => !s.is_active));
-  const suppliersWithProducts = $derived(suppliers.filter(s => {
+  const activeSuppliers = $derived(suppliers.filter((s: Supplier) => s.is_active));
+  const inactiveSuppliers = $derived(suppliers.filter((s: Supplier) => !s.is_active));
+  const suppliersWithProducts = $derived(suppliers.filter(() => {
     // This would need to be enhanced with actual product count data
     return true; // Placeholder
   }));

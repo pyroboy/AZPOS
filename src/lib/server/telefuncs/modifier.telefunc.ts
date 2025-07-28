@@ -3,14 +3,9 @@ import {
   modifierInputSchema,
   modifierFiltersSchema,
   validateModifierSelectionSchema,
-  productModifierAssignmentSchema,
-  bulkModifierUpdateSchema,
   type Modifier,
   type ModifierFilters,
-  type ModifierStats,
-  type ValidateModifierSelection,
-  type ProductModifierAssignment,
-  type BulkModifierUpdate
+  type ModifierStats
 } from '$lib/types/modifier.schema';
 import { createSupabaseClient } from '$lib/server/db';
 
@@ -196,7 +191,7 @@ export async function onUpdateModifier(modifierId: string, modifierData: unknown
   const validatedData = modifierInputSchema.parse(modifierData);
   const supabase = createSupabaseClient();
 
-  const { data: updatedModifier, error } = await supabase
+  const { error } = await supabase
     .from('modifiers')
     .update({
       ...validatedData,
@@ -326,7 +321,7 @@ export async function onValidateModifierSelection(validationData: unknown): Prom
       }
       break;
 
-    case 'multi_select':
+    case 'multi_select': {
       const selectedCount = validatedData.selected_options?.length || 0;
       
       if (selectedCount < modifier.min_selections) {
@@ -345,6 +340,7 @@ export async function onValidateModifierSelection(validationData: unknown): Prom
         };
       }
       break;
+    }
 
     case 'text_input':
       if (modifier.is_required && !validatedData.text_value) {
@@ -370,7 +366,7 @@ export async function onValidateModifierSelection(validationData: unknown): Prom
   // Calculate price adjustment for selected options
   if (validatedData.selected_options) {
     for (const optionId of validatedData.selected_options) {
-      const option = modifier.modifier_options.find((opt: any) => opt.id === optionId);
+      const option = modifier.modifier_options.find((opt: { id: string; name: string; is_available: boolean; price_adjustment: number }) => opt.id === optionId);
       if (!option) {
         return {
           is_valid: false,

@@ -109,35 +109,35 @@ export function useUsers() {
   
   // Filtered users
   const activeUsers = $derived(
-    users.filter(user => user.is_active)
+    users.filter((user: User) => user.is_active)
   );
   
   const inactiveUsers = $derived(
-    users.filter(user => !user.is_active)
+    users.filter((user: User) => !user.is_active)
   );
   
   const verifiedUsers = $derived(
-    users.filter(user => user.is_verified)
+    users.filter((user: User) => user.is_verified)
   );
   
   const unverifiedUsers = $derived(
-    users.filter(user => !user.is_verified)
+    users.filter((user: User) => !user.is_verified)
   );
   
   const adminUsers = $derived(
-    users.filter(user => user.role === 'admin')
+    users.filter((user: User) => user.role === 'admin')
   );
   
   const managerUsers = $derived(
-    users.filter(user => user.role === 'manager')
+    users.filter((user: User) => user.role === 'manager')
   );
   
   const cashierUsers = $derived(
-    users.filter(user => user.role === 'cashier')
+    users.filter((user: User) => user.role === 'cashier')
   );
   
   const customerUsers = $derived(
-    users.filter(user => user.role === 'customer')
+    users.filter((user: User) => user.role === 'customer')
   );
 
   // Helper functions
@@ -237,19 +237,19 @@ export function useUsers() {
   }
 
   function getUsersByRole(role: User['role']) {
-    return users.filter(user => user.role === role);
+    return users.filter((user: User) => user.role === role);
   }
 
   function getRecentlyActiveUsers(hours: number = 24) {
     const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return users.filter(user => 
+    return users.filter((user: User) => 
       user.last_login_at && new Date(user.last_login_at) > cutoff
     );
   }
 
   function getNewUsers(days: number = 30) {
     const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    return users.filter(user => 
+    return users.filter((user: User) => 
       new Date(user.created_at) > cutoff
     );
   }

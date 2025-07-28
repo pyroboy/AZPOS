@@ -494,8 +494,8 @@
 									>
 										${(item.final_price / 100).toFixed(2)}
 									</button>
+								</div>
 							</div>
-						</div>
 						<div class="flex items-center gap-2">
 							<Input
 								type="number"
