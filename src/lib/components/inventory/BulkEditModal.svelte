@@ -8,6 +8,7 @@
 	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore.svelte';
 	import { categories } from '$lib/stores/categoryStore.svelte';
 	import type { Product } from '$lib/types';
+	import { bulkUpdateProducts } from '$lib/stores/productStore.svelte';
 
 	let { open = $bindable(), productIds, onclose } = $props<{ open: boolean; productIds: string[]; onclose: () => void }>();
 
@@ -49,7 +50,7 @@
 		}
 
 		if (Object.keys(updates).length > 0) {
-			inventoryManager.updateProducts(productIds, updates);
+			bulkUpdateProducts(productIds, updates);
 		}
 
 		// Reset form and close modal

@@ -75,7 +75,7 @@
 					</Table.Row>
 				{:else}
 					{#each filteredReturns as ret (ret.id)}
-						<Table.Row class="cursor-pointer hover:bg-muted/50" onclick={() => viewDetails()}>
+						<Table.Row class="cursor-pointer hover:bg-muted/50" onclick={() => viewDetails(ret)}>
 							<Table.Cell class="font-medium">{ret.id}</Table.Cell>
 							<Table.Cell>{ret.order_id}</Table.Cell>
 							<Table.Cell>{ret.customer_name}</Table.Cell>

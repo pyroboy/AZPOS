@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { ReturnRecord } from '$lib/schemas/models';
-	import { returns } from '$lib/stores/returnsStore.svelte';
+	import { updateReturnStatus } from '$lib/stores/returnsStore.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -21,14 +21,14 @@
 
 	function approveReturn() {
 		if (!record) return;
-		returns.updateReturnStatus(record.id, 'approved');
+		updateReturnStatus(record.id, 'approved');
 		toast.success(`Return ${record.id} has been approved.`);
 		onClose();
 	}
 
 	function rejectReturn() {
 		if (!record) return;
-		returns.updateReturnStatus(record.id, 'rejected', rejectionNotes || 'No reason provided.');
+		updateReturnStatus(record.id, 'rejected');
 		toast.error(`Return ${record.id} has been rejected.`);
 		rejectionNotes = '';
 		onClose();

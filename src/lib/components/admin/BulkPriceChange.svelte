@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { products } from '$lib/stores/productStore';
+	import { products, bulkUpdatePrices } from '$lib/stores/productStore.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -18,7 +18,7 @@
 	let isScheduled = $state(false);
 
 	const filteredProducts = $derived(
-		$products.filter((product) => {
+		products.filter((product) => {
 			if (product.is_archived) return false;
 			const matchesSearch =
 				product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -28,9 +28,9 @@
 		})
 	);
 
-	const categories = $derived([...new Set($products.map((p) => p.category_id).filter(Boolean))].sort());
+	const categories = $derived([...new Set(products.map((p) => p.category_id).filter(Boolean))].sort());
 
-	const selectedProducts = $derived($products.filter((p) => selectedProductIds.has(p.id!)));
+	const selectedProducts = $derived(products.filter((p) => selectedProductIds.has(p.id!)));
 
 	const totalSelectedValue = $derived(
 		selectedProducts.reduce((sum, product) => sum + product.price, 0)
@@ -70,7 +70,7 @@
 
 		const updates = previewPrices.map((p) => ({ id: p.id!, price: p.newPrice }));
 
-		await products.bulkUpdatePrices(updates);
+		await bulkUpdatePrices(updates);
 
 		alert(`Price updated for ${selectedProductIds.size} products.`);
 		clearSelection();

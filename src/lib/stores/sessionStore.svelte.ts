@@ -13,6 +13,9 @@ export function setSession(user: User | null | undefined) {
 	currentUser = user ?? null;
 }
 
+export function resetSession() {
+	currentUser = null;
+}
 // Logout helper that posts to the server endpoint
 export async function logout() {
 	await fetch('/login?/logout', {

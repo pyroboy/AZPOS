@@ -158,7 +158,7 @@ class ProductManager {
 		});
 	}
 
-	bulkUpdateProducts(updates: { ids: string[], data: Partial<Omit<Product, 'id'>> }) {
+	bulkUpdateProducts(updates: { ids: string[]; data: Partial<Omit<Product, 'id'>>; }) {
 		this.products = this.products.map(p => {
 			if (p.id && updates.ids.includes(p.id)) {
 				return { ...p, ...updates.data, updated_at: new Date().toISOString() };
@@ -241,7 +241,14 @@ export const {
 	isLoading,
 	currentPage,
 	totalProducts,
-	hasMore
+	hasMore,
+	bulkUpdatePrices,
+	bulkUpdateProducts,
+	archiveProduct,
+	unarchiveProduct,
+	findById,
+	setProducts,
+	reset
 } = productManager;
 
 // Export utility functions for backward compatibility

@@ -11,6 +11,33 @@
 	import { productManager } from '$lib/stores/productStore.svelte';
 	import { inventoryManager } from '$lib/stores/inventoryStore.svelte';
 
+	// TanStack Query for server-centric state management
+	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
+	import { browser } from '$app/environment';
+
+	// Create QueryClient instance
+	const queryClient = new QueryClient({
+		defaultOptions: {
+			queries: {
+				staleTime: 1000 * 60 * 5, // 5 minutes
+				gcTime: 1000 * 60 * 30, // 30 minutes
+				retry: (failureCount, error) => {
+					// Don't retry on 4xx errors
+					if (error && typeof error === 'object' && 'status' in error) {
+						const status = error.status as number;
+						if (status >= 400 && status < 500) return false;
+					}
+					return failureCount < 3;
+				},
+				refetchOnWindowFocus: false,
+				refetchOnReconnect: 'always'
+			},
+			mutations: {
+				retry: false
+			}
+		}
+	});
+
 	// The `data` prop is reactive and contains the `user` from the load function.
 	const { data, children } = $props<{ data: LayoutData; children: any }>();
 
@@ -33,8 +60,9 @@
 	});
 </script>
 
-
-<Toaster />
+<!-- Provide TanStack Query client to all components -->
+<QueryClientProvider client={queryClient}>
+	<Toaster />
 
 {#if $page.data.user}
 	<Sidebar.Provider>
@@ -51,3 +79,4 @@
 		{@render children()}
 	</main>
 {/if}
+</QueryClientProvider>
