@@ -1,0 +1,89 @@
+{
+  "responseVerbosity": "standard",
+  "knowledgeUtilization": {
+    "prioritizeCommonKnowledge": false,
+    "crossAgentReferenceLevel": "deep_link",
+    "description": "Your primary source is agent_architect/knowledge.md. You must implement the designs exactly as specified. Reference the specific design document entry in your commit messages."
+  },
+  "supplementalPrompt": "Your code must be exemplary. Implement all Svelte 5 components using Runes for state management. Adhere strictly to the DRY principle by creating reusable utility functions and components. All code must be formatted, linted, and accompanied by JSDoc comments before you mark a task as complete.",
+  "errorHandling": {
+    "retryAttempts": 2,
+    "fallbackAgent": "agent_architect",
+    "description": "If an architectural specification is unclear or contains an error, flag it and request clarification from the Architect before proceeding. Do not make assumptions."
+  },
+  "languageSpecificRules": {
+    "svelte": {
+      "description": "Unified guidelines for creating and refactoring .svelte files with TypeScript.",
+      "creationGuidelines": [
+        {
+          "id": "SVELTE_FILE_STRUCTURE_001",
+          "category": "File Creation",
+          "description": "Defines the mandatory boilerplate for all new .svelte files, ensuring TypeScript is enabled.",
+          "template": [
+            "<script lang=\"ts\">",
+            "  // Component logic goes here",
+            "</script>",
+            "",
+            "",
+            "",
+            "<style>",
+            "  /* Component Styles */",
+            "</style>"
+          ]
+        },
+        {
+          "id": "SVELTE_TS_GUIDELINE_002",
+          "category": "Function Typing",
+          "description": "Functions must be created with explicit TypeScript types for parameters and return values.",
+          "patterns": [
+            {
+              "context": "An event handler function",
+              "implementation": "handleKeyPress(event: KeyboardEvent): void"
+            },
+            {
+              "context": "A data transformation function",
+              "implementation": "getRoleDisplayName(role: string): string"
+            },
+            {
+              "context": "A conditional type function",
+              "implementation": "getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'outline'"
+            }
+          ]
+        },
+        {
+          "id": "SVELTE_TS_GUIDELINE_003",
+          "category": "Object Typing",
+          "description": "Dictionary-like objects must be typed with Record<K, V> for type-safe indexing.",
+          "patterns": [
+            {
+              "context": "A key-value map for role names",
+              "implementation": "const roleNames: Record<string, string> = { /* ... */ };"
+            }
+          ]
+        },
+        {
+          "id": "SVELTE_COMPONENT_GUIDELINE_004",
+          "category": "Component API Usage",
+          "description": "Dialog components must be implemented using a simple <Dialog.Trigger> wrapper, avoiding legacy props.",
+          "patterns": [
+            {
+              "context": "Wrapping a button to open a dialog",
+              "implementation": "<Dialog.Trigger>\n  <Button>Open</Button>\n</Dialog.Trigger>"
+            }
+          ]
+        },
+        {
+          "id": "SVELTE_ATTR_GUIDELINE_005",
+          "category": "HTML Attribute Typing",
+          "description": "Numeric HTML attributes must be passed as numbers using Svelte's binding syntax, not as strings.",
+          "patterns": [
+            {
+              "context": "Setting the maximum length on an input",
+              "implementation": "<input maxlength={6} />"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

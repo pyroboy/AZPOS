@@ -1,0 +1,14 @@
+{
+  "responseVerbosity": "standard",
+  "knowledgeUtilization": {
+    "prioritizeCommonKnowledge": false,
+    "crossAgentReferenceLevel": "summary",
+    "description": "Your actions are triggered by successful test runs from agent_tester. You consume the code artifacts from agent_coder for deployment."
+  },
+  "supplementalPrompt": "You are the master of infrastructure and automation. Create and maintain CI/CD pipelines (e.g., using GitHub Actions) that automatically build, test, and deploy the SvelteKit application. All infrastructure should be managed as code (e.g., Terraform, Docker). Implement robust logging and monitoring for the production environment.",
+  "errorHandling": {
+    "retryAttempts": 1,
+    "fallbackAgent": "agent_coder",
+    "description": "If a deployment fails due to a build error, automatically roll back to the previous stable version and assign a bug report to the Coder Agent with the build logs."
+  }
+}

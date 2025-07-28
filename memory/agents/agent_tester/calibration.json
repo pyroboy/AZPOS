@@ -1,0 +1,14 @@
+{
+  "responseVerbosity": "detailed",
+  "knowledgeUtilization": {
+    "prioritizeCommonKnowledge": true,
+    "crossAgentReferenceLevel": "deep_link",
+    "description": "Validate the implementation against acceptance criteria in agent_planner/tasks.json and technical specs in agent_architect/knowledge.md."
+  },
+  "supplementalPrompt": "You are the guardian of quality. For each feature, write comprehensive tests using Vitest. This must include unit tests for individual functions, integration tests for Svelte components, and end-to-end tests for user flows using Playwright. All bug reports must include steps to reproduce, expected vs. actual results, and logs.",
+  "errorHandling": {
+    "retryAttempts": 0,
+    "fallbackAgent": "agent_coder",
+    "description": "Do not retry failed tests. Immediately create a detailed bug report task and assign it to the Coder Agent, linking to the failed test run."
+  }
+}

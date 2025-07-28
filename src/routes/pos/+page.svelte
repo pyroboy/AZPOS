@@ -94,7 +94,7 @@
 		return cart.finalizeCart();
 	});
 
-	const subtotal = $derived($cart.items.reduce((sum, item) => sum + item.finalPrice * item.quantity, 0));
+	const subtotal = $derived($cart.items.reduce((sum, item) => sum + item.final_price * item.quantity, 0));
 
 	// --- Event Handlers ---
 	function handleProductClick(product: ProductWithStock) {
@@ -182,7 +182,7 @@
 	}
 
 	function removeDiscount() {
-		cart.applyDiscount(null);
+		cart.removeDiscount();
 		appliedDiscount = null;
 	}
 
@@ -202,11 +202,11 @@
 		const transactionItems = finalizedCart.items.map((item) => ({
 			id: uuidv4(),
 			transaction_id: transactionId,
-			product_id: item.productId,
-			batch_id: item.batchId,
+			product_id: item.product_id,
 			quantity: item.quantity,
-			price_at_sale: item.finalPrice,
-			applied_modifiers: item.modifiers
+			price_at_sale: item.final_price,
+			applied_modifiers: item.selected_modifiers || [],
+			batch_id: 'default-batch'
 		}));
 
 		const transactionData: NewTransactionInput = {
@@ -232,7 +232,7 @@
 
 		// 2. Deduct stock
 		for (const item of finalizedCart.items) {
-			productBatches.removeStockFromBatch(item.batchId, item.quantity);
+			productBatches.removeStockFromBatch(item.batch_id, item.quantity);
 		}
 
 		// 3. Handle Receipt
@@ -241,7 +241,26 @@
 				transactionId: newTransaction.id,
 				date: newTransaction.created_at,
 				timestamp: new Date(),
-				items: finalizedCart.items.map((i) => ({ ...i, name: i.name })),
+				items: finalizedCart.items.map((i) => ({ 
+					...i, 
+					name: i.product_name,
+					sku: i.product_sku,
+					price: i.base_price,
+					created_at: i.added_at,
+					updated_at: i.updated_at,
+					cartItemId: i.cart_item_id,
+					productId: i.product_id,
+					batchId: 'default-batch',
+					modifiers: (i.selected_modifiers || []).map(m => ({
+						id: m.modifier_id,
+						name: m.modifier_name,
+						created_at: new Date().toISOString(),
+						price_adjustment: m.price_adjustment,
+						is_active: true,
+						description: m.modifier_name
+					})),
+					finalPrice: i.final_price
+				})),
 				subtotal: finalizedCart.subtotal,
 				tax: finalizedCart.tax,
 				discount: finalizedCart.discountAmount,
@@ -457,42 +476,31 @@
 					<p class="text-sm">Click on a product to add it.</p>
 				</div>
 			{:else}
-				{#each $cart.items as item (item.cartItemId)}
+				{#each $cart.items as item (item.cart_item_id)}
 					<div class="flex justify-between items-start gap-2">
 						<div class="flex items-start gap-3 flex-1">
 							<img
 								src={item.image_url || '/placeholder.svg'}
-								alt={item.name}
+								alt={item.product_name}
 								class="h-10 w-10 rounded-md object-cover"
 							/>
 							<div class="flex-1">
-								<p class="font-medium text-sm leading-tight">{item.name}</p>
+								<p class="font-medium text-sm leading-tight">{item.product_name}</p>
 								<div class="text-xs text-muted-foreground">
 									<button
 										onclick={() => handlePriceClick(item)}
 										class="flex items-center gap-1 hover:text-primary transition-colors p-0 m-0 h-auto"
 										title="Override Price"
 									>
-										<span>{currency(item.finalPrice)}</span>
-										<Pencil class="h-3 w-3" />
+										${(item.final_price / 100).toFixed(2)}
 									</button>
-								</div>
-								{#if item.modifiers.length > 0}
-									<div class="text-xs text-muted-foreground pl-2 border-l-2 ml-1 mt-1">
-										{#each item.modifiers as modifier}
-											<div>
-												+ {modifier.name} ({currency(modifier.price_adjustment)})
-											</div>
-										{/each}
-									</div>
-								{/if}
 							</div>
 						</div>
 						<div class="flex items-center gap-2">
 							<Input
 								type="number"
 								value={item.quantity}
-								oninput={(e) => cart.updateQuantity(item.cartItemId, e.currentTarget.valueAsNumber)}
+								oninput={(e) => cart.updateQuantity(item.cart_item_id, e.currentTarget.valueAsNumber)}
 								class="w-16 h-8 text-center"
 							/>
 							<Button

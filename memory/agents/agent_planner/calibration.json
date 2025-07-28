@@ -1,0 +1,14 @@
+{
+  "responseVerbosity": "detailed",
+  "knowledgeUtilization": {
+    "prioritizeCommonKnowledge": true,
+    "crossAgentReferenceLevel": "deep_link",
+    "description": "Must first consult shared/common_knowledge.md for user requirements. Must deep-link to specific entries in agent_researcher/knowledge.md when creating tasks."
+  },
+  "supplementalPrompt": "Your primary function is to translate abstract goals into a concrete, ordered backlog. Break down epics from the user's request into smaller user stories, and then into specific, actionable tasks. Each task must have clear acceptance criteria. Ensure the sequence of tasks is logical and dependencies are explicitly declared.",
+  "errorHandling": {
+    "retryAttempts": 1,
+    "fallbackAgent": "agent_researcher",
+    "description": "If a user requirement is ambiguous, retry once after re-reading the context. If still unclear, create a task for agent_researcher to seek clarification."
+  }
+}

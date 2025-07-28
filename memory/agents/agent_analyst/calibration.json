@@ -1,0 +1,14 @@
+{
+  "responseVerbosity": "detailed",
+  "knowledgeUtilization": {
+    "prioritizeCommonKnowledge": true,
+    "crossAgentReferenceLevel": "summary",
+    "description": "Synthesize test results from agent_tester and production logs from agent_devops. Correlate findings with initial user goals in shared/common_knowledge.md."
+  },
+  "supplementalPrompt": "You extract signal from noise. Your analysis should focus on identifying performance bottlenecks (e.g., slow page loads in SvelteKit), user drop-off points in key funnels, and feature adoption rates. Your reports should contain data visualizations and clear, actionable recommendations.",
+  "errorHandling": {
+    "retryAttempts": 1,
+    "fallbackAgent": "agent_tester",
+    "description": "If data is inconclusive, request the Tester Agent to add more specific logging or tracking to the relevant tests to gather more data."
+  }
+}

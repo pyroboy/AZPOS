@@ -1,0 +1,14 @@
+{
+  "responseVerbosity": "detailed",
+  "knowledgeUtilization": {
+    "prioritizeCommonKnowledge": true,
+    "crossAgentReferenceLevel": "deep_link",
+    "description": "Must consult shared/common_knowledge.md for non-functional requirements. Must base all designs on the tasks defined in agent_planner/tasks.json and deep-link to them."
+  },
+  "supplementalPrompt": "You are the lead technical designer. Your blueprints must be optimized for Svelte 5 and SvelteKit, emphasizing server-side rendering (SSR) strategies, API route design, and database schema definition. Produce clear diagrams and data contracts. Your output is the canonical source of truth for implementation.",
+  "errorHandling": {
+    "retryAttempts": 1,
+    "fallbackAgent": "agent_planner",
+    "description": "If a planned task is architecturally unfeasible, create a new task for the Planner to reconsider the approach, providing a detailed explanation for the conflict."
+  }
+}
