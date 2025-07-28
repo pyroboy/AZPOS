@@ -11,7 +11,6 @@ import {
 } from '$lib/server/telefuncs/session.telefunc';
 import type {
 	SessionState,
-	SessionData,
 	SessionFilters,
 	PaginatedSessions,
 	SessionStats,
@@ -55,7 +54,7 @@ export function useSessions() {
 
 	// Mutation to create session
 	const createSessionMutation = createMutation({
-		mutationFn: (sessionData: any) => onCreateSession(sessionData),
+	mutationFn: (sessionData: Record<string, unknown>) => onCreateSession(sessionData),
 		onSuccess: (newSession) => {
 			// Update current session
 			queryClient.setQueryData(currentSessionQueryKey, newSession);
@@ -68,7 +67,7 @@ export function useSessions() {
 
 	// Mutation to update session
 	const updateSessionMutation = createMutation({
-		mutationFn: ({ sessionId, sessionData }: { sessionId: string; sessionData: any }) =>
+		mutationFn: ({ sessionId, sessionData }: { sessionId: string; sessionData: Record<string, unknown> }) =>
 			onUpdateSession(sessionId, sessionData),
 		onSuccess: (updatedSession) => {
 			// Update current session if it's the same
@@ -188,7 +187,7 @@ export function useSessions() {
 		updateFilters({ status, page: 1 });
 	}
 
-	function setExpiredFilter(_is_expired: boolean) {
+	function setExpiredFilter() {
 		// Note: is_expired is not part of SessionFilters schema, removing this functionality
 		// updateFilters({ is_expired, page: 1 });
 		updateFilters({ page: 1 });
@@ -206,11 +205,11 @@ export function useSessions() {
 	}
 
 	// Session operations
-	function createSession(sessionData: any) {
+	function createSession(sessionData: Record<string, unknown>) {
 		return createSessionMutation.mutateAsync(sessionData);
 	}
 
-	function updateSession(sessionId: string, sessionData: any) {
+	function updateSession(sessionId: string, sessionData: Record<string, unknown>) {
 		return updateSessionMutation.mutateAsync({ sessionId, sessionData });
 	}
 

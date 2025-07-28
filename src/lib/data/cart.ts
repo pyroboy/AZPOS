@@ -66,7 +66,7 @@ export function useCart() {
 			queryClient.invalidateQueries({ queryKey: [...cartQueryKey, sessionId] });
 			queryClient.invalidateQueries({ queryKey: [...cartTotalsQueryKey, sessionId] });
 		},
-		onError: (error, variables) => {
+		onError: (error) => {
 			// Revert optimistic updates on error
 			queryClient.invalidateQueries({ queryKey: [...cartQueryKey, sessionId] });
 			queryClient.invalidateQueries({ queryKey: [...cartTotalsQueryKey, sessionId] });
@@ -81,7 +81,7 @@ export function useCart() {
 			queryClient.invalidateQueries({ queryKey: [...cartQueryKey, sessionId] });
 			queryClient.invalidateQueries({ queryKey: [...cartTotalsQueryKey, sessionId] });
 		},
-		onError: (error, variables) => {
+		onError: (error) => {
 			// Revert optimistic updates on error
 			queryClient.invalidateQueries({ queryKey: [...cartQueryKey, sessionId] });
 			queryClient.invalidateQueries({ queryKey: [...cartTotalsQueryKey, sessionId] });
@@ -96,7 +96,7 @@ export function useCart() {
 			queryClient.invalidateQueries({ queryKey: [...cartQueryKey, sessionId] });
 			queryClient.invalidateQueries({ queryKey: [...cartTotalsQueryKey, sessionId] });
 		},
-		onError: (error, variables) => {
+		onError: (error) => {
 			// Revert optimistic updates on error
 			queryClient.invalidateQueries({ queryKey: [...cartQueryKey, sessionId] });
 			queryClient.invalidateQueries({ queryKey: [...cartTotalsQueryKey, sessionId] });
@@ -410,17 +410,17 @@ export function useCart() {
 
 	// Additional helper functions
 	const getItemById = (cartItemId: string) => {
-		return cartState.items.find((item: any) => item.cart_item_id === cartItemId);
+	return cartState.items.find((item: EnhancedCartItem) => item.cart_item_id === cartItemId);
 	};
 
 	const getItemQuantity = (productId: string) => {
 		return cartState.items
-			.filter((item: any) => item.product_id === productId)
-			.reduce((sum: number, item: any) => sum + item.quantity, 0);
+		.filter((item: EnhancedCartItem) => item.product_id === productId)
+			.reduce((sum: number, item: EnhancedCartItem) => sum + item.quantity, 0);
 	};
 
 	const hasItem = (productId: string) => {
-		return cartState.items.some((item: any) => item.product_id === productId);
+	return cartState.items.some((item: EnhancedCartItem) => item.product_id === productId);
 	};
 
 	// Batch operations

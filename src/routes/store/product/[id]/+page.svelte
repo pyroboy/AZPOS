@@ -1,11 +1,9 @@
 <!-- Agent: agent_coder | File: +page.svelte | Last Updated: 2025-07-28T10:29:03+08:00 -->
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-import { useGroceryCart } from '$lib/data/groceryCart';
+	import { useGroceryCart } from '$lib/data/groceryCart';
+	import { useProduct } from '$lib/data/product';
 
-// Initialize grocery cart hook
-const cart = useGroceryCart();
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -39,42 +37,21 @@ const cart = useGroceryCart();
 		price_adjustment: number;
 	}
 
+	// Get product ID from URL
+	let productId = $derived($page.params.id);
+
+	// Initialize hooks
+	const cart = useGroceryCart();
+	const { product, isLoading, isError, error } = useProduct($page.params.id);
+
 	// Reactive state using Svelte 5 runes
-	let product = $state<CustomerProduct | null>(null);
-	let loading = $state<boolean>(true);
-	let error = $state<string | null>(null);
 	let quantity = $state<number>(1);
 	let selectedModifiers = $state<ProductModifier[]>([]);
 	let notes = $state<string>('');
 	let addingToCart = $state<boolean>(false);
 
-	// Get product ID from URL
-	let productId = $derived($page.params.id);
-
 	// Reactive cart totals
 	let cartTotals = $derived(cart.cartTotals);
-
-	// Load product data
-	onMount(async () => {
-		if (!productId) return;
-
-		try {
-			loading = true;
-			const response = await fetch(`/store/api/products/${productId}`);
-
-			if (!response.ok) {
-				throw new Error('Product not found');
-			}
-
-			const data = await response.json();
-			product = data.product;
-		} catch (err: any) {
-			error = err?.message || 'Failed to load product';
-			console.error('Error loading product:', err);
-		} finally {
-			loading = false;
-		}
-	});
 
 	// Handle quantity changes
 	function updateQuantity(change: number): void {
@@ -209,7 +186,7 @@ async function handleAddToCart(): Promise<void> {
 
 	<!-- Main Content -->
 	<div class="container mx-auto px-4 py-8">
-		{#if loading}
+		{#if isLoading}
 			<!-- Loading State -->
 			<div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
 				<div class="animate-pulse">
@@ -222,11 +199,11 @@ async function handleAddToCart(): Promise<void> {
 					<div class="h-10 bg-muted rounded w-1/4"></div>
 				</div>
 			</div>
-		{:else if error}
+		{:else if isError}
 			<!-- Error State -->
 			<div class="text-center py-12">
 				<div class="text-destructive text-lg font-semibold mb-2">Product Not Found</div>
-				<p class="text-muted-foreground mb-4">{error}</p>
+				<p class="text-muted-foreground mb-4">{error || 'Failed to load product'}</p>
 				<Button onclick={() => (window.location.href = '/store')}>Back to Store</Button>
 			</div>
 		{:else if product}
@@ -424,13 +401,13 @@ async function handleAddToCart(): Promise<void> {
 						<Button
 							class="w-full gap-2"
 							size="lg"
-							onclick={handleAddToCart}
-							disabled={!product.in_stock || addingToCart}
+					onclick={handleAddToCart}
+					disabled={!product?.in_stock || cart.isAddingItem}
 						>
 							<ShoppingCart class="h-5 w-5" />
-							{#if addingToCart}
-								Adding to Cart...
-							{:else if !product.in_stock}
+					{#if cart.isAddingItem}
+						Adding to Cart...
+					{:else if !product?.in_stock}
 								Out of Stock
 							{:else}
 								Add to Cart

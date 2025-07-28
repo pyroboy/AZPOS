@@ -166,7 +166,7 @@ export function useModifiers() {
 		updateFilters({ sort_by, sort_order });
 	}
 
-	// Validation helpers
+// Validation helpers
 	function validateSelection(
 		modifierId: string,
 		selectedOptions?: string[],
@@ -179,6 +179,43 @@ export function useModifiers() {
 			text_value: textValue,
 			number_value: numberValue
 		});
+	}
+
+	// Batch-aware modifier helpers
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	function getApplicableModifiersForProductBatch(productId: string, _batchId?: string) {
+		const productModifiers = getModifiersForProduct(productId);
+		// If batch-specific modifiers are needed, this could be extended
+		// For now, return product-level modifiers
+		return productModifiers.filter((modifier: Modifier) => 
+			modifier.is_active
+			// TODO: Add batch_restrictions support when schema is updated
+			// (!modifier.batch_restrictions || !_batchId || modifier.batch_restrictions.includes(_batchId))
+		);
+	}
+
+	// Calculate total modifier price adjustment
+	function calculateModifierTotal(selectedModifiers: Modifier[]) {
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		return selectedModifiers.reduce((total, _modifier) => {
+			// TODO: Add price_adjustment support when schema is updated
+			return total + 0; // _modifier.price_adjustment || 0
+		}, 0);
+	}
+
+	// Validate required modifiers are selected
+	function validateRequiredModifiers(productId: string, selectedModifierIds: string[]) {
+		const productModifiers = getModifiersForProduct(productId);
+		const requiredModifiers = productModifiers.filter((m: Modifier) => m.is_required);
+		
+		const missingRequired = requiredModifiers.filter(
+			(required: Modifier) => !selectedModifierIds.includes(required.id)
+		);
+		
+		return {
+			isValid: missingRequired.length === 0,
+			missingModifiers: missingRequired
+		};
 	}
 
 	// CRUD operations
@@ -235,6 +272,11 @@ export function useModifiers() {
 		// Product/Category specific helpers
 		getModifiersForProduct,
 		getModifiersForCategory,
+		getApplicableModifiersForProductBatch,
+
+		// Calculation helpers
+		calculateModifierTotal,
+		validateRequiredModifiers,
 
 		// Loading states
 		isLoading: $derived(modifiersQuery.isPending),

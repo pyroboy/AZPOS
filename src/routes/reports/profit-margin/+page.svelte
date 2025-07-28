@@ -6,6 +6,7 @@
 	import { useProfitMarginReport } from '$lib/data/profitMargin';
 	import { useAuth } from '$lib/data/auth';
 	import RoleGuard from '$lib/components/ui/RoleGuard.svelte';
+
 	import {
 		TrendingUp,
 		TrendingDown,
@@ -75,7 +76,6 @@
 	permissions={['reports:view', 'reports:profit-margin']}
 	requireStaffMode={true}
 	requireAuthentication={true}
-	fallback={fallbackSnippet}
 >
 	<div class="space-y-6">
 		<!-- Header Section -->
@@ -318,8 +318,7 @@
 			</Card.Root>
 		{/if}
 	</div>
-
-	{#snippet fallbackSnippet()}
+	{#snippet fallback()}
 		<div class="flex items-center justify-center min-h-[400px]">
 			<Card.Root class="w-full max-w-md">
 				<Card.Header class="text-center">

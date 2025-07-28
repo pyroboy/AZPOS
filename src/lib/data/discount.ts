@@ -173,7 +173,7 @@ export function useDiscounts() {
 	createDiscountStatus: $derived(createDiscountMutation.status),
 
 	// Placeholder methods - these would need proper implementations
-	updateDiscount: (discount: any) => {
+	updateDiscount: (discount: Record<string, unknown>) => {
 		console.log('updateDiscount not implemented', discount);
 	},
 	deleteDiscount: (id: string) => {

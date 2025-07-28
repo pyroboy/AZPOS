@@ -61,7 +61,14 @@ export function useProfitMarginReport() {
 					totalCogs: number;
 					salesCount: number;
 					averageMargin: number;
-				}>, sale: any) => {
+				}>, sale: {
+					productName: string;
+					product_id: string;
+					profit: number;
+					revenue: number;
+					costOfGoodsSold: number;
+					profitMargin: number;
+				}) => {
 					const existing = acc.find((item) => item.productName === sale.productName);
 					if (existing) {
 						existing.totalProfit += sale.profit;
@@ -91,16 +98,24 @@ export function useProfitMarginReport() {
 					averageMargin: number;
 				}>
 			)
-			.map((item: any) => ({
+			.map((item: {
+				productName: string;
+				productId: string;
+				totalProfit: number;
+				totalRevenue: number;
+				totalCogs: number;
+				salesCount: number;
+				averageMargin: number;
+			}) => ({
 				...item,
 				averageMargin: item.totalRevenue > 0 ? (item.totalProfit / item.totalRevenue) * 100 : 0
 			}))
-			.sort((a: any, b: any) => b.totalProfit - a.totalProfit)
+				.sort((a: { totalProfit: number }, b: { totalProfit: number }) => b.totalProfit - a.totalProfit)
 			.slice(0, 10)
 	);
 
 	// Products with negative margins (losses)
-	const lossProducts = $derived(salesWithProfit.filter((sale: any) => sale.profit < 0));
+	const lossProducts = $derived(salesWithProfit.filter((sale: { profit: number }) => sale.profit < 0));
 
 	// Products with highest margin percentages
 	const highestMarginSales = $derived(

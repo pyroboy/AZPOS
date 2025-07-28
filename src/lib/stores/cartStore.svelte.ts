@@ -10,6 +10,8 @@ export interface EnhancedCartItem {
 	product_sku: string;
 	base_price: number;
 	quantity: number;
+	batch_id?: string; // Track which batch this item is from
+	batch_number?: string; // Display batch number for clarity
 	selected_modifiers?: Array<{
 		modifier_id: string;
 		modifier_name: string;
@@ -145,17 +147,22 @@ function createCartStore() {
 		// Validate quantity (max 999 as per schema)
 		const validQuantity = Math.min(Math.max(1, quantity), 999);
 
+		// Create unique identifier for item considering product, batch, and modifiers
 		const modifierIds = modifiers
 			.map((m) => m.id)
 			.sort()
 			.join(',');
+		const itemKey = `${product.id}-${batch.id}-${modifierIds}`;
+		
 		const existingItem = state.items.find(
-			(item) =>
-				item.product_id === product.id &&
-				item.selected_modifiers
+			(item) => {
+				const existingModifierIds = item.selected_modifiers
 					?.map((m) => m.modifier_id)
 					.sort()
-					.join(',') === modifierIds
+					.join(',') || '';
+				const existingKey = `${item.product_id}-${item.batch_id || 'default'}-${existingModifierIds}`;
+				return existingKey === itemKey;
+			}
 		);
 
 		const now = new Date().toISOString();
@@ -184,6 +191,8 @@ function createCartStore() {
 				product_sku: product.sku,
 				base_price: product.price,
 				quantity: validQuantity,
+				batch_id: batch.id, // Store batch information
+				batch_number: batch.batch_number,
 				selected_modifiers: modifiers.map((m) => ({
 					modifier_id: m.id,
 					modifier_name: m.name,

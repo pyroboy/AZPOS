@@ -8,11 +8,11 @@
 
 	// Props according to the new pattern
 	type Props = {
-		receiptData: GeneratedReceipt | null;
+		open: boolean;
 		onClose?: () => void;
 	};
 
-	let { receiptData, onClose }: Props = $props();
+	let { open, onClose }: Props = $props();
 
 	// Get receipt operations from TanStack Query hook
 	const { generateReceipt, generateReceiptStatus } = useReceipts();
@@ -58,12 +58,12 @@
 </script>
 
 <Dialog.Root
-	open={!!receiptData}
+	open={open}
 	onOpenChange={(o) => {
 		if (!o) handleClose();
 	}}
 >
-	{#if receiptData}
+	<!-- Display modal based on generateReceiptStatus -->
 		<Dialog.Content class="sm:max-w-md bg-gray-100">
 			<Dialog.Header>
 				<Dialog.Title>Receipt Preview</Dialog.Title>
@@ -73,38 +73,19 @@
 				id="receipt-printable-area"
 				class="my-4 max-h-[60vh] overflow-y-auto p-2 bg-white rounded-sm"
 			>
-				{#if receiptData}
-					<!-- Create a simple receipt preview since GeneratedReceipt doesn't match Receipt component props -->
-					<div
-						class="bg-white text-black p-4 font-mono text-xs max-w-sm mx-auto border border-dashed border-gray-400"
-					>
+				<!-- Display based on generateReceiptStatus -->
+				{#if generateReceiptStatus === 'pending'}
+					<p class="text-center py-8">Generating receipt...</p>
+				{:else if generateReceiptStatus === 'success'}
+					<div class="bg-white text-black p-4 font-mono text-xs max-w-sm mx-auto border border-dashed border-gray-400">
 						<header class="text-center mb-4">
 							<h1 class="text-lg font-bold uppercase">AZPOS Pharmacy</h1>
 							<p>Receipt Preview</p>
 							<p class="mt-2">OFFICIAL RECEIPT</p>
 						</header>
 
-						<section class="mb-2 border-t border-b border-dashed border-gray-400 py-2">
-							<div class="flex justify-between">
-								<span>Receipt #:</span>
-								<span class="truncate">{receiptData.receipt_number}</span>
-							</div>
-							<div class="flex justify-between">
-								<span>Transaction #:</span>
-								<span class="truncate">{receiptData.transaction_id}</span>
-							</div>
-							<div class="flex justify-between">
-								<span>Format:</span>
-								<span class="uppercase">{receiptData.format}</span>
-							</div>
-							<div class="flex justify-between">
-								<span>Delivery:</span>
-								<span class="uppercase">{receiptData.delivery_method}</span>
-							</div>
-						</section>
-
 						<div class="mb-4">
-							<div class="whitespace-pre-wrap text-xs">{receiptData.content}</div>
+							<p class="text-center text-xs text-gray-600">Receipt generated successfully</p>
 						</div>
 
 						<footer class="text-center mt-4 pt-2 border-t border-dashed border-gray-400">
@@ -112,10 +93,14 @@
 							<p class="text-xs">This serves as your official receipt.</p>
 						</footer>
 					</div>
+				{:else if generateReceiptStatus === 'error'}
+					<p class="text-center text-red-500 py-8">Failed to generate receipt. Please try again.</p>
+				{:else}
+					<p class="text-center py-8">No receipt to display</p>
 				{/if}
 			</div>
 
-			<Dialog.Footer class="sm:justify-between grid grid-cols-2 gap-2">
+			<Dialog.Footer class="sm:justify-between {generateReceiptStatus === 'success' ? 'grid grid-cols-2' : 'flex justify-center'} gap-2">
 				<div
 					onclick={() => handleClose()}
 					role="button"
@@ -126,17 +111,18 @@
 						<X class="mr-2 h-4 w-4" /> Close
 					</Button>
 				</div>
-				<div
-					onclick={() => printReceipt()}
-					role="button"
-					tabindex="0"
-					onkeydown={(e) => e.key === 'Enter' && printReceipt()}
-				>
-					<Button class="w-full">
-						<Printer class="mr-2 h-4 w-4" /> Print Receipt
-					</Button>
-				</div>
+				{#if generateReceiptStatus === 'success'}
+					<div
+						onclick={() => printReceipt()}
+						role="button"
+						tabindex="0"
+						onkeydown={(e) => e.key === 'Enter' && printReceipt()}
+					>
+						<Button class="w-full">
+							<Printer class="mr-2 h-4 w-4" /> Print Receipt
+						</Button>
+					</div>
+				{/if}
 			</Dialog.Footer>
 		</Dialog.Content>
-	{/if}
 </Dialog.Root>
