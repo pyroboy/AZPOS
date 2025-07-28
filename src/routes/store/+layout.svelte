@@ -15,7 +15,13 @@
 	<Header {toggleSidebar} />
 
 	<div class="flex flex-1">
-		<Sidebar bind:isOpen={sidebarOpen} />
+	<Sidebar bind:isOpen={sidebarOpen} onCategorySelect={(categoryId) => {
+			// Pass category selection to child pages via context or custom event
+			// For now, we'll use a simple approach with custom events
+			if (typeof window !== 'undefined') {
+				window.dispatchEvent(new CustomEvent('categorySelected', { detail: categoryId }));
+			}
+		}} />
 
 		<main
 			class="flex-1 p-4 transition-all duration-300 ease-in-out md:ml-0"

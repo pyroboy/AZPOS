@@ -3,6 +3,7 @@
     import * as Table from '$lib/components/ui/table/index.js';
     import { Badge } from '$lib/components/ui/badge';
     import { Button } from '$lib/components/ui/button';
+    import { toast } from 'svelte-sonner';
 
     // Use the returns hook
     const { 
@@ -26,6 +27,24 @@
             default: return 'secondary';
         }
     };
+
+    const handleApprove = async (returnId: string) => {
+        try {
+            await updateStatus({ id: returnId, status: 'approved' });
+            toast.success(`Return ${returnId} has been approved`);
+        } catch (error) {
+            toast.error(`Failed to approve return: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    };
+
+    const handleReject = async (returnId: string) => {
+        try {
+            await updateStatus({ id: returnId, status: 'rejected' });
+            toast.error(`Return ${returnId} has been rejected`);
+        } catch (error) {
+            toast.error(`Failed to reject return: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        }
+    };
 </script>
 
 <div class="p-8">
@@ -40,13 +59,16 @@
 	{:else if isError}
 		<!-- Error state -->
 		<div class="bg-red-50 border border-red-200 rounded-md p-4">
-			<div class="flex">
-				<div class="ml-3">
+			<div class="flex items-start justify-between">
+				<div class="ml-3 flex-1">
 					<h3 class="text-sm font-medium text-red-800">Error loading returns</h3>
 					<div class="mt-2 text-sm text-red-700">
 						<p>{error?.message || 'An unexpected error occurred'}</p>
 					</div>
 				</div>
+				<Button variant="outline" onclick={refetch} class="ml-4">
+					Retry
+				</Button>
 			</div>
 		</div>
 	{:else}
@@ -81,7 +103,7 @@
 										<Button
 											size="sm"
 											disabled={isUpdating}
-											onclick={() => updateStatus({ id: r.id, status: 'approved' })}
+											onclick={() => handleApprove(r.id)}
 										>
 											{#if isUpdating}
 												<div
@@ -94,7 +116,7 @@
 											size="sm"
 											variant="destructive"
 											disabled={isUpdating}
-											onclick={() => updateStatus({ id: r.id, status: 'rejected' })}
+											onclick={() => handleReject(r.id)}
 										>
 											{#if isUpdating}
 												<div

@@ -157,9 +157,10 @@ type NavigationMenuType = z.infer<typeof navigationMenuSchemaBase> & {
 	children: NavigationMenuType[];
 };
 
+// Create the recursive schema with proper typing
 export const navigationMenuSchema: z.ZodType<NavigationMenuType> = navigationMenuSchemaBase.extend({
 	children: z.array(z.lazy(() => navigationMenuSchema)).default([])
-});
+}) as z.ZodType<NavigationMenuType>;
 
 // Schema for view analytics
 export const viewAnalyticsSchema = z.object({

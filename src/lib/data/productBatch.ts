@@ -40,7 +40,7 @@ export function useProductBatches(filters?: ProductBatchFilters) {
 	// Query to fetch expiring batches
 	const expiringBatchesQuery = createQuery<ProductBatch[]>({
 		queryKey: productBatchQueryKeys.expiring(),
-		queryFn: onGetExpiringBatches,
+		queryFn: () => onGetExpiringBatches(),
 		staleTime: 1000 * 60 * 5, // 5 minutes
 		gcTime: 1000 * 60 * 15 // 15 minutes
 	});
@@ -159,14 +159,14 @@ export function useProductBatches(filters?: ProductBatchFilters) {
 	const activeBatches = $derived(batches.filter((b: ProductBatch) => b.quantity_on_hand > 0));
 	const expiredBatches = $derived(
 		batches.filter((b: ProductBatch) => {
-			if (!b.expiry_date) return false;
-			return new Date(b.expiry_date) < new Date();
+			if (!b.expiration_date) return false;
+			return new Date(b.expiration_date) < new Date();
 		})
 	);
 	const nearExpiryBatches = $derived(
 		batches.filter((b: ProductBatch) => {
-			if (!b.expiry_date) return false;
-			const expiryDate = new Date(b.expiry_date);
+			if (!b.expiration_date) return false;
+			const expiryDate = new Date(b.expiration_date);
 			const thirtyDaysFromNow = new Date();
 			thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 			return expiryDate < thirtyDaysFromNow && expiryDate >= new Date();

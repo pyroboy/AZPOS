@@ -22,7 +22,7 @@
 
 	function verifyPin() {
 		error = '';
-		const allUsers = get(users);
+		const allUsers = users;
 		const rolesToCheck = Array.isArray(requiredRole) ? requiredRole : [requiredRole];
 
 		const matchingUser = allUsers.find(

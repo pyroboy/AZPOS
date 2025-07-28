@@ -5,11 +5,14 @@
 	import { goto } from '$app/navigation';
 	import { setContext } from 'svelte';
 
-	// Stores for context
-	import { inventory } from '$lib/stores/inventoryStore.svelte';
+	// Data hooks for context
+	import { useInventory } from '$lib/data/inventory';
 	import { settings } from '$lib/stores/settingsStore.svelte';
 
-	// Provide stores to child components via context
+	// Initialize data hook
+	const inventory = useInventory();
+
+	// Provide data to child components via context
 	setContext('inventory', inventory);
 	setContext('settings', settings);
 

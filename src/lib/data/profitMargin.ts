@@ -53,7 +53,15 @@ export function useProfitMarginReport() {
 	const topProfitableProducts = $derived(
 		salesWithProfit
 			.reduce(
-				(acc, sale) => {
+				(acc: Array<{
+					productName: string;
+					productId: string;
+					totalProfit: number;
+					totalRevenue: number;
+					totalCogs: number;
+					salesCount: number;
+					averageMargin: number;
+				}>, sale: any) => {
 					const existing = acc.find((item) => item.productName === sale.productName);
 					if (existing) {
 						existing.totalProfit += sale.profit;
@@ -83,16 +91,16 @@ export function useProfitMarginReport() {
 					averageMargin: number;
 				}>
 			)
-			.map((item) => ({
+			.map((item: any) => ({
 				...item,
 				averageMargin: item.totalRevenue > 0 ? (item.totalProfit / item.totalRevenue) * 100 : 0
 			}))
-			.sort((a, b) => b.totalProfit - a.totalProfit)
+			.sort((a: any, b: any) => b.totalProfit - a.totalProfit)
 			.slice(0, 10)
 	);
 
 	// Products with negative margins (losses)
-	const lossProducts = $derived(salesWithProfit.filter((sale) => sale.profit < 0));
+	const lossProducts = $derived(salesWithProfit.filter((sale: any) => sale.profit < 0));
 
 	// Products with highest margin percentages
 	const highestMarginSales = $derived(
@@ -232,7 +240,7 @@ export function useProductProfitMargin(productId: string) {
 
 	// Additional derived calculations specific to single product
 	const totalQuantitySold = $derived(
-		salesWithProfit.reduce((sum, sale) => sum + Math.abs(sale.quantity_adjusted), 0)
+		salesWithProfit.reduce((sum: number, sale: any) => sum + Math.abs(sale.quantity_adjusted), 0)
 	);
 	const averageProfitPerUnit = $derived(
 		totalQuantitySold > 0 ? totalProfit / totalQuantitySold : 0
@@ -242,7 +250,13 @@ export function useProductProfitMargin(productId: string) {
 	// Sales trend analysis
 	const salesByDate = $derived(
 		salesWithProfit.reduce(
-			(acc, sale) => {
+			(acc: Record<string, {
+				date: string;
+				revenue: number;
+				profit: number;
+				quantity: number;
+				salesCount: number;
+			}>, sale: any) => {
 				const date = new Date(sale.created_at).toISOString().split('T')[0];
 				if (!acc[date]) {
 					acc[date] = {

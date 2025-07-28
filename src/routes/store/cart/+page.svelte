@@ -126,9 +126,19 @@
 				<!-- Cart Summary -->
 				<div class="lg:col-span-1">
 					<div class="sticky top-4">
-						<CartSummary
-							{cartTotals}
-							onContinueShopping={continueShopping}
+								<CartSummary
+									cartTotals={{ 
+										subtotal: cartTotals?.subtotal || 0,
+										tax_amount: cartTotals?.tax_amount || 0,
+										total_amount: cartTotals?.total_amount || 0,
+										delivery_fee: cartTotals?.delivery_fee || 0,
+										min_order_met: cartTotals?.min_order_met || false,
+										item_count: cartTotals?.item_count || 0,
+										discount_amount: 0,
+										tax: cartTotals?.tax_amount || 0,
+										total: cartTotals?.total_amount || 0
+									}}
+									onContinueShopping={continueShopping}
 							onProceedToCheckout={proceedToCheckout}
 						/>
 					</div>

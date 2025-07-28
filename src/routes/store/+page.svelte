@@ -1,6 +1,7 @@
 <!-- Component Integration Guide Applied: TanStack Query + Telefunc Pattern -->
 <script lang="ts">
-	import { useProducts } from '$lib/data/product';
+import { useProducts } from '$lib/data/product';
+import { useInventory } from '$lib/data/inventory';
 	import { useGroceryCart } from '$lib/data/groceryCart';
 	import ProductCard from '$lib/components/store/ProductCard.svelte';
 	import SearchBar from '$lib/components/store/SearchBar.svelte';
@@ -16,7 +17,11 @@
 
 	// Reactive state using Svelte 5 runes
 	let searchQuery = $state('');
-	let selectedCategory = $state('all');
+let selectedCategory = $state('all');
+let categories = $derived.by(() => {
+    // For now, return empty array since categories structure is not defined
+    return [];
+});
 	let showCartSidebar = $state(false);
 	let viewMode = $state('grid'); // 'grid' or 'list'
 
@@ -36,18 +41,21 @@
 		// Filter by search query
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase();
-			filtered = filtered.filter(
-				(product) =>
-					product.name.toLowerCase().includes(query) ||
+		filtered = filtered.filter(
+			(product: any) =>
+				product.name.toLowerCase().includes(query) ||
 					product.description?.toLowerCase().includes(query) ||
 					product.sku.toLowerCase().includes(query)
 			);
 		}
 
-		// Filter by category
-		if (selectedCategory !== 'all') {
-			filtered = filtered.filter((product) => product.category_id === selectedCategory);
-		}
+// Filter by category using derived categories
+if (selectedCategory !== 'all') {
+    const categoryIds = categories.map((cat: any) => cat.id);
+    if (categoryIds.includes(selectedCategory)) {
+        filtered = filtered.filter((product: any) => product.category_id === selectedCategory);
+    }
+}
 
 		return filtered;
 	});
@@ -72,6 +80,21 @@
 	function toggleCartSidebar() {
 		showCartSidebar = !showCartSidebar;
 	}
+
+	// Listen for category selection events from sidebar
+	$effect(() => {
+		if (typeof window !== 'undefined') {
+			const handleCategorySelected = (event: CustomEvent) => {
+				selectedCategory = event.detail;
+			};
+			window.addEventListener('categorySelected', handleCategorySelected as EventListener);
+			
+			// Cleanup
+			return () => {
+				window.removeEventListener('categorySelected', handleCategorySelected as EventListener);
+			};
+		}
+	});
 </script>
 
 <svelte:head>

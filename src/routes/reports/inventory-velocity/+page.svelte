@@ -84,7 +84,7 @@
 						<tr>
 							<td>{item.sku}</td>
 							<td>{item.name}</td>
-							<td class="text-right font-mono">{item.stock_on_hand}</td>
+											<td class="text-right font-mono">{item.currentStock}</td>
 							<td class="text-right font-mono"
 								>{item.last_sale_date
 									? new Date(item.last_sale_date).toLocaleDateString()

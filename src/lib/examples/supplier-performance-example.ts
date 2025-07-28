@@ -131,7 +131,8 @@ export function ExampleComponentIntegration() {
 	const performance = useSupplierPerformanceReport({
 		period: 'month',
 		sort_by: 'on_time_rate',
-		sort_order: 'desc'
+		sort_order: 'desc',
+		include_inactive: false
 	});
 
 	// Reactive derived state

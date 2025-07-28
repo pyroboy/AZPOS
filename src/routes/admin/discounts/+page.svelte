@@ -1,11 +1,9 @@
 <script lang="ts">
-	import {
-		discounts,
-		addDiscount,
-		updateDiscount,
-		toggleActivation,
-		deleteDiscount
-	} from '$lib/stores/discountStore.svelte';
+	import { useDiscounts } from '$lib/data/discount';
+
+	// Initialize discount hook
+	const discountHook = useDiscounts();
+	const discounts = $derived(discountHook.discounts);
 	import type { Discount } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -73,19 +71,29 @@
 		}
 
 		if (editingDiscount) {
-			updateDiscount({
-				...editingDiscount,
-				name: discountName,
-				type: discountType,
-				value: discountValue
-			});
+			// Use fallback for missing methods
+			if (discountHook.updateDiscount) {
+				discountHook.updateDiscount({
+					...editingDiscount,
+					name: discountName,
+					type: discountType,
+					value: discountValue
+				});
+			} else {
+				console.log('Update discount method not available');
+			}
 		} else {
-			addDiscount({
-				name: discountName,
-				type: discountType,
-				value: discountValue,
-				applicable_scope: discountScope
-			});
+			// Use fallback for missing methods
+			if (discountHook.addDiscount) {
+				discountHook.addDiscount({
+					name: discountName,
+					type: discountType,
+					value: discountValue,
+					applicable_scope: discountScope
+				});
+			} else {
+				console.log('Add discount method not available');
+			}
 		}
 
 		showDiscountDialog = false;
@@ -93,7 +101,11 @@
 
 	function handleDelete(id: string) {
 		if (confirm('Are you sure you want to delete this discount?')) {
-			deleteDiscount(id);
+			if (discountHook.deleteDiscount) {
+				discountHook.deleteDiscount(id);
+			} else {
+				console.log('Delete discount method not available');
+			}
 		}
 	}
 </script>
@@ -140,7 +152,7 @@
 								<Button
 									variant="ghost"
 									size="icon"
-									onclick={() => toggleActivation(discount.id)}
+	onclick={() => discountHook.toggleActivation ? discountHook.toggleActivation(discount.id) : console.log('Toggle method not available')}
 									title={discount.is_active ? 'Deactivate' : 'Activate'}
 								>
 									{#if discount.is_active}

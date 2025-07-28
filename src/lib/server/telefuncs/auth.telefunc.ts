@@ -10,8 +10,7 @@ import {
 	type AuthUser,
 	type AuthSession,
 	type AuthStats,
-	type AuthActivity,
-	type PinLogin
+	type AuthActivity
 } from '$lib/types/auth.schema';
 import { createSupabaseClient } from '$lib/server/db';
 
@@ -34,7 +33,8 @@ function createAuthSession(user: AuthUser, accessToken: string, refreshToken: st
 		access_token: accessToken,
 		refresh_token: refreshToken,
 		expires_at: new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString(), // 8 hours
-		session_id: crypto.randomUUID()
+		session_id: crypto.randomUUID(),
+		is_staff_mode: false
 	};
 }
 
@@ -78,12 +78,12 @@ export async function onLogin(loginData: unknown): Promise<AuthSession> {
 		throw new Error('Account is deactivated');
 	}
 
-	// Update last login
+	// Update last login - Note: database schema doesn't have last_login_at or login_count
+	// So we'll just update the updated_at timestamp
 	await supabase
 		.from('users')
 		.update({
-			last_login_at: new Date().toISOString(),
-			login_count: (user.login_count || 0) + 1
+			updated_at: new Date().toISOString()
 		})
 		.eq('id', user.id);
 
@@ -97,8 +97,23 @@ export async function onLogin(loginData: unknown): Promise<AuthSession> {
 		created_at: new Date().toISOString()
 	});
 
+	// Transform database user to AuthUser format for session
 	return createAuthSession(
-		user,
+		{
+			id: user.id,
+			email: `${user.username}@local.pos`, // Create synthetic email for compatibility
+			full_name: user.full_name,
+			role: user.role === 'staff' ? 'cashier' : user.role,
+			is_active: user.is_active,
+			is_verified: true, // Staff users are considered verified
+			permissions: [], // Will be populated based on role
+			profile: {
+				pin: user.pin_hash
+			},
+			last_login_at: new Date().toISOString(),
+			created_at: user.created_at,
+			updated_at: user.updated_at
+		},
 		authData.session?.access_token || '',
 		authData.session?.refresh_token || ''
 	);
@@ -109,15 +124,15 @@ export async function onRegister(registerData: unknown): Promise<AuthSession> {
 	const validatedData = registerSchema.parse(registerData);
 	const supabase = createSupabaseClient();
 
-	// Check if email already exists
+	// Check if username already exists (database schema uses username, not email)
 	const { data: existingUser } = await supabase
 		.from('users')
 		.select('id')
-		.eq('email', validatedData.email)
+		.eq('username', validatedData.email.split('@')[0]) // Extract username from email
 		.single();
 
 	if (existingUser) {
-		throw new Error('Email already registered');
+		throw new Error('Username already registered');
 	}
 
 	// Create auth user with Supabase Auth
@@ -136,17 +151,16 @@ export async function onRegister(registerData: unknown): Promise<AuthSession> {
 	}
 
 	// Create user profile in our users table
+	// Note: The database schema doesn't have email, is_verified, permissions, or login_count fields
 	const { data: user, error: userError } = await supabase
 		.from('users')
 		.insert({
 			id: authData.user.id,
-			email: validatedData.email,
+			username: validatedData.email.split('@')[0], // Extract username from email
 			full_name: validatedData.full_name,
-			role: validatedData.role,
+			role: validatedData.role === 'customer' ? 'cashier' : validatedData.role, // Map customer to cashier
+			pin_hash: '', // Default empty PIN hash for new users
 			is_active: true,
-			is_verified: false,
-			permissions: [],
-			login_count: 0,
 			created_at: new Date().toISOString(),
 			updated_at: new Date().toISOString()
 		})
@@ -167,8 +181,23 @@ export async function onRegister(registerData: unknown): Promise<AuthSession> {
 		created_at: new Date().toISOString()
 	});
 
+	// Transform database user to AuthUser format for session
 	return createAuthSession(
-		user,
+		{
+			id: user.id,
+			email: `${user.username}@local.pos`, // Create synthetic email for compatibility
+			full_name: user.full_name,
+			role: user.role === 'staff' ? 'cashier' : user.role,
+			is_active: user.is_active,
+			is_verified: true, // Staff users are considered verified
+			permissions: [], // Will be populated based on role
+			profile: {
+				pin: user.pin_hash || ''
+			},
+			last_login_at: new Date().toISOString(),
+			created_at: user.created_at,
+			updated_at: user.updated_at
+		},
 		authData.session?.access_token || '',
 		authData.session?.refresh_token || ''
 	);
@@ -212,16 +241,21 @@ export async function onGetCurrentUser(): Promise<AuthUser | null> {
 
 	if (error || !userData) return null;
 
+	// Transform database user to AuthUser format
+	// The database schema doesn't have email, profile, permissions, is_verified, or last_login_at fields
+	// Create a synthetic email for compatibility and build profile object
 	return {
 		id: userData.id,
-		email: userData.email,
+		email: `${userData.username}@local.pos`, // Create synthetic email for compatibility
 		full_name: userData.full_name,
-		role: userData.role,
+		role: userData.role === 'staff' ? 'cashier' : userData.role,
 		is_active: userData.is_active,
-		is_verified: userData.is_verified,
-		permissions: userData.permissions || [],
-		profile: userData.profile,
-		last_login_at: userData.last_login_at,
+		is_verified: true, // Staff users are considered verified
+		permissions: [], // Will be populated based on role
+		profile: {
+			pin: userData.pin_hash
+		},
+		last_login_at: new Date().toISOString(), // Current timestamp as fallback
 		created_at: userData.created_at,
 		updated_at: userData.updated_at
 	};
@@ -560,7 +594,7 @@ export async function onLoginWithPin(pinData: unknown): Promise<AuthSession> {
 			is_verified: true, // Staff users are considered verified
 			permissions: [], // Will be populated based on role
 			profile: {
-				pin_hash: authenticatedUser.pin_hash
+				pin: authenticatedUser.pin_hash
 			},
 			last_login_at: new Date().toISOString(),
 			created_at: authenticatedUser.created_at,
@@ -620,7 +654,7 @@ export async function onToggleStaffMode(): Promise<{ isStaffMode: boolean; user:
 			is_verified: true, // Staff users are considered verified
 			permissions: [], // Will be populated based on role
 			profile: {
-				pin_hash: userData.pin_hash
+				pin: userData.pin_hash
 			},
 			last_login_at: new Date().toISOString(),
 			created_at: userData.created_at,

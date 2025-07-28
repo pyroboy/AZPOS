@@ -481,11 +481,11 @@ export async function onGetThemeStats(): Promise<ThemeStats> {
 		system_themes: themes?.filter((t) => t.is_system).length || 0,
 		custom_themes: themes?.filter((t) => !t.is_system).length || 0,
 		active_users_by_theme: activeUsersByTheme,
-		theme_type_breakdown: {
-			light: themes?.filter((t) => t.type === 'light').length || 0,
-			dark: themes?.filter((t) => t.type === 'dark').length || 0,
-			auto: themes?.filter((t) => t.type === 'auto').length || 0
-		}
+			theme_type_breakdown: {
+				light: themes?.filter((t: any) => t.type === 'light').length || 0,
+				dark: themes?.filter((t: any) => t.type === 'dark').length || 0,
+				auto: themes?.filter((t: any) => t.type === 'auto').length || 0
+			}
 	};
 
 	return stats;

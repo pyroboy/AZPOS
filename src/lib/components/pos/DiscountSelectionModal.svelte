@@ -1,12 +1,10 @@
 <script lang="ts">
-	import {
-		discounts,
-		addDiscount,
-		updateDiscount,
-		toggleActivation,
-		deleteDiscount
-	} from '$lib/stores/discountStore.svelte';
-	import type { Discount } from '$lib/schemas/models';
+import { useDiscounts } from '$lib/data/discount';
+import type { Discount } from '$lib/types';
+
+	// Initialize discount hook
+	const discountHook = useDiscounts();
+	const discounts = $derived(discountHook.discounts);
 	import {
 		Dialog,
 		DialogContent,
@@ -28,7 +26,7 @@
 		onApply: (discount: Discount) => void;
 	} = $props();
 
-	const activeDiscounts = $derived(discounts.filter((d) => d.is_active));
+	const activeDiscounts = $derived(discounts.filter((d: Discount) => d.is_active));
 	let selectedDiscountId = $state<string | undefined>(undefined);
 	let focusContainer = $state<HTMLDivElement | undefined>(undefined);
 
@@ -42,7 +40,7 @@
 
 	function handleApply() {
 		if (selectedDiscountId) {
-			const selectedDiscount = activeDiscounts.find((d) => d.id === selectedDiscountId);
+			const selectedDiscount = activeDiscounts.find((d: Discount) => d.id === selectedDiscountId);
 			if (selectedDiscount) {
 				onApply(selectedDiscount);
 				open = false;

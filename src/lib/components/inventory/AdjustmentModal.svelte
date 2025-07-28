@@ -5,28 +5,33 @@
 	import * as ToggleGroup from '$lib/components/ui/toggle-group';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { inventory, inventoryManager } from '$lib/stores/inventoryStore.svelte';
-	import type { ProductWithStock } from '$lib/stores/inventoryStore.svelte';
-	import type { ProductBatch } from '$lib/types';
-	import { toast } from 'svelte-sonner';
-	import { z, type ZodError } from 'zod';
-	import { Textarea } from '$lib/components/ui/textarea';
-	import { Switch } from '$lib/components/ui/switch';
-	import { Checkbox } from '$lib/components/ui/checkbox';
+import { useInventory } from '$lib/data/inventory';
+import type { Product, ProductBatch } from '$lib/types';
+import { toast } from 'svelte-sonner';
+import { z, type ZodError } from 'zod';
+import { Textarea } from '$lib/components/ui/textarea';
+import { Switch } from '$lib/components/ui/switch';
+import { Checkbox } from '$lib/components/ui/checkbox';
+
+	// Initialize inventory hook
+	const inventory = useInventory();
 
 	let {
 		product,
 		productList,
 		open = $bindable()
 	}: {
-		product: ProductWithStock | null;
-		productList: ProductWithStock[] | null;
+		product: Product | null;
+		productList: Product[] | null;
 		open: boolean;
 	} = $props();
 
+	// Add a type alias for backwards compatibility
+	type ProductWithStock = Product;
+
 	const isBulkMode = $derived(productList && productList.length > 0);
 
-	const productWithStock = $derived(inventory.find((p) => p.id === product?.id));
+const productWithStock = $derived(inventory.inventoryItems.find((p: any) => p.id === product?.id));
 	const existingBatches = $derived(productWithStock?.batches ?? []);
 	const currentStock = $derived(productWithStock?.stock ?? 0);
 
@@ -138,30 +143,48 @@
 			if (isBulkMode && productList) {
 				toast.info('Bulk adjustment is not yet implemented.');
 			} else if (product) {
-				if (data.isNewBatch) {
-					// Create a new batch
-					inventoryManager.addBatch({
-						product_id: product.id,
+			if (data.isNewBatch) {
+					// Create a new batch using inventory movement
+					await inventory.createMovement({
+						product_id: product.id!,
+						movement_type: 'adjustment',
+						quantity: data.quantity,
 						batch_number: data.new_batch_number!,
-						quantity_on_hand: data.quantity,
-						expiration_date: data.new_batch_expiration || undefined,
-						purchase_cost: data.new_batch_cost || 0
+						reason: data.reason,
+						notes: data.notes,
+						reference_number: `BATCH-${Date.now()}`
 					});
 					toast.success(`New batch ${data.new_batch_number} created for ${product.name}.`);
 				} else {
-					// Adjust an existing batch
+					// Adjust an existing batch using inventory movement
 					const batchId = data.selectedBatchId!;
+					let adjustmentQuantity = data.quantity;
+					
 					switch (data.adjustment_type) {
 						case 'add':
-							inventoryManager.addStockToBatch(batchId, data.quantity);
+							adjustmentQuantity = data.quantity;
 							break;
 						case 'remove':
-							inventoryManager.removeStockFromBatch(batchId, data.quantity);
+							adjustmentQuantity = -data.quantity;
 							break;
 						case 'set':
-							inventoryManager.setStockForBatch(batchId, data.quantity);
+							// For 'set', calculate the difference and adjust accordingly
+							const selectedBatch = existingBatches.find((b: ProductBatch) => b.id === batchId);
+							if (selectedBatch) {
+								adjustmentQuantity = data.quantity - selectedBatch.quantity_on_hand;
+							}
 							break;
 					}
+					
+					await inventory.createMovement({
+						product_id: product.id!,
+						movement_type: 'adjustment',
+						quantity: adjustmentQuantity,
+						batch_number: data.selectedBatchId,
+						reason: data.reason,
+						notes: data.notes,
+						reference_number: `ADJ-${Date.now()}`
+					});
 					toast.success(`Stock for batch updated successfully.`);
 				}
 				handleClose();

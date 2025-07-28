@@ -26,10 +26,7 @@ const ROLE_REPORTS: Record<Role, string[]> = {
 	customer: []
 };
 
-// import { products } from '$lib/stores/productStore.svelte';
-import { get } from 'svelte/store';
-
-export const load: LayoutServerLoad = async ({ locals, fetch }) => {
+export const load: LayoutServerLoad = async ({ locals }) => {
 	if (!locals.user) {
 		throw redirect(302, '/login');
 	}

@@ -1,5 +1,10 @@
 <script lang="ts">
-	import { products, bulkUpdatePrices } from '$lib/stores/productStore.svelte';
+import { useProducts } from '$lib/data/product';
+	import type { Product } from '$lib/types';
+
+	// Initialize product hook
+	const productHook = useProducts();
+	const products = $derived(productHook.products);
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -24,7 +29,7 @@
 	let isScheduled = $state(false);
 
 	const filteredProducts = $derived(
-		products.filter((product) => {
+		products.filter((product: Product) => {
 			if (product.is_archived) return false;
 			const matchesSearch =
 				product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -35,26 +40,27 @@
 	);
 
 	const categories = $derived(
-		[...new Set(products.map((p) => p.category_id).filter(Boolean))].sort()
+		[...new Set(products.map((p: Product) => p.category_id).filter(Boolean))].sort()
 	);
 
-	const selectedProducts = $derived(products.filter((p) => selectedProductIds.has(p.id!)));
+	const selectedProducts = $derived(products.filter((p: Product) => selectedProductIds.has(p.id!)));
 
 	const totalSelectedValue = $derived(
-		selectedProducts.reduce((sum, product) => sum + product.price, 0)
+		selectedProducts.reduce((sum: number, product: Product) => sum + product.price, 0)
 	);
 
 	const previewPrices = $derived(
-		selectedProducts.map((product) => {
-			let newPrice = product.price;
+		selectedProducts.map((product: Product) => {
+			const currentPrice = product.price;
+			let newPrice = currentPrice;
 			if (priceChangeType === 'percentage') {
-				newPrice = product.price * (1 + priceChangeValue / 100);
+				newPrice = currentPrice * (1 + priceChangeValue / 100);
 			} else {
-				newPrice = product.price + priceChangeValue;
+				newPrice = currentPrice + priceChangeValue;
 			}
 			return {
 				...product,
-				oldPrice: product.price,
+				oldPrice: currentPrice,
 				newPrice: Math.max(0, Number(newPrice.toFixed(2)))
 			};
 		})
@@ -76,9 +82,10 @@
 			return;
 		}
 
-		const updates = previewPrices.map((p) => ({ id: p.id!, price: p.newPrice }));
+	const updates = previewPrices.map((p: any) => ({ id: p.id!, selling_price: p.newPrice }));
 
-		await bulkUpdatePrices(updates);
+		// Use bulkUpdate method from the product hook
+		await productHook.bulkUpdate({ updates });
 
 		alert(`Price updated for ${selectedProductIds.size} products.`);
 		clearSelection();
@@ -194,7 +201,7 @@
 							</div>
 						</div>
 						<div class="text-right">
-							<div class="font-medium">{currency(product.price)}</div>
+									<div class="font-medium">{currency(product.selling_price || 0)}</div>
 						</div>
 					</div>
 				{/each}
@@ -217,7 +224,7 @@
 					<div class="flex justify-between text-sm font-medium">
 						<span>Current Total Value: {currency(totalSelectedValue)}</span>
 						<span
-							>New Total Value: {currency(previewPrices.reduce((sum, p) => sum + p.newPrice, 0))}
+							>New Total Value: {currency(previewPrices.reduce((sum: number, p: any) => sum + p.newPrice, 0))}
 						</span>
 					</div>
 

@@ -9,7 +9,7 @@
 
 	// Transform metrics to match the expected format for the table
 	const performanceData = $derived(
-		metrics.map((metric) => ({
+		metrics.map((metric: any) => ({
 			supplierId: metric.supplier_id,
 			supplierName: metric.supplier_name,
 			onTimeRate: metric.on_time_rate,

@@ -1,6 +1,9 @@
 <!-- Agent: agent_coder | File: CartSidebar.svelte | Last Updated: 2025-07-28T10:29:03+08:00 -->
 <script lang="ts">
-	import { cart } from '$lib/stores/cartStore.svelte';
+	import { useCart } from '$lib/data/cart';
+
+	// Initialize cart hook
+	const cart = useCart();
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import {
@@ -17,8 +20,8 @@
 	let { open = $bindable(false) } = $props();
 
 	// Reactive cart state
-	let cartState = $derived(cart.state);
-	let cartTotals = $derived(cart.totals);
+	let cartState = $derived(cart.cartState);
+	let cartTotals = $derived(cart.cartTotals);
 
 	// Format price
 	function formatPrice(price: number): string {

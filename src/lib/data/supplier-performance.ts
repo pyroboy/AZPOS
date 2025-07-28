@@ -20,6 +20,9 @@ const supplierPerformanceQueryKeys = {
 	details: () => [...supplierPerformanceQueryKeys.all, 'details'] as const,
 	detail: (supplierId: string, period: string) =>
 		[...supplierPerformanceQueryKeys.details(), supplierId, period] as const,
+	comparisons: () => [...supplierPerformanceQueryKeys.all, 'comparisons'] as const,
+	comparison: (supplierIds: string[], period: string) =>
+		[...supplierPerformanceQueryKeys.comparisons(), supplierIds.sort().join(','), period] as const,
 	exports: () => [...supplierPerformanceQueryKeys.all, 'exports'] as const
 };
 
@@ -209,10 +212,10 @@ export function useSupplierPerformanceDetail(
 
 	// Analysis of recent orders
 	const recentOnTimeOrders = $derived(
-		recentOrders.filter((order) => order.is_on_time === true).length
+		recentOrders.filter((order: { is_on_time?: boolean }) => order.is_on_time === true).length
 	);
 	const recentLateOrders = $derived(
-		recentOrders.filter((order) => order.is_on_time === false).length
+		recentOrders.filter((order: { is_on_time?: boolean }) => order.is_on_time === false).length
 	);
 	const recentOnTimeRate = $derived(
 		recentOrders.length > 0 ? (recentOnTimeOrders / recentOrders.length) * 100 : 0
@@ -257,13 +260,7 @@ export function useSupplierPerformanceComparison(supplierIds: string[], period: 
 	// Remove unused queryClient variable
 
 	const comparisonQuery = createQuery<SupplierPerformanceReport>({
-		queryKey: supplierPerformanceQueryKeys.report({
-			supplier_ids: supplierIds,
-			period: period as 'month' | 'quarter' | 'year' | 'custom',
-			include_inactive: false,
-			sort_by: 'supplier_name',
-			sort_order: 'asc'
-		}),
+		queryKey: supplierPerformanceQueryKeys.comparison(supplierIds, period),
 		queryFn: () =>
 			onGetSupplierPerformanceReport({
 				supplier_ids: supplierIds,
@@ -283,23 +280,25 @@ export function useSupplierPerformanceComparison(supplierIds: string[], period: 
 	// Comparison insights
 	const bestPerformer = $derived(
 		metrics.reduce(
-			(best: any, current: any) => (current.on_time_rate > best.on_time_rate ? current : best),
-			metrics[0]
+			(best: SupplierPerformanceMetric | undefined, current: SupplierPerformanceMetric) => 
+				!best || current.on_time_rate > best.on_time_rate ? current : best,
+			undefined
 		)
 	);
 
 	const worstPerformer = $derived(
 		metrics.reduce(
-			(worst: any, current: any) => (current.on_time_rate < worst.on_time_rate ? current : worst),
-			metrics[0]
+			(worst: SupplierPerformanceMetric | undefined, current: SupplierPerformanceMetric) => 
+				!worst || current.on_time_rate < worst.on_time_rate ? current : worst,
+			undefined
 		)
 	);
 
 	const averageOnTimeRate = $derived(
-		metrics.length > 0 ? metrics.reduce((sum, m) => sum + m.on_time_rate, 0) / metrics.length : 0
+		metrics.length > 0 ? metrics.reduce((sum: number, m: SupplierPerformanceMetric) => sum + m.on_time_rate, 0) / metrics.length : 0
 	);
 
-	const totalOrderValue = $derived(metrics.reduce((sum, m) => sum + m.total_order_value, 0));
+	const totalOrderValue = $derived(metrics.reduce((sum: number, m: SupplierPerformanceMetric) => sum + m.total_order_value, 0));
 
 	return {
 		comparisonQuery,
@@ -339,14 +338,10 @@ export function useSupplierPerformanceTrends(filters?: SupplierPerformanceFilter
 	});
 
 	// Derived trend analysis
-	const trends = $derived(() => {
-		const monthMetrics = currentMonth.metrics;
-		const quarterMetrics = currentQuarter.metrics;
-		const yearMetrics = currentYear.metrics;
-
-		return monthMetrics.map((monthMetric: any) => {
-			const quarterMetric = quarterMetrics.find((m: any) => m.supplier_id === monthMetric.supplier_id);
-			const yearMetric = yearMetrics.find((m: any) => m.supplier_id === monthMetric.supplier_id);
+	const trends = $derived(
+		currentMonth.metrics.map((monthMetric: SupplierPerformanceMetric) => {
+			const quarterMetric = currentQuarter.metrics.find((m: SupplierPerformanceMetric) => m.supplier_id === monthMetric.supplier_id);
+			const yearMetric = currentYear.metrics.find((m: SupplierPerformanceMetric) => m.supplier_id === monthMetric.supplier_id);
 
 			return {
 				supplier_id: monthMetric.supplier_id,
@@ -360,11 +355,11 @@ export function useSupplierPerformanceTrends(filters?: SupplierPerformanceFilter
 				quarterly_order_value: quarterMetric?.total_order_value ?? 0,
 				yearly_order_value: yearMetric?.total_order_value ?? 0
 			};
-		});
-	});
+		})
+	);
 
-	const improvingSuppliers = $derived(trends.filter((t) => t.trend_direction === 'improving'));
-	const decliningSuppliers = $derived(trends.filter((t) => t.trend_direction === 'declining'));
+	const improvingSuppliers = trends.filter((t: { trend_direction: string }) => t.trend_direction === 'improving');
+	const decliningSuppliers = trends.filter((t: { trend_direction: string }) => t.trend_direction === 'declining');
 
 	return {
 		trends,

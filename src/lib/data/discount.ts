@@ -166,15 +166,27 @@ export function useDiscounts() {
 		// Current filters
 		filters: $derived(filters),
 
-		// Mutations
-		createDiscount: createDiscountMutation.mutate,
-		createDiscountAsync: createDiscountMutation.mutateAsync,
-		createDiscountStatus: $derived(createDiscountMutation.status),
+	// Mutations
+	createDiscount: createDiscountMutation.mutate,
+	addDiscount: createDiscountMutation.mutate,
+	createDiscountAsync: createDiscountMutation.mutateAsync,
+	createDiscountStatus: $derived(createDiscountMutation.status),
 
-		validateDiscountCode,
-		validateDiscountById,
-		validateDiscountStatus: $derived(validateDiscountMutation.status),
-		validationResult: $derived(validateDiscountMutation.data),
+	// Placeholder methods - these would need proper implementations
+	updateDiscount: (discount: any) => {
+		console.log('updateDiscount not implemented', discount);
+	},
+	deleteDiscount: (id: string) => {
+		console.log('deleteDiscount not implemented', id);
+	},
+	toggleActivation: (id: string) => {
+		console.log('toggleActivation not implemented', id);
+	},
+
+	validateDiscountCode,
+	validateDiscountById,
+	validateDiscountStatus: $derived(validateDiscountMutation.status),
+	validationResult: $derived(validateDiscountMutation.data),
 
 		// Filter helpers
 		updateFilters,

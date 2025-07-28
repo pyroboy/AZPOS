@@ -75,9 +75,7 @@
 	permissions={['reports:view', 'reports:profit-margin']}
 	requireStaffMode={true}
 	requireAuthentication={true}
-	fallback={() => {
-		return 'div';
-	}}
+	fallback={fallbackSnippet}
 >
 	<div class="space-y-6">
 		<!-- Header Section -->
@@ -321,7 +319,7 @@
 		{/if}
 	</div>
 
-	{#snippet fallback()}
+	{#snippet fallbackSnippet()}
 		<div class="flex items-center justify-center min-h-[400px]">
 			<Card.Root class="w-full max-w-md">
 				<Card.Header class="text-center">

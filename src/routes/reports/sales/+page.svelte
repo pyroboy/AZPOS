@@ -4,8 +4,12 @@
 	import * as Button from '$lib/components/ui/button';
 	import { Skeleton } from '$lib/components/ui/skeleton';
 	import { AlertCircle, RefreshCw } from 'lucide-svelte';
-	import { inventoryAdjustments } from '$lib/stores/stockTransactionStore.svelte';
-	import { products } from '$lib/stores/productStore.svelte';
+	import { useProducts } from '$lib/data/product';
+	import { useInventory } from '$lib/data/inventory';
+
+	// Initialize data hooks
+	const products = useProducts();
+	const inventory = useInventory();
 	import type { InventoryAdjustment, Product } from '$lib/types';
 
 	// Reactive state for loading and error handling
@@ -17,8 +21,8 @@
 	const salesData = $derived(() => {
 		if (isLoading) return [];
 
-		const allAdjustments = inventoryAdjustments;
-		const allProducts: Product[] = products;
+		const allAdjustments = inventory.inventoryItems;
+		const allProducts: Product[] = products.products;
 
 		return allAdjustments
 			.filter(
@@ -35,7 +39,7 @@
 					totalSale: saleAmount
 				};
 			})
-			.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+			.sort((a: InventoryAdjustment, b: InventoryAdjustment) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 	});
 
 	// Derived total revenue
@@ -58,9 +62,9 @@
 				return;
 			}
 
-			// Check if stores have data
-			if (!inventoryAdjustments || !products) {
-				error = 'Required data stores are not available.';
+			// Check if hooks have data
+			if (!inventory.inventoryItems || !products.products) {
+				error = 'Required data is not available.';
 				isLoading = false;
 				return;
 			}
@@ -90,10 +94,10 @@
 	<div class="flex items-center justify-between">
 		<h2 class="text-2xl font-bold">Sales Report</h2>
 		{#if error}
-			<Button.Root variant="outline" size="sm" onclick={handleRetry} disabled={isRetrying}>
-				<RefreshCw class="h-4 w-4 mr-2" class:animate-spin={isRetrying} />
-				Retry
-			</Button.Root>
+		<button class="btn btn-outline btn-sm" onclick={handleRetry} disabled={isRetrying}>
+			<RefreshCw class="h-4 w-4 mr-2 {isRetrying ? 'animate-spin' : ''}" />
+			Retry
+		</button>
 		{/if}
 	</div>
 
@@ -112,7 +116,7 @@
 					class="mt-3"
 					disabled={isRetrying}
 				>
-					<RefreshCw class="h-4 w-4 mr-2" class:animate-spin={isRetrying} />
+					<RefreshCw class="h-4 w-4 mr-2 {isRetrying ? 'animate-spin' : ''}" />
 					Try again
 				</Button.Root>
 			</Card.Content>

@@ -64,31 +64,31 @@ export function useReceipts() {
 
 	// Filtered receipts
 	const printedReceipts = $derived(
-		receipts.filter((receipt) => receipt.delivery_method === 'print')
+		receipts.filter((receipt: any) => receipt.delivery_method === 'print')
 	);
 
 	const emailedReceipts = $derived(
-		receipts.filter((receipt) => receipt.delivery_method === 'email')
+		receipts.filter((receipt: any) => receipt.delivery_method === 'email')
 	);
 
-	const smsReceipts = $derived(receipts.filter((receipt) => receipt.delivery_method === 'sms'));
+	const smsReceipts = $derived(receipts.filter((receipt: any) => receipt.delivery_method === 'sms'));
 
 	const downloadedReceipts = $derived(
-		receipts.filter((receipt) => receipt.delivery_method === 'download')
+		receipts.filter((receipt: any) => receipt.delivery_method === 'download')
 	);
 
 	const failedReceipts = $derived(
-		receipts.filter((receipt) => receipt.delivery_status === 'failed')
+		receipts.filter((receipt: any) => receipt.delivery_status === 'failed')
 	);
 
 	const pendingReceipts = $derived(
-		receipts.filter((receipt) => receipt.delivery_status === 'pending')
+		receipts.filter((receipt: any) => receipt.delivery_status === 'pending')
 	);
 
 	const todaysReceipts = $derived(() => {
 		const today = new Date();
 		today.setHours(0, 0, 0, 0);
-		return receipts.filter((receipt) => {
+		return receipts.filter((receipt: any) => {
 			const receiptDate = new Date(receipt.generated_at);
 			receiptDate.setHours(0, 0, 0, 0);
 			return receiptDate.getTime() === today.getTime();
@@ -99,7 +99,7 @@ export function useReceipts() {
 	const deliveryMethodBreakdown = $derived(() => {
 		const breakdown: Record<string, { count: number; percentage: number }> = {};
 
-		receipts.forEach((receipt) => {
+		receipts.forEach((receipt: any) => {
 			if (!breakdown[receipt.delivery_method]) {
 				breakdown[receipt.delivery_method] = { count: 0, percentage: 0 };
 			}
@@ -119,7 +119,7 @@ export function useReceipts() {
 	const formatBreakdown = $derived(() => {
 		const breakdown: Record<string, { count: number; percentage: number }> = {};
 
-		receipts.forEach((receipt) => {
+		receipts.forEach((receipt: any) => {
 			if (!breakdown[receipt.format]) {
 				breakdown[receipt.format] = { count: 0, percentage: 0 };
 			}
@@ -270,9 +270,9 @@ export function useReceipts() {
 	// Calculate totals for current view
 	const currentViewTotals = $derived(() => {
 		const total_receipts = receipts.length;
-		const successful_deliveries = receipts.filter((r) => r.delivery_status === 'sent').length;
-		const failed_deliveries = receipts.filter((r) => r.delivery_status === 'failed').length;
-		const pending_deliveries = receipts.filter((r) => r.delivery_status === 'pending').length;
+		const successful_deliveries = receipts.filter((r: any) => r.delivery_status === 'sent').length;
+		const failed_deliveries = receipts.filter((r: any) => r.delivery_status === 'failed').length;
+		const pending_deliveries = receipts.filter((r: any) => r.delivery_status === 'pending').length;
 		const success_rate = total_receipts > 0 ? (successful_deliveries / total_receipts) * 100 : 0;
 
 		return {

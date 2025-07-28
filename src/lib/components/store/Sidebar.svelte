@@ -5,23 +5,59 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Apple, Beef, Milk, Wheat, Fish, IceCream, Coffee, Salad, X } from 'lucide-svelte';
 
-	let { isOpen = $bindable() } = $props();
 
-	const categories = [
-		{ name: 'Fresh Produce', icon: Apple, count: 124 },
-		{ name: 'Meat & Poultry', icon: Beef, count: 67 },
-		{ name: 'Dairy & Eggs', icon: Milk, count: 45 },
-		{ name: 'Bakery', icon: Wheat, count: 32 },
-		{ name: 'Seafood', icon: Fish, count: 28 },
-		{ name: 'Frozen Foods', icon: IceCream, count: 89 },
-		{ name: 'Beverages', icon: Coffee, count: 156 },
-		{ name: 'Pantry Staples', icon: Salad, count: 203 }
-	];
+// Category selection props
+let { isOpen = $bindable(), onCategorySelect }: { isOpen: boolean; onCategorySelect?: (categoryId: string) => void } = $props();
 
-	let selectedCategory = $state('Fresh Produce');
+import { useInventory } from '$lib/data/inventory';
 
-	function selectCategory(categoryName: string) {
+let selectedCategory = $state('Fresh Produce');
+const inventoryHook = useInventory();
+// Since categories property doesn't exist, use empty array for now
+const categories: any[] = [];
+
+// Function to select appropriate icon based on category name
+function selectIcon(categoryName: string) {
+    const iconMap: Record<string, typeof Apple> = {
+        'Fresh Produce': Apple,
+        'Meat & Poultry': Beef,
+        'Dairy & Eggs': Milk,
+        'Bakery': Wheat,
+        'Seafood': Fish,
+        'Frozen Foods': IceCream,
+        'Beverages': Coffee,
+        'Pantry Staples': Salad
+    };
+    return iconMap[categoryName] || Salad; // Default to Salad icon
+}
+
+// Prepare categories with icons as needed
+const categoriesWithIcons = $derived.by(() => {
+    if (!categories || categories.length === 0) {
+        // Fallback to static categories if dynamic ones are not available
+        return [
+            { name: 'Fresh Produce', icon: Apple, count: 124 },
+            { name: 'Meat & Poultry', icon: Beef, count: 67 },
+            { name: 'Dairy & Eggs', icon: Milk, count: 45 },
+            { name: 'Bakery', icon: Wheat, count: 32 },
+            { name: 'Seafood', icon: Fish, count: 28 },
+            { name: 'Frozen Foods', icon: IceCream, count: 89 },
+            { name: 'Beverages', icon: Coffee, count: 156 },
+            { name: 'Pantry Staples', icon: Salad, count: 203 }
+        ];
+    }
+    return categories.map((cat: any) => ({
+        ...cat,
+        icon: selectIcon(cat.name)
+    }));
+});
+
+	function selectCategory(categoryName: string, categoryId?: string) {
 		selectedCategory = categoryName;
+		// Notify parent component about category selection
+		if (onCategorySelect) {
+			onCategorySelect(categoryId || categoryName);
+		}
 	}
 
 	function closeSidebar() {
@@ -58,11 +94,11 @@
 	<ScrollArea class="h-[calc(100vh-8rem)]">
 		<div class="p-4">
 			<div class="space-y-2">
-				{#each categories as category}
+{#each categoriesWithIcons as category}
 					<Button
 						variant={selectedCategory === category.name ? 'default' : 'ghost'}
 						class="w-full justify-start text-left"
-						onclick={() => selectCategory(category.name)}
+					onclick={() => selectCategory(category.name, category.id)}
 					>
 						{@const IconComponent = category.icon}
 						<IconComponent class="mr-3 h-4 w-4" />

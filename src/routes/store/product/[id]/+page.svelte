@@ -2,7 +2,10 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { cart } from '$lib/stores/cartStore.svelte';
+import { useGroceryCart } from '$lib/data/groceryCart';
+
+// Initialize grocery cart hook
+const cart = useGroceryCart();
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -49,7 +52,7 @@
 	let productId = $derived($page.params.id);
 
 	// Reactive cart totals
-	let cartTotals = $derived(cart.totals);
+	let cartTotals = $derived(cart.cartTotals);
 
 	// Load product data
 	onMount(async () => {
@@ -112,44 +115,31 @@
 		return (product.price + modifierPrice) * quantity;
 	});
 
-	// Handle add to cart
-	async function handleAddToCart(): Promise<void> {
-		if (!product || addingToCart) return;
+// Handle add to grocery cart
+async function handleAddToCart(): Promise<void> {
+	if (!product || addingToCart) return;
 
-		try {
-			addingToCart = true;
+	try {
+		addingToCart = true;
 
-			// Create mock batch with all required properties
-			const mockBatch: ProductBatch = {
-				id: crypto.randomUUID(),
-				product_id: product.id,
-				batch_number: 'BATCH-' + Date.now(),
-				expiration_date: product.expiration_date || undefined,
-				quantity_on_hand: quantity,
-				purchase_cost: product.average_cost || 0,
-				created_at: new Date().toISOString()
-			};
+		// Define grocery cart item input
+		const itemData = {
+			product_id: product.id,
+			quantity: quantity,
+			special_instructions: notes,
+			substitution_allowed: true
+		};
 
-			// Convert selected modifiers to the format expected by cartStore
-			const modifiers: Modifier[] = selectedModifiers.map((m) => ({
-				id: m.modifier_id,
-				name: m.modifier_name,
-				price_adjustment: m.price_adjustment,
-				created_at: new Date().toISOString(),
-				is_active: true,
-				description: m.modifier_name
-			}));
+		await cart.addItem(itemData);
 
-			await cart.addItem(product, mockBatch, quantity, modifiers, notes);
-
-			// Show success feedback (could be a toast in the future)
-			console.log('Added to cart successfully');
-		} catch (err) {
-			console.error('Error adding to cart:', err);
-		} finally {
-			addingToCart = false;
-		}
+		// Show success feedback (could be a toast in the future)
+		console.log('Added to grocery cart successfully');
+	} catch (err) {
+		console.error('Error adding to grocery cart:', err);
+	} finally {
+		addingToCart = false;
 	}
+}
 
 	// Format price for display
 	function formatPrice(price: number): string {
@@ -200,7 +190,7 @@
 					Back to Store
 				</Button>
 
-				{#if cart.state.items.length > 0}
+				{#if cart.itemCount > 0}
 					<div class="ml-auto">
 						<Button
 							variant="outline"
@@ -209,7 +199,7 @@
 							class="gap-2"
 						>
 							<ShoppingCart class="h-4 w-4" />
-							Cart ({cart.state.items.length})
+							Cart ({cart.itemCount})
 						</Button>
 					</div>
 				{/if}

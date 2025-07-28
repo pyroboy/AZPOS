@@ -1,16 +1,19 @@
 <!-- Agent: agent_coder | File: +page.svelte | Last Updated: 2025-07-28T10:29:03+08:00 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { cart } from '$lib/stores/cartStore.svelte';
+	import { useCart } from '$lib/data/cart';
 	import CheckoutForm from '$lib/components/store/CheckoutForm.svelte';
 	import OrderReview from '$lib/components/store/OrderReview.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { ArrowLeft, Lock } from 'lucide-svelte';
 
+	// Initialize cart hook
+	const cart = useCart();
+
 	// Reactive cart state
-	let cartState = $derived(cart.state);
-	let cartTotals = $derived(cart.totals);
+	let cartState = $derived(cart.cartState);
+	let cartTotals = $derived(cart.cartTotals);
 
 	// Checkout state
 	let checkoutStep = $state(1); // 1: Review, 2: Payment, 3: Confirmation
@@ -80,7 +83,7 @@
 			const result = await response.json();
 
 			// Clear cart and redirect to confirmation
-			cart.clear();
+			cart.clearCart();
 			window.location.href = `/store/confirmation/${result.transaction_id}`;
 		} catch (err) {
 			error = err instanceof Error ? err.message : 'An unknown error occurred';

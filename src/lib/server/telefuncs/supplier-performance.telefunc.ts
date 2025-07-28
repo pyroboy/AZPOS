@@ -101,7 +101,12 @@ export async function onGetSupplierPerformanceReport(
 	}
 
 	const supabase = createSupabaseClient();
-	const validatedFilters = filters ? supplierPerformanceFiltersSchema.parse(filters) : {};
+	const validatedFilters = filters ? supplierPerformanceFiltersSchema.parse(filters) : {
+		period: 'month' as const,
+		include_inactive: false,
+		sort_by: 'supplier_name' as const,
+		sort_order: 'asc' as const
+	};
 
 	// Calculate date range
 	const { startDate, endDate, label } = calculateDateRange(
@@ -409,7 +414,10 @@ export async function onGetSupplierPerformanceDetail(
 	// Get current period performance
 	const report = await onGetSupplierPerformanceReport({
 		supplier_ids: [supplierId],
-		period: period
+		period: period,
+		include_inactive: false,
+		sort_by: 'supplier_name',
+		sort_order: 'asc'
 	});
 
 	const currentMetric = report.metrics.find((m) => m.supplier_id === supplierId);

@@ -5,9 +5,6 @@ import {
 	stockTransferSchema,
 	stockTransactionFiltersSchema,
 	type StockTransaction,
-	type CreateStockTransaction,
-	type BulkStockAdjustment,
-	type StockTransfer,
 	type StockTransactionFilters,
 	type PaginatedStockTransactions,
 	type StockTransactionStats,
@@ -55,28 +52,29 @@ export async function onCreateStockTransaction(
 			throw new Error('Insufficient stock - negative stock not allowed');
 		}
 
-		const stockTransaction: StockTransaction = {
-			id: transactionId,
-			product_id: validatedData.product_id,
-			location_id: validatedData.location_id,
-			movement_type: validatedData.movement_type,
-			quantity_change: validatedData.quantity_change,
-			quantity_before: product.stock_quantity,
-			quantity_after: newStockLevel,
-			unit_cost: validatedData.unit_cost,
-			total_cost: validatedData.unit_cost
-				? Math.abs(validatedData.quantity_change) * validatedData.unit_cost
-				: undefined,
-			reference_type: validatedData.reference_type,
-			reference_id: validatedData.reference_id,
-			batch_number: validatedData.batch_number,
-			expiry_date: validatedData.expiry_date,
-			serial_numbers: validatedData.serial_numbers,
-			reason: validatedData.reason,
-			notes: validatedData.notes,
-			created_by: user.id,
-			created_at: now
-		};
+	const stockTransaction: StockTransaction = {
+		id: transactionId,
+		product_id: validatedData.product_id,
+		location_id: validatedData.location_id,
+		movement_type: validatedData.movement_type,
+		quantity: Math.abs(validatedData.quantity_change),
+		quantity_change: validatedData.quantity_change,
+		quantity_before: product.stock_quantity,
+		quantity_after: newStockLevel,
+		unit_cost: validatedData.unit_cost,
+		total_cost: validatedData.unit_cost
+			? Math.abs(validatedData.quantity_change) * validatedData.unit_cost
+			: undefined,
+		reference_type: validatedData.reference_type,
+		reference_id: validatedData.reference_id,
+		batch_number: validatedData.batch_number,
+		expiry_date: validatedData.expiry_date,
+		serial_numbers: validatedData.serial_numbers,
+		reason: validatedData.reason,
+		notes: validatedData.notes,
+		created_by: user.id,
+		created_at: now
+	};
 
 		// Start transaction
 		const { data: savedTransaction, error: transactionError } = await supabase
@@ -134,24 +132,25 @@ export async function onProcessBulkAdjustment(
 				throw new Error(`Product not found: ${adjustment.product_id}`);
 			}
 
-			const transaction: StockTransaction = {
-				id: crypto.randomUUID(),
-				product_id: adjustment.product_id,
-				location_id: adjustment.location_id,
-				movement_type: 'adjustment',
-				quantity_change: adjustment.quantity_change,
-				quantity_before: product.stock_quantity,
-				quantity_after: product.stock_quantity + adjustment.quantity_change,
-				unit_cost: adjustment.unit_cost,
-				total_cost: adjustment.unit_cost
-					? Math.abs(adjustment.quantity_change) * adjustment.unit_cost
-					: undefined,
-				reference_type: validatedData.reference_type,
-				reason: adjustment.reason || validatedData.global_reason,
-				notes: adjustment.notes || validatedData.global_notes,
-				created_by: user.id,
-				created_at: now
-			};
+		const transaction: StockTransaction = {
+			id: crypto.randomUUID(),
+			product_id: adjustment.product_id,
+			location_id: adjustment.location_id,
+			movement_type: 'adjustment',
+			quantity: Math.abs(adjustment.quantity_change),
+			quantity_change: adjustment.quantity_change,
+			quantity_before: product.stock_quantity,
+			quantity_after: product.stock_quantity + adjustment.quantity_change,
+			unit_cost: adjustment.unit_cost,
+			total_cost: adjustment.unit_cost
+				? Math.abs(adjustment.quantity_change) * adjustment.unit_cost
+				: undefined,
+			reference_type: 'adjustment',
+			reason: adjustment.reason || validatedData.global_reason,
+			notes: adjustment.notes || validatedData.global_notes,
+			created_by: user.id,
+			created_at: now
+		};
 
 			transactions.push(transaction);
 		}
@@ -215,43 +214,45 @@ export async function onProcessStockTransfer(transferData: unknown): Promise<Sto
 				throw new Error(`Insufficient stock for product ${item.product_id}`);
 			}
 
-			// Create transfer out transaction
-			const transferOutTransaction: StockTransaction = {
-				id: crypto.randomUUID(),
-				product_id: item.product_id,
-				location_id: validatedData.from_location_id,
-				movement_type: 'transfer',
-				quantity_change: -item.quantity,
-				quantity_before: product.stock_quantity,
-				quantity_after: product.stock_quantity - item.quantity,
-				reference_type: 'transfer',
-				reference_id: referenceId,
-				batch_number: item.batch_number,
-				serial_numbers: item.serial_numbers,
-				reason: validatedData.reason,
-				notes: validatedData.notes,
-				created_by: user.id,
-				created_at: now
-			};
+		// Create transfer out transaction
+		const transferOutTransaction: StockTransaction = {
+			id: crypto.randomUUID(),
+			product_id: item.product_id,
+			location_id: validatedData.from_location_id,
+			movement_type: 'transfer',
+			quantity: item.quantity,
+			quantity_change: -item.quantity,
+			quantity_before: product.stock_quantity,
+			quantity_after: product.stock_quantity - item.quantity,
+			reference_type: 'transfer',
+			reference_id: referenceId,
+			batch_number: item.batch_number,
+			serial_numbers: item.serial_numbers,
+			reason: validatedData.reason,
+			notes: validatedData.notes,
+			created_by: user.id,
+			created_at: now
+		};
 
-			// Create transfer in transaction
-			const transferInTransaction: StockTransaction = {
-				id: crypto.randomUUID(),
-				product_id: item.product_id,
-				location_id: validatedData.to_location_id,
-				movement_type: 'transfer',
-				quantity_change: item.quantity,
-				quantity_before: 0, // Assuming destination starts at 0 for simplicity
-				quantity_after: item.quantity,
-				reference_type: 'transfer',
-				reference_id: referenceId,
-				batch_number: item.batch_number,
-				serial_numbers: item.serial_numbers,
-				reason: validatedData.reason,
-				notes: validatedData.notes,
-				created_by: user.id,
-				created_at: now
-			};
+		// Create transfer in transaction
+		const transferInTransaction: StockTransaction = {
+			id: crypto.randomUUID(),
+			product_id: item.product_id,
+			location_id: validatedData.to_location_id,
+			movement_type: 'transfer',
+			quantity: item.quantity,
+			quantity_change: item.quantity,
+			quantity_before: 0, // Assuming destination starts at 0 for simplicity
+			quantity_after: item.quantity,
+			reference_type: 'transfer',
+			reference_id: referenceId,
+			batch_number: item.batch_number,
+			serial_numbers: item.serial_numbers,
+			reason: validatedData.reason,
+			notes: validatedData.notes,
+			created_by: user.id,
+			created_at: now
+		};
 
 			transactions.push(transferOutTransaction, transferInTransaction);
 		}
@@ -405,9 +406,8 @@ export async function onGetStockTransactionStats(): Promise<StockTransactionStat
 
 		if (error) throw error;
 
-		const now = new Date();
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
 
 		const thisWeek = new Date();
 		thisWeek.setDate(thisWeek.getDate() - 7);
@@ -519,20 +519,24 @@ export async function onGetStockValuation(): Promise<StockValuation[]> {
 
 		const { data: products, error } = await supabase
 			.from('products')
-			.select('id, name, sku, stock_quantity, cost_price')
+			.select('id, name, sku, stock_quantity, cost_price, selling_price')
 			.gt('stock_quantity', 0);
 
 		if (error) throw error;
 
 		const now = new Date().toISOString();
 
-		const valuation: StockValuation[] = (products || []).map((product) => ({
-			product_id: product.id,
-			current_quantity: product.stock_quantity,
-			average_cost: product.cost_price || 0,
-			total_value: product.stock_quantity * (product.cost_price || 0),
-			calculated_at: now
-		}));
+	const valuation: StockValuation[] = (products || []).map((product) => ({
+		product_id: product.id,
+		current_quantity: product.stock_quantity,
+		current_stock: product.stock_quantity,
+		average_cost: product.cost_price || 0,
+		total_value: product.stock_quantity * (product.cost_price || 0),
+		stock_value: product.stock_quantity * (product.cost_price || 0),
+		retail_value: product.stock_quantity * (product.selling_price || 0),
+		potential_profit: product.stock_quantity * ((product.selling_price || 0) - (product.cost_price || 0)),
+		calculated_at: now
+	}));
 
 		return valuation;
 	} catch (error) {
@@ -565,8 +569,20 @@ export async function onGetStockAging(): Promise<StockAging[]> {
 
 		if (error) throw error;
 
-		const now = new Date();
-		const batchData = new Map<string, any>();
+	const now = new Date();
+	const batchData = new Map<string, {
+		product_id: string;
+		product_name: string;
+		batches: Array<{
+			batch_number: string;
+			quantity: number;
+			unit_cost: number;
+			received_date: string;
+			age_days: number;
+			expiry_date?: string;
+			days_to_expiry?: number;
+		}>;
+	}>();
 
 		// Process transactions to build batch aging data
 		transactions?.forEach((transaction) => {
@@ -600,21 +616,23 @@ export async function onGetStockAging(): Promise<StockAging[]> {
 			}
 		});
 
-		const agingReport: StockAging[] = Array.from(batchData.values()).map((data) => {
-			const totalQuantity = data.batches.reduce(
-				(sum: number, batch: any) => sum + batch.quantity,
-				0
-			);
-			const averageAge =
-				data.batches.reduce((sum: number, batch: any) => sum + batch.age_days, 0) /
-				data.batches.length;
-			const oldestStock = Math.max(...data.batches.map((batch: any) => batch.age_days));
-			const expiringSoon = data.batches
-				.filter((batch: any) => batch.days_to_expiry !== undefined && batch.days_to_expiry <= 30)
-				.reduce((sum: number, batch: any) => sum + batch.quantity, 0);
+	const agingReport: StockAging[] = Array.from(batchData.values()).map((data) => {
+		const totalQuantity = data.batches.reduce(
+			(sum: number, batch) => sum + batch.quantity,
+			0
+		);
+		const averageAge =
+			data.batches.reduce((sum: number, batch) => sum + batch.age_days, 0) /
+			data.batches.length;
+		const oldestStock = Math.max(...data.batches.map((batch) => batch.age_days));
+		const expiringSoon = data.batches
+			.filter((batch) => batch.days_to_expiry !== undefined && batch.days_to_expiry <= 30)
+			.reduce((sum: number, batch) => sum + batch.quantity, 0);
 
-			return {
+		return {
 				...data,
+				remaining_quantity: totalQuantity,
+				aging_category: expiringSoon > 0 ? 'expired' as const : (averageAge > 60 ? 'old' as const : (averageAge > 30 ? 'aging' as const : 'fresh' as const)),
 				total_quantity: totalQuantity,
 				average_age_days: averageAge,
 				oldest_stock_days: oldestStock,

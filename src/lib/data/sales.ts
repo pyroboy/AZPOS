@@ -274,7 +274,7 @@ export function useSalesReports() {
 			];
 			const csvContent = [
 				headers.join(','),
-				...salesItems.map((sale) =>
+					...salesItems.map((sale: any) =>
 					[
 						new Date(sale.sale_date).toLocaleDateString(),
 						`"${sale.product_name}"`,

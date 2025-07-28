@@ -1,22 +1,25 @@
 <script lang="ts">
-	import * as Card from '$lib/components/ui/card';
-	import * as Table from '$lib/components/ui/table';
-	import { products } from '$lib/stores/productStore.svelte';
-	import type { Product } from '$lib/types';
-	import { inventory } from '$lib/stores/inventoryStore.svelte';
+import * as Card from '$lib/components/ui/card';
+import * as Table from '$lib/components/ui/table';
+import { useProducts } from '$lib/data/product';
+import { useInventory } from '$lib/data/inventory';
+import type { Product } from '$lib/types';
+
+	// Initialize data hooks
+	const products = useProducts();
+	const inventory = useInventory();
 
 	// Reactive state for low-stock products
 	const lowStockProducts = $derived(
-		inventory.filter((p) => p.stock < (p.reorder_point ?? 10)).slice(0, 5)
+		inventory.inventoryItems.filter((p: any) => p.quantity_available < (p.min_stock_level ?? 10)).slice(0, 5)
 	);
 
 	// Reactive state for near-expiry products (expiring in the next 90 days)
 	const nearExpiryProducts = $derived(
-		inventory
-			.flatMap((p) => p.batches.map((b) => ({ ...p, ...b, product_name: p.name })))
-			.filter((b) => {
-				if (!b.expiration_date) return false;
-				const expiryDate = new Date(b.expiration_date);
+		inventory.inventoryItems
+			.filter((item: any) => {
+				if (!item.expiry_date) return false;
+				const expiryDate = new Date(item.expiry_date);
 				const ninetyDaysFromNow = new Date();
 				ninetyDaysFromNow.setDate(ninetyDaysFromNow.getDate() + 90);
 				return expiryDate > new Date() && expiryDate <= ninetyDaysFromNow;
@@ -90,10 +93,9 @@
 						{:else}
 							{#each lowStockProducts as item}
 								<Table.Row>
-									<Table.Cell>{item.name}</Table.Cell>
-									<Table.Cell>{item.stock}</Table.Cell>
-									<Table.Cell>{item.reorder_point}</Table.Cell>
-									<Table.Cell>{item.reorder_point}</Table.Cell>
+									<Table.Cell>{item.product_name || item.name}</Table.Cell>
+									<Table.Cell>{item.quantity_available}</Table.Cell>
+									<Table.Cell>{item.min_stock_level ?? 10}</Table.Cell>
 								</Table.Row>
 							{/each}
 						{/if}

@@ -1,4 +1,18 @@
-import type { ReceiptData } from '$lib/stores/receiptStore.svelte';
+// Remove import and define inline type
+type ReceiptData = {
+	timestamp: Date;
+	transactionId: string;
+	customer?: string;
+	items: Array<{ quantity: number; name: string; price: number }>;
+	subtotal: number;
+	discount: number;
+	tax: number;
+	total: number;
+	paymentMethod: string;
+	amountPaid: number;
+	change: number;
+	gcashReference?: string;
+};
 
 /**
  * Generates a plain text version of the receipt for simple logging or display.
@@ -25,7 +39,7 @@ export function generateTextReceipt(receiptData: ReceiptData): string {
 	}
 	text += `--------------------------------\n`;
 
-	receiptData.items.forEach((item) => {
+	receiptData.items.forEach((item: any) => {
 		const itemTotal = item.quantity * item.price;
 		text += `${item.quantity}x ${item.name.padEnd(15, ' ')} @ ${item.price.toFixed(2).padStart(7, ' ')} = ${itemTotal.toFixed(2).padStart(7, ' ')}\n`;
 	});
