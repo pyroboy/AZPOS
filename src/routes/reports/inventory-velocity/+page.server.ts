@@ -1,20 +1,24 @@
-import { get } from 'svelte/store';
-import { transactions as transactionStore } from '$lib/stores/transactionStore';
-import { getTotalStockForProduct } from '$lib/stores/productBatchStore';
-import type { Product, Transaction, TransactionItem, Role } from '$lib/schemas/models';
+import { onGetTransactions } from '$lib/server/telefuncs/transaction.telefunc';
+import { onGetProducts } from '$lib/server/telefuncs/product.telefunc';
+import { onGetProductBatches } from '$lib/server/telefuncs/productBatch.telefunc';
+import type { Product } from '$lib/types/product.schema';
+import type { Transaction, TransactionItem } from '$lib/types/transaction.schema';
+import type { Role } from '$lib/schemas/models';
 import { redirect } from '@sveltejs/kit';
 
 const ALLOWED_ROLES: Role[] = ['admin', 'owner', 'manager'];
 
 /** @type {import('./$types').PageServerLoad} */
 export async function load({ parent }) {
-    const { user, products, productBatches } = await parent();
+    const { user } = await parent();
 
     if (!ALLOWED_ROLES.includes(user.role)) {
         throw redirect(302, '/reports');
     }
 
-    const transactions = get(transactionStore);
+    const { transactions } = await onGetTransactions();
+    const { products } = await onGetProducts();
+    const productBatches = await onGetProductBatches();
 
     const productMap = new Map<string, Product>(products.map((p: Product) => [p.id, p]));
 
@@ -23,12 +27,12 @@ export async function load({ parent }) {
     // Sort transactions to find the most recent sale date accurately
     transactions
         .filter((t: Transaction) => t.status === 'completed' && t.items)
-        .sort((a: Transaction, b: Transaction) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+        .sort((a: Transaction, b: Transaction) => new Date(b.processed_at).getTime() - new Date(a.processed_at).getTime())
         .forEach((t: Transaction) => {
             t.items.forEach((item: TransactionItem) => {
                 if (!salesStats[item.product_id]) {
                     salesStats[item.product_id] = { 
-                        last_sale_date: t.created_at, 
+                        last_sale_date: t.processed_at, 
                         units_sold: 0 
                     };
                 }
@@ -40,7 +44,7 @@ export async function load({ parent }) {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     transactions
-        .filter((t: Transaction) => t.status === 'completed' && new Date(t.created_at) >= thirtyDaysAgo)
+        .filter((t: Transaction) => t.status === 'completed' && new Date(t.processed_at) >= thirtyDaysAgo)
         .forEach((t: Transaction) => {
             t.items.forEach((item: TransactionItem) => {
                 if (salesStats[item.product_id]) {
@@ -59,31 +63,36 @@ export async function load({ parent }) {
         .filter(([, stats]) => new Date(stats.last_sale_date) >= sevenDaysAgo)
         .map(([product_id, stats]) => {
             const product = productMap.get(product_id);
+            const stock = productBatches.batches.filter(b => b.product_id === product_id).reduce((sum, b) => sum + b.quantity_on_hand, 0);
             return {
                 product_id,
                 sku: product?.sku ?? 'N/A',
                 name: product?.name ?? 'Unknown',
                 units_sold: stats.units_sold,
-                last_sale_date: stats.last_sale_date
+                last_sale_date: stats.last_sale_date,
+                currentStock: stock
             };
         })
         .sort((a, b) => b.units_sold - a.units_sold);
 
     const slowMovers = products
-        .map(product => ({
-            product,
-            stats: salesStats[product.id]
-        }))
-        .filter(({ product, stats }) => {
-            const stock = getTotalStockForProduct(product.id, productBatches);
+        .map(product => {
+            const stock = productBatches.batches.filter(b => b.product_id === product.id).reduce((sum, b) => sum + b.quantity_on_hand, 0);
+            return {
+                product,
+                stock,
+                stats: salesStats[product.id]
+            };
+        })
+        .filter(({ stock, stats }) => {
             const last_sale_date = stats ? new Date(stats.last_sale_date) : null;
             return stock > 0 && (!last_sale_date || last_sale_date < thirtyDaysAgoForSlow);
         })
-        .map(({ product, stats }) => ({
+        .map(({ product, stats, stock }) => ({
             product_id: product.id,
             sku: product.sku,
             name: product.name,
-            currentStock: getTotalStockForProduct(product.id, productBatches),
+            currentStock: stock,
             last_sale_date: stats?.last_sale_date ?? null
         }))
         .sort((a, b) => new Date(a.last_sale_date ?? 0).getTime() - new Date(b.last_sale_date ?? 0).getTime());

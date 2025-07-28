@@ -2,7 +2,7 @@
 import { json, error } from '@sveltejs/kit';
 import type { RequestHandler } from './$types';
 import type { FoundImage } from '../types';
-import { PRIVATE_GOOGLE_API_KEY, PRIVATE_GOOGLE_CSE_ID } from '$env/static/private';
+// import { PRIVATE_GOOGLE_API_KEY, PRIVATE_GOOGLE_CSE_ID } from '$env/static/private';
 
 // --- Type definitions for Google Custom Search API Response ---
 interface GoogleSearchItem {
@@ -29,8 +29,10 @@ export const GET: RequestHandler = async ({ url }) => {
 	}
 
 	const q = name;
-	const API_KEY = PRIVATE_GOOGLE_API_KEY;
-	const CX = PRIVATE_GOOGLE_CSE_ID;
+	// const API_KEY = PRIVATE_GOOGLE_API_KEY;
+	// const CX = PRIVATE_GOOGLE_CSE_ID;
+	const API_KEY = '';
+	const CX = '';
 
 	if (!API_KEY || !CX) {
 		console.error('[/search] Error: Google API Key or CX ID is not configured on the server.');

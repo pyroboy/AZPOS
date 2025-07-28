@@ -1,12 +1,11 @@
 <script lang="ts">
-	import { suppliers } from '$lib/stores/supplierStore.svelte';
-	import { products } from '$lib/stores/productStore.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { PlusCircle } from 'lucide-svelte';
 	import SupplierTable from '$lib/components/suppliers/SupplierTable.svelte';
 	import SupplierDialog from '$lib/components/suppliers/SupplierDialog.svelte';
-	import type { PurchaseOrder, Supplier } from '$lib/schemas/models';
+	import type { Supplier } from '$lib/types/supplier.schema';
 
+	// Components manage their own data fetching with TanStack Query hooks
 
 	let dialogOpen = $state(false);
 	let selectedSupplier = $state<Supplier | null>(null);
@@ -16,8 +15,8 @@
 		dialogOpen = true;
 	}
 
-	function handleEditSupplier(event: CustomEvent<Supplier>) {
-		selectedSupplier = event.detail;
+	function handleEditSupplier(supplier: Supplier) {
+		selectedSupplier = supplier;
 		dialogOpen = true;
 	}
 </script>
@@ -34,9 +33,12 @@
         </Button>
     </header>
 
-    <SupplierTable on:edit={handleEditSupplier} />
+    <SupplierTable onEditSupplier={handleEditSupplier} />
 
-    <SupplierDialog bind:open={dialogOpen} bind:supplier={selectedSupplier} />
+    <SupplierDialog 
+        bind:open={dialogOpen} 
+        bind:supplier={selectedSupplier}
+    />
 </div>
 
 <!-- TODO: SupplierDialog component will go here -->

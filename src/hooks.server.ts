@@ -1,5 +1,5 @@
 import type { Handle } from '@sveltejs/kit';
-import { users } from '$lib/stores/userStore';
+import { users } from '$lib/stores/userStore.svelte';
 
 export const handle: Handle = async ({ event, resolve }) => {
 	const sessionUsername = event.cookies.get('session_user');

@@ -5,11 +5,9 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import '$lib/stores/themeStore';
 
-	import { session } from '$lib/stores/sessionStore.svelte';
-	import type { LayoutData } from './$types';
-	import { page } from '$app/stores';
-	import { productManager } from '$lib/stores/productStore.svelte';
-	import { inventoryManager } from '$lib/stores/inventoryStore.svelte';
+import { useSessions } from '$lib/data/session';
+import type { LayoutData } from './$types';
+import { page } from '$app/stores';
 
 	// TanStack Query for server-centric state management
 	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
@@ -39,23 +37,24 @@
 	});
 
 	// The `data` prop is reactive and contains the `user` from the load function.
-	const { data, children } = $props<{ data: LayoutData; children: any }>();
+	const { data, children } = $props<{ data: LayoutData; children: () => void }>();
+
+	// Initialize session management with TanStack Query
+	const { currentSession, createSession } = useSessions();
 
 	// When the user data changes (e.g., on login/logout),
-	// this reactive statement will run and update our client-side session store.
+	// create or update session accordingly
 	$effect(() => {
-		session.setSession(data.user);
-	});
-
-	// This reactive statement runs on the client when the component mounts.
-	// It takes the product data loaded on the server and sets it in our client-side stores.
-	// This process is called "hydration".
-	$effect(() => {
-		if (data.products) {
-			productManager.setProducts(data.products);
-		}
-		if (data.productBatches) {
-			inventoryManager.productBatches = data.productBatches;
+		if (data.user && !currentSession) {
+			// Create new session for logged in user
+			createSession({
+				user_id: data.user.id,
+				session_type: 'user',
+				device_info: {
+					user_agent: browser ? navigator.userAgent : 'server',
+					screen_resolution: browser ? `${screen.width}x${screen.height}` : 'unknown'
+				}
+			}).catch(console.error);
 		}
 	});
 </script>

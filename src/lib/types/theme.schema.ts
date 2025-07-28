@@ -110,13 +110,10 @@ export const userThemePreferencesSchema = z.object({
 
 // Schema for theme export/import
 export const themeExportSchema = z.object({
-  theme: themeConfigSchema,
-  metadata: z.object({
-    exported_at: z.string().datetime(),
-    exported_by: z.string(),
-    version: z.string().default('1.0'),
-    compatibility: z.array(z.string()).default(['1.0'])
-  })
+  format_version: z.string().default('1.0'),
+  exported_at: z.string().datetime(),
+  exported_by: z.string(),
+  theme: themeConfigSchema.omit({ id: true, created_at: true, updated_at: true, created_by: true, is_default: true, is_system: true })
 });
 
 // Schema for theme statistics

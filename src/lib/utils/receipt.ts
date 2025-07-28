@@ -1,4 +1,4 @@
-import type { ReceiptData } from '$lib/stores/receiptStore';
+import type { ReceiptData } from '$lib/stores/receiptStore.svelte';
 
 /**
  * Generates a plain text version of the receipt for simple logging or display.

@@ -1,19 +1,19 @@
 import { redirect } from '@sveltejs/kit';
 import type { PageServerLoad } from './$types';
-import { products } from '$lib/stores/productStore';
-import { get } from 'svelte/store';
+import { onGetProducts } from '$lib/server/telefuncs/product.telefunc';
 
-export const load: PageServerLoad = async ({ locals, fetch }) => {
+export const load: PageServerLoad = async ({ locals }) => {
     // If the user is not logged in, redirect to the login page.
     if (!locals.user) {
         throw redirect(302, '/login');
     }
 
-    await products.loadProducts(fetch); // This uses the new loadProductsCached method
+    // Load products on the server side for initial render
+    const products = await onGetProducts();
 
     // Pass the user and products to the page component.
     return { 
         user: locals.user,
-        products: get(products)
+        products
     };
 };

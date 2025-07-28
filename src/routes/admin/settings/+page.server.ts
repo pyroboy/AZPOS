@@ -1,6 +1,6 @@
 import { fail } from '@sveltejs/kit';
-import { settingsStore } from '$lib/stores/settingsStore';
-import { settingsSchema } from '$lib/schemas/settingsSchema';
+import { onGetSettings, onUpdateSettings } from '$lib/server/telefuncs/settings.telefunc';
+import { settingsSchema } from '$lib/types/settings.schema';
 import { superValidate } from 'sveltekit-superforms';
 import { zod } from 'sveltekit-superforms/adapters';
 import type { Actions, PageServerLoad } from './$types';
@@ -40,7 +40,8 @@ async function getProductImageStats() {
 }
 
 export const load: PageServerLoad = async () => {
-    const form = await superValidate(settingsStore.get(), zod(settingsSchema));
+    const settings = await onGetSettings();
+    const form = await superValidate(settings, zod(settingsSchema));
     const imageStats = await getProductImageStats();
     return { form, ...imageStats };
 };
@@ -53,32 +54,41 @@ export const actions: Actions = {
             return fail(400, { form });
         }
 
-        const currentSettings = settingsStore.get();
+        const currentSettings = await onGetSettings();
         const newSettings = form.data;
 
         // Deep comparison of tax rates to check for changes
-        const taxRatesChanged = JSON.stringify(currentSettings.tax_rates) !== JSON.stringify(newSettings.tax_rates);
+        const taxRatesChanged = JSON.stringify(currentSettings.business?.tax_settings) !== JSON.stringify(newSettings.business?.tax_settings);
+
+        // Get PIN from form data separately since it's not part of the settings schema
+        const formData = await request.formData();
+        const pin = formData.get('pin') as string;
 
         if (taxRatesChanged) {
-            if (!newSettings.pin) {
-                // Add a specific error to the PIN field
-				form.errors.pin = ['PIN is required to change tax rates.'];
-                return fail(400, { form });
+            if (!pin) {
+                // Add a specific error to the PIN field (manually add to form errors)
+				return fail(400, { 
+                    form: { 
+                        ...form, 
+                        errors: { ...form.errors, pin: ['PIN is required to change tax rates.'] } 
+                    } 
+                });
             }
 
-            if (!validatePin(newSettings.pin ?? '')) {
-                form.errors.pin = ['Invalid PIN.'];
-                return fail(401, { form });
+            if (!validatePin(pin)) {
+                return fail(401, { 
+                    form: { 
+                        ...form, 
+                        errors: { ...form.errors, pin: ['Invalid PIN.'] } 
+                    } 
+                });
             }
         }
 
-        // Remove PIN from the data before saving
-        // The linter will complain that 'pin' is unused, which is the point.
-        // We are destructuring it out so it doesn't get saved.
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        const { pin, ...settingsToSave } = newSettings;
+        // Use form data directly (PIN is not included in settings schema)
+        const settingsToSave = form.data;
 
-        settingsStore.updateSettings(settingsToSave);
+        await onUpdateSettings(settingsToSave);
 
         return { form };
     }

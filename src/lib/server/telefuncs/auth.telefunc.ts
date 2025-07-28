@@ -6,10 +6,12 @@ import {
   emailVerificationSchema,
   profileUpdateSchema,
   changePasswordSchema,
+  pinLoginSchema,
   type AuthUser,
   type AuthSession,
   type AuthStats,
-  type AuthActivity
+  type AuthActivity,
+  type PinLogin
 } from '$lib/types/auth.schema';
 import { createSupabaseClient } from '$lib/server/db';
 
@@ -463,4 +465,183 @@ export async function onGetUserActivity(userId?: string, limit: number = 50): Pr
   if (error) throw error;
 
   return activities || [];
+}
+
+// Helper function to hash PIN using Web Crypto API
+async function hashPin(pin: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(pin);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Helper function to verify PIN
+async function verifyPin(pin: string, hash: string): Promise<boolean> {
+  const pinHash = await hashPin(pin);
+  return pinHash === hash;
+}
+
+// Telefunc to login with PIN (staff authentication)
+export async function onLoginWithPin(pinData: unknown): Promise<AuthSession> {
+  const validatedData = pinLoginSchema.parse(pinData);
+  const supabase = createSupabaseClient();
+
+  // For PIN authentication, we'll use the users table directly since we don't have Supabase Auth for PINs
+  // We need to query users that have PIN hashes (staff members)
+  const { data: users, error: usersError } = await supabase
+    .from('users')
+    .select('*')
+    .not('pin_hash', 'is', null)
+    .eq('is_active', true);
+
+  if (usersError) {
+    throw new Error('Failed to query users');
+  }
+
+  if (!users || users.length === 0) {
+    // Log failed PIN login attempt
+    await supabase
+      .from('auth_activities')
+      .insert({
+        action: 'failed_pin_login',
+        ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
+        user_agent: getContext().request?.headers?.['user-agent'],
+        success: false,
+        error_message: 'No staff users with PINs found',
+        created_at: new Date().toISOString()
+      });
+    throw new Error('Invalid PIN');
+  }
+
+  // Check PIN against all staff users
+  let authenticatedUser = null;
+  for (const user of users) {
+    if (user.pin_hash && await verifyPin(validatedData.pin, user.pin_hash)) {
+      authenticatedUser = user;
+      break;
+    }
+  }
+
+  if (!authenticatedUser) {
+    // Log failed PIN login attempt
+    await supabase
+      .from('auth_activities')
+      .insert({
+        action: 'failed_pin_login',
+        ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
+        user_agent: getContext().request?.headers?.['user-agent'],
+        success: false,
+        error_message: 'Invalid PIN',
+        created_at: new Date().toISOString()
+      });
+    throw new Error('Invalid PIN');
+  }
+
+  // Update last login - Note: the database schema doesn't show login_count or last_login_at
+  // So we'll just update the updated_at timestamp
+  await supabase
+    .from('users')
+    .update({
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', authenticatedUser.id);
+
+  // Log successful PIN login
+  await supabase
+    .from('auth_activities')
+    .insert({
+      user_id: authenticatedUser.id,
+      action: 'pin_login',
+      ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
+      user_agent: getContext().request?.headers?.['user-agent'],
+      success: true,
+      created_at: new Date().toISOString()
+    });
+
+  // Create session without Supabase Auth tokens (using temporary tokens)
+  const sessionToken = crypto.randomUUID();
+  const refreshToken = crypto.randomUUID();
+
+  // Create a compatible AuthUser object from the database user
+  // Since the database schema uses username instead of email, we'll use username@local.pos as email
+  return createAuthSession(
+    {
+      id: authenticatedUser.id,
+      email: `${authenticatedUser.username}@local.pos`, // Create synthetic email for compatibility
+      full_name: authenticatedUser.full_name,
+      role: authenticatedUser.role === 'staff' ? 'cashier' : authenticatedUser.role, // Map staff to cashier
+      is_active: authenticatedUser.is_active,
+      is_verified: true, // Staff users are considered verified
+      permissions: [], // Will be populated based on role
+      profile: {
+        pin_hash: authenticatedUser.pin_hash
+      },
+      last_login_at: new Date().toISOString(),
+      created_at: authenticatedUser.created_at,
+      updated_at: authenticatedUser.updated_at
+    },
+    sessionToken,
+    refreshToken
+  );
+}
+
+// Telefunc to toggle staff mode (for authenticated users)
+export async function onToggleStaffMode(): Promise<{ isStaffMode: boolean; user: AuthUser }> {
+  const { user } = getContext();
+  if (!user) throw new Error('Not authenticated');
+
+  const supabase = createSupabaseClient();
+
+  // Get current user data
+  const { data: userData, error } = await supabase
+    .from('users')
+    .select('*')
+    .eq('id', user.id)
+    .single();
+
+  if (error || !userData) {
+    throw new Error('User not found');
+  }
+
+  // Only staff members (non-customers) can toggle staff mode
+  // Based on the database schema, we don't have 'customer' role, so we check for staff roles
+  const staffRoles = ['admin', 'owner', 'manager', 'cashier', 'staff'];
+  if (!staffRoles.includes(userData.role)) {
+    throw new Error('Only staff members can toggle staff mode');
+  }
+
+  // Log staff mode toggle
+  await supabase
+    .from('auth_activities')
+    .insert({
+      user_id: user.id,
+      action: 'staff_mode_toggle',
+      ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
+      user_agent: getContext().request?.headers?.['user-agent'],
+      success: true,
+      created_at: new Date().toISOString()
+    });
+
+  // Return user data and indicate staff mode is toggled
+  // Note: The actual staff mode state is managed on the client side
+  // This function just validates the user can toggle and logs the action
+  return {
+    isStaffMode: true, // This would be toggled on the client side
+    user: {
+      id: userData.id,
+      email: `${userData.username}@local.pos`, // Create synthetic email for compatibility
+      full_name: userData.full_name,
+      role: userData.role === 'staff' ? 'cashier' : userData.role, // Map staff to cashier
+      is_active: userData.is_active,
+      is_verified: true, // Staff users are considered verified
+      permissions: [], // Will be populated based on role
+      profile: {
+        pin_hash: userData.pin_hash
+      },
+      last_login_at: new Date().toISOString(),
+      created_at: userData.created_at,
+      updated_at: userData.updated_at
+    }
+  };
 }

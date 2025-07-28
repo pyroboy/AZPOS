@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
-	import { users } from '$lib/stores/userStore';
+import { users } from '$lib/stores/userStore.svelte';
 	import type { Role, User } from '$lib/schemas/models';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Input } from '$lib/components/ui/input';

@@ -12,9 +12,9 @@
 	import { useTransactions } from '$lib/data/transaction';
 	import { useReturns } from '$lib/data/returns';
 	import { useProducts } from '$lib/data/product';
-	import { useSession } from '$lib/data/session';
-	import type { Transaction, NewReturnInput } from '$lib/types/transaction.schema';
-	import type { ReturnItem } from '$lib/types/returns.schema';
+	import { useSessions } from '$lib/data/session';
+	import type { Transaction, TransactionItem } from '$lib/types/transaction.schema';
+	import type { ReturnItem, NewReturnInput } from '$lib/types/returns.schema';
 	import type { Product } from '$lib/types/product.schema';
 
 	// Props according to the new pattern
@@ -28,7 +28,7 @@
 	const { useTransaction } = useTransactions();
 	const { createReturn, isCreating } = useReturns();
 	const { products } = useProducts();
-	const { sessionData } = useSession();
+	const { currentSession } = useSessions();
 
 	let transactionIdInput = $state('');
 	let foundTransaction = $state<Transaction | null>(null);
@@ -36,8 +36,10 @@
 	let errorMessage = $state<string | null>(null);
 	let step = $state<'search' | 'selection' | 'summary'>('search');
 
-	// Create transaction query when we have an ID
-	$: transactionQuery = transactionIdInput.trim() ? useTransaction(transactionIdInput.trim()) : null;
+	// Create transaction query when we have an ID - use $derived instead of $:
+	const transactionQuery = $derived(
+		transactionIdInput.trim() ? useTransaction(transactionIdInput.trim()) : null
+	);
 
 	function findTransaction() {
 		errorMessage = null;
@@ -74,34 +76,35 @@
 	async function processReturn() {
 		if (!foundTransaction || selectedItemsToReturn.size === 0) return;
 
-		const itemsToReturn = foundTransaction.items.filter(item => selectedItemsToReturn.has(item.id));
+		const itemsToReturn = foundTransaction.items.filter(item => selectedItemsToReturn.has(item.product_id));
 
 		// Create a return record using TanStack Query mutation
 		const returnItems: ReturnItem[] = itemsToReturn.map(item => {
 			const product = getProduct(item.product_id);
 			return {
 				product_id: item.product_id,
-				product_name: product?.name ?? 'Unknown Product',
-				product_sku: product?.sku ?? 'N/A',
+				product_name: product?.name ?? item.product_name,
+				product_sku: product?.sku ?? item.product_sku,
 				quantity: item.quantity
 			};
 		});
 
 		const newReturnData: NewReturnInput = {
 			order_id: foundTransaction.id,
-			customer_name: 'Walk-in Customer', // Placeholder
+			customer_name: foundTransaction.customer_name ?? 'Walk-in Customer',
 			items: returnItems,
 			reason: 'changed_mind', // Placeholder
-			notes: `Refund of $${returnTotal.toFixed(2)} processed by ${sessionData?.user?.username ?? 'system'}.`
+			notes: `Refund of $${returnTotal.toFixed(2)} processed by ${currentSession?.user_id ?? 'system'}.`
 		};
 
 		try {
 			const newReturn = await createReturn(newReturnData);
 			alert(`Return processed successfully! Return ID: ${newReturn.id}`);
 			closeModal();
-		} catch (error) {
-			errorMessage = `Failed to process return: ${error.message}`;
-		}
+	} catch (error: unknown) {
+		const errorText = error instanceof Error ? error.message : 'Unknown error occurred';
+		errorMessage = `Failed to process return: ${errorText}`;
+	}
 	}
 
 	function closeModal() {
@@ -123,8 +126,8 @@
 
 	const returnTotal = $derived(
 		foundTransaction?.items
-			.filter(item => selectedItemsToReturn.has(item.id))
-			.reduce((sum, item) => sum + item.price_at_sale * item.quantity, 0) ?? 0
+			.filter(item => selectedItemsToReturn.has(item.product_id))
+			.reduce((sum, item) => sum + item.unit_price * item.quantity, 0) ?? 0
 	);
 
 	const getProduct = (productId: string): Product | undefined => 
@@ -162,21 +165,21 @@
             <div class="py-4 space-y-4">
                 <h4 class="font-medium">Original Items</h4>
                 <div class="border rounded-lg max-h-[40vh] overflow-y-auto">
-                    {#each foundTransaction.items as item (item.id)}
+                    {#each foundTransaction.items as item (item.product_id)}
                         {@const product = getProduct(item.product_id)}
                         <div
 							class="flex items-center gap-4 p-4 border-b last:border-b-0 cursor-pointer"
-							onclick={() => toggleReturnItem(item.id)}
+							onclick={() => toggleReturnItem(item.product_id)}
 							onkeydown={(e) => {
-								if (e.key === 'Enter' || e.key === ' ') toggleReturnItem(item.id);
+								if (e.key === 'Enter' || e.key === ' ') toggleReturnItem(item.product_id);
 							}}
 							role="button"
 							tabindex="0"
 						>
-							<Checkbox id={item.id} checked={selectedItemsToReturn.has(item.id)} tabindex={-1} />
-                            <Label for={item.id} class="flex-1 w-full h-full">
-                                <div class="font-medium">{product?.name ?? 'Loading...'} <Badge variant="outline">x{item.quantity}</Badge></div>
-                                <div class="text-sm text-muted-foreground">${item.price_at_sale.toFixed(2)} each</div>
+							<Checkbox id={item.product_id} checked={selectedItemsToReturn.has(item.product_id)} tabindex={-1} />
+                            <Label for={item.product_id} class="flex-1 w-full h-full">
+                                <div class="font-medium">{product?.name ?? item.product_name} <Badge variant="outline">x{item.quantity}</Badge></div>
+                                <div class="text-sm text-muted-foreground">${item.unit_price.toFixed(2)} each</div>
                             </Label>
                         </div>
                     {/each}

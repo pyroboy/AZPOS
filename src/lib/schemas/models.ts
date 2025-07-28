@@ -170,7 +170,7 @@ export const inventoryAdjustmentSchema = z.object({
 // 6.4 Users & Roles
 // =======================================================================
 
-export const roleSchema = z.enum(['admin', 'owner', 'manager', 'pharmacist', 'cashier']);
+export const roleSchema = z.enum(['admin', 'owner', 'manager', 'pharmacist', 'cashier', 'customer']);
 
 export const userSchema = z.object({
 	id: z.string().uuid(),

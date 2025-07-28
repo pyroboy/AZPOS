@@ -1,8 +1,8 @@
 import type { LayoutServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
-import { users } from '$lib/stores/userStore';
-import { productBatches } from '$lib/stores/productBatchStore';
+// import { users } from '$lib/stores/userStore.svelte';
+// import { productBatches } from '$lib/stores/productBatchStore.svelte';
 
 export const load: LayoutServerLoad = async ({ locals, url, fetch }) => {
     if (!locals.user && url.pathname !== '/login') {
@@ -35,9 +35,9 @@ export const load: LayoutServerLoad = async ({ locals, url, fetch }) => {
 
     return {
         user: locals.user,
-        users: users.getAllActiveUsers(),
+        // users: users.getAllActiveUsers(),
         products,
-        productBatches: get(productBatches),
+        // productBatches: get(productBatches),
         meta // 🎯 This fixes the meta disconnect
     };
 };

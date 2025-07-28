@@ -1,4 +1,4 @@
-import { products } from '$lib/stores/productStore';
+import { products } from '$lib/stores/productStore.svelte';
 import { get } from 'svelte/store';
 import type { PageServerLoad } from './$types';
 

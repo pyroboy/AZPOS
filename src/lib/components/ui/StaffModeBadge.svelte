@@ -5,14 +5,16 @@
 	import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '$lib/components/ui/dialog';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { auth, isStaff, isStaffMode, userRole, userName } from '$lib/stores/authStore';
+import { useAuth } from '$lib/data/auth';
 	import { Shield, ShieldCheck, LogOut, Settings, User } from 'lucide-svelte';
+	
+	// Initialize auth composable
+	const auth = useAuth();
 	
 	// Login state
 	let showLoginDialog = $state(false);
 	let pin = $state('');
 	let loginError = $state('');
-	let isLoggingIn = $state(false);
 	
 	// Handle staff login
 	async function handleLogin() {
@@ -21,11 +23,10 @@
 			return;
 		}
 		
-		isLoggingIn = true;
 		loginError = '';
 		
 		try {
-			const result = await auth.login(pin);
+			const result = await auth.loginWithPin(pin);
 			
 			if (result.success) {
 				showLoginDialog = false;
@@ -36,8 +37,6 @@
 			}
 		} catch (error) {
 			loginError = 'Login failed. Please try again.';
-		} finally {
-			isLoggingIn = false;
 		}
 	}
 	
@@ -93,15 +92,15 @@
 </script>
 
 <div class="flex items-center gap-2">
-	{#if $isStaff}
+	{#if auth.isStaff}
 		<!-- Staff Mode Toggle -->
 		<Button
-			variant={$isStaffMode ? 'default' : 'outline'}
+			variant={auth.isStaffMode ? 'default' : 'outline'}
 			size="sm"
 			onclick={toggleStaffMode}
 			class="flex items-center gap-2"
 		>
-			{#if $isStaffMode}
+			{#if auth.isStaffMode}
 				<ShieldCheck class="h-4 w-4" />
 				<span>Staff Mode</span>
 			{:else}
@@ -111,10 +110,10 @@
 		</Button>
 		
 		<!-- User Info Badge -->
-		<Badge variant={getRoleBadgeVariant($userRole)} class="flex items-center gap-1">
+		<Badge variant={getRoleBadgeVariant(auth.userRole)} class="flex items-center gap-1">
 			<User class="h-3 w-3" />
-			<span>{$userName}</span>
-			<span class="text-xs opacity-75">({getRoleDisplayName($userRole)})</span>
+			<span>{auth.userName}</span>
+			<span class="text-xs opacity-75">({getRoleDisplayName(auth.userRole)})</span>
 		</Badge>
 		
 		<!-- Logout Button -->
@@ -153,7 +152,7 @@
 							placeholder="••••"
 							bind:value={pin}
 							onkeypress={handleKeyPress}
-							disabled={isLoggingIn}
+							disabled={auth.loginWithPinStatus === 'pending'}
 							class="text-center text-lg tracking-widest"
 							maxlength={6}
 						/>
@@ -166,15 +165,15 @@
 						<Button
 							variant="outline"
 							onclick={() => { showLoginDialog = false; pin = ''; loginError = ''; }}
-							disabled={isLoggingIn}
+							disabled={auth.loginWithPinStatus === 'pending'}
 						>
 							Cancel
 						</Button>
 						<Button
 							onclick={handleLogin}
-							disabled={isLoggingIn || !pin.trim()}
+							disabled={auth.loginWithPinStatus === 'pending' || !pin.trim()}
 						>
-							{#if isLoggingIn}
+							{#if auth.loginWithPinStatus === 'pending'}
 								<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
 								Authenticating...
 							{:else}

@@ -1,7 +1,10 @@
 <!-- Agent: agent_coder | File: RoleGuard.svelte | Last Updated: 2025-07-28T10:41:46+08:00 -->
 <script lang="ts">
-	import { auth, isStaff, isStaffMode } from '$lib/stores/authStore';
-	import type { UserRole } from '$lib/stores/authStore';
+import { useAuth } from '$lib/data/auth';
+import type { UserRole } from '$lib/stores/authStore.svelte';
+	
+	// Initialize auth hook
+	const auth = useAuth();
 	
 	// Props
 	let { 
@@ -17,7 +20,7 @@
 	let hasRequiredRole = $derived(() => {
 		if (roles.length === 0) return true;
 		
-		const userRole = $auth.user.role;
+		const userRole = auth.user.role;
 		return roles.includes(userRole);
 	});
 	
@@ -26,22 +29,20 @@
 		if (permissions.length === 0) return true;
 		
 		return permissions.every(permission => {
-			// Admin and owner have all permissions
-			if ($auth.user.permissions.includes('*')) return true;
-			return $auth.user.permissions.includes(permission);
+			return auth.hasPermission(permission);
 		});
 	});
 	
 	// Check if staff mode is required and active
 	let staffModeCheck = $derived(() => {
 		if (!requireStaffMode) return true;
-		return $isStaffMode;
+		return auth.isStaffMode;
 	});
 	
 	// Check if authentication is required
 	let authCheck = $derived(() => {
 		if (!requireAuthentication) return true;
-		return $auth.isAuthenticated;
+		return auth.isAuthenticated;
 	});
 	
 	// Final access check

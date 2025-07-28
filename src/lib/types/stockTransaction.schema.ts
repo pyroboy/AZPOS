@@ -3,7 +3,8 @@ import { z } from 'zod';
 // Schema for stock movement types
 export const stockMovementTypeSchema = z.enum([
   'sale', 'return', 'purchase', 'adjustment', 'transfer', 'damaged', 'expired', 
-  'theft', 'recount', 'promotion', 'sample', 'waste', 'conversion', 'assembly'
+  'theft', 'recount', 'promotion', 'sample', 'waste', 'conversion', 'assembly',
+  'stock_in', 'stock_out', 'adjustment_in', 'adjustment_out', 'transfer_in', 'transfer_out', 'damage'
 ]);
 
 // Schema for stock transaction
@@ -12,6 +13,7 @@ export const stockTransactionSchema = z.object({
   product_id: z.string(),
   location_id: z.string().optional(),
   movement_type: stockMovementTypeSchema,
+  quantity: z.number(), // Absolute quantity involved in transaction
   quantity_change: z.number(), // Positive for increases, negative for decreases
   quantity_before: z.number().min(0),
   quantity_after: z.number().min(0),
@@ -26,6 +28,7 @@ export const stockTransactionSchema = z.object({
   notes: z.string().optional(),
   created_by: z.string(),
   created_at: z.string().datetime(),
+  processed_at: z.string().datetime().optional(),
   approved_by: z.string().optional(),
   approved_at: z.string().datetime().optional()
 });
@@ -83,6 +86,8 @@ export const stockTransactionFiltersSchema = z.object({
   movement_type: stockMovementTypeSchema.optional(),
   reference_type: z.enum(['transaction', 'purchase_order', 'transfer', 'adjustment', 'manual']).optional(),
   reference_id: z.string().optional(),
+  reference_number: z.string().optional(),
+  supplier_id: z.string().optional(),
   created_by: z.string().optional(),
   date_from: z.string().datetime().optional(),
   date_to: z.string().datetime().optional(),
@@ -148,8 +153,12 @@ export const stockValuationSchema = z.object({
   product_id: z.string(),
   location_id: z.string().optional(),
   current_quantity: z.number().min(0),
+  current_stock: z.number().min(0),
   average_cost: z.number().min(0),
   total_value: z.number().min(0),
+  stock_value: z.number().min(0),
+  retail_value: z.number().min(0),
+  potential_profit: z.number(),
   last_cost: z.number().min(0).optional(),
   fifo_cost: z.number().min(0).optional(),
   lifo_cost: z.number().min(0).optional(),
@@ -161,6 +170,8 @@ export const stockAgingSchema = z.object({
   product_id: z.string(),
   product_name: z.string(),
   location_id: z.string().optional(),
+  remaining_quantity: z.number().min(0),
+  aging_category: z.enum(['fresh', 'aging', 'old', 'expired']),
   batches: z.array(z.object({
     batch_number: z.string().optional(),
     quantity: z.number().min(0),
@@ -179,7 +190,9 @@ export const stockAgingSchema = z.object({
 // Export inferred types
 export type StockMovementType = z.infer<typeof stockMovementTypeSchema>;
 export type StockTransaction = z.infer<typeof stockTransactionSchema>;
+export type StockTransactionCreate = z.infer<typeof createStockTransactionSchema>;
 export type CreateStockTransaction = z.infer<typeof createStockTransactionSchema>;
+export type BulkAdjustment = z.infer<typeof bulkStockAdjustmentSchema>;
 export type BulkStockAdjustment = z.infer<typeof bulkStockAdjustmentSchema>;
 export type StockTransfer = z.infer<typeof stockTransferSchema>;
 export type StockTransactionFilters = z.infer<typeof stockTransactionFiltersSchema>;
@@ -187,3 +200,4 @@ export type StockTransactionStats = z.infer<typeof stockTransactionStatsSchema>;
 export type PaginatedStockTransactions = z.infer<typeof paginatedStockTransactionsSchema>;
 export type StockValuation = z.infer<typeof stockValuationSchema>;
 export type StockAging = z.infer<typeof stockAgingSchema>;
+export type StockAgingReport = z.infer<typeof stockAgingSchema>;

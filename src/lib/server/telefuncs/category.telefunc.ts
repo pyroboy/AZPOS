@@ -90,7 +90,7 @@ export async function onGetCategoryTree(): Promise<CategoryTree[]> {
 
   const { data: categories, error } = await supabase
     .from('categories')
-    .select('id, name, slug, level, parent_id, product_count, is_active, sort_order')
+    .select('id, name, description, color, icon, level, parent_id, product_count, is_active, sort_order')
     .eq('is_active', true)
     .order('level')
     .order('sort_order');
@@ -106,9 +106,9 @@ export async function onGetCategoryTree(): Promise<CategoryTree[]> {
     const category: CategoryTree = {
       id: cat.id,
       name: cat.name,
-      slug: cat.slug,
-      level: cat.level,
-      product_count: cat.product_count || 0,
+      description: cat.description,
+      color: cat.color,
+      icon: cat.icon,
       is_active: cat.is_active,
       children: []
     };

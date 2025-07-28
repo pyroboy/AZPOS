@@ -27,13 +27,16 @@ export const categorySchema = categoryInputSchema.extend({
 });
 
 // Schema for category tree structure
-export const categoryTreeSchema = z.object({
+const categoryTreeSchemaBase = z.object({
   id: z.string(),
   name: z.string(),
-  slug: z.string(),
-  level: z.number(),
-  product_count: z.number(),
-  is_active: z.boolean(),
+  description: z.string().optional(),
+  color: z.string().optional(),
+  icon: z.string().optional(),
+  is_active: z.boolean()
+});
+
+export const categoryTreeSchema: z.ZodType<CategoryTree> = categoryTreeSchemaBase.extend({
   children: z.array(z.lazy(() => categoryTreeSchema)).optional()
 });
 
@@ -85,7 +88,9 @@ export const bulkCategoryUpdateSchema = z.object({
 // Export inferred types
 export type CategoryInput = z.infer<typeof categoryInputSchema>;
 export type Category = z.infer<typeof categorySchema>;
-export type CategoryTree = z.infer<typeof categoryTreeSchema>;
+export type CategoryTree = z.infer<typeof categoryTreeSchemaBase> & {
+  children?: CategoryTree[];
+};
 export type CategoryFilters = z.infer<typeof categoryFiltersSchema>;
 export type CategoryStats = z.infer<typeof categoryStatsSchema>;
 export type MoveCategory = z.infer<typeof moveCategorySchema>;

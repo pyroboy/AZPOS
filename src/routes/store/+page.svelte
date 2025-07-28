@@ -1,7 +1,7 @@
-<!-- Agent: agent_coder | File: +page.svelte | Last Updated: 2025-07-28T10:41:46+08:00 -->
+<!-- Component Integration Guide Applied: TanStack Query + Telefunc Pattern -->
 <script lang="ts">
-	import { onMount } from 'svelte';
-	import { cart } from '$lib/stores/cartStore.svelte';
+	import { useProducts } from '$lib/data/product';
+	import { useGroceryCart } from '$lib/data/groceryCart';
 	import ProductCard from '$lib/components/store/ProductCard.svelte';
 	import SearchBar from '$lib/components/store/SearchBar.svelte';
 	// import CategoryFilter from '$lib/components/store/CategoryFilter.svelte';
@@ -12,26 +12,35 @@
 	import { ShoppingCart } from 'lucide-svelte';
 	import StaffModeBadge from '$lib/components/ui/StaffModeBadge.svelte';
 	import RoleGuard from '$lib/components/ui/RoleGuard.svelte';
+	import type { GroceryCartItemInput } from '$lib/types/groceryCart.schema';
 	
 	// Reactive state using Svelte 5 runes
 	let searchQuery = $state('');
 	let selectedCategory = $state('all');
-	let products: any[] = $state([]);
-	let categories: any[] = $state([]);
-	let isLoading = $state(false);
-	let error = $state(null);
 	let showCartSidebar = $state(false);
 	let viewMode = $state('grid'); // 'grid' or 'list'
 
-	// Reactive cart state
-	const cartState = $derived(cart.state);
-	const cartTotals = $derived(cart.totals);
+	// TanStack Query hooks for data management
+	const {
+		productsQuery,
+		activeProducts,
+		isLoading,
+		isError,
+		error
+	} = useProducts({ is_active: true });
+
+	const {
+		cart,
+		cartTotals,
+		addItem,
+		isAddingItem
+	} = useGroceryCart();
 
 	// Filtered products using $derived
-	let filteredProducts = $derived.by(() => {
-		if (!products) return [];
+	const filteredProducts = $derived.by(() => {
+		if (!activeProducts) return [];
 
-		let filtered = products;
+		let filtered = activeProducts;
 
 		// Filter by search query
 		if (searchQuery.trim()) {
@@ -51,43 +60,17 @@
 		return filtered;
 	});
 
-	// Load products and categories on mount
-	onMount(async () => {
-		try {
-			isLoading = true;
-
-			// Fetch products from API
-			const productsResponse = await fetch('/store/api/products?page=1&limit=50');
-			if (!productsResponse.ok) throw new Error('Failed to load products');
-			const productsData = await productsResponse.json();
-			products = productsData.products || [];
-
-			// Extract unique categories
-			const uniqueCategories = [...new Set(products.map(p => ({ id: p.category_id, name: p.category_name })))];
-			categories = uniqueCategories;
-
-		} catch (err: unknown) {
-			console.error('Failed to load products:', err);
-		} finally {
-			isLoading = false;
-		}
-	});
-
-	// Handle add to cart
+	// Handle add to cart with grocery cart model
 	function addToCart(product: any, modifiers: any[] = []): void {
 		try {
-			// Create a mock ProductBatch for the cart
-			const mockBatch = {
-				id: `batch-${product.id}`,
+			const itemData: GroceryCartItemInput = {
 				product_id: product.id,
-				created_at: new Date().toISOString(),
-				batch_number: 'STORE-001',
-				quantity_on_hand: 100,
-				purchase_cost: product.price * 0.7,
-				expiration_date: undefined
+				quantity: 1,
+				special_instructions: '',
+				substitution_allowed: true
 			};
 
-			cart.addItem(product, mockBatch, 1, modifiers, '');
+			addItem(itemData);
 			showCartSidebar = true; // Show cart sidebar after adding item
 		} catch (err) {
 			console.error('Failed to add to cart:', err);
@@ -126,9 +109,9 @@
 					>
 						<ShoppingCart class="h-4 w-4" />
 						Cart
-						{#if $cartTotals && $cartTotals.item_count > 0}
+						{#if cartTotals && cartTotals.item_count > 0}
 							<Badge variant="destructive" class="absolute -right-2 -top-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
-								{$cartTotals.item_count}
+								{cartTotals.item_count}
 							</Badge>
 						{/if}
 					</Button>

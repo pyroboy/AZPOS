@@ -115,7 +115,7 @@ export const viewConfigSchema = z.object({
 });
 
 // Schema for navigation menu
-export const navigationMenuSchema = z.object({
+const navigationMenuSchemaBase = z.object({
   id: z.string(),
   label: z.string(),
   path: z.string().optional(),
@@ -125,13 +125,20 @@ export const navigationMenuSchema = z.object({
     color: z.string(),
     variant: z.enum(['default', 'success', 'warning', 'error'])
   }).optional(),
-  children: z.array(z.lazy(() => navigationMenuSchema)).default([]),
   permissions: z.array(z.string()).default([]),
   roles: z.array(z.string()).default([]),
   is_active: z.boolean().default(true),
   is_external: z.boolean().default(false),
   sort_order: z.number().default(0),
   metadata: z.record(z.any()).optional()
+});
+
+type NavigationMenuType = z.infer<typeof navigationMenuSchemaBase> & {
+  children: NavigationMenuType[];
+};
+
+export const navigationMenuSchema: z.ZodType<NavigationMenuType> = navigationMenuSchemaBase.extend({
+  children: z.array(z.lazy(() => navigationMenuSchema)).default([])
 });
 
 // Schema for view analytics
@@ -209,7 +216,9 @@ export const viewStatsSchema = z.object({
 export type ViewState = z.infer<typeof viewStateSchema>;
 export type UserViewPreferences = z.infer<typeof userViewPreferencesSchema>;
 export type ViewConfig = z.infer<typeof viewConfigSchema>;
-export type NavigationMenu = z.infer<typeof navigationMenuSchema>;
+export type NavigationMenu = z.infer<typeof navigationMenuSchemaBase> & {
+  children: NavigationMenu[];
+};
 export type ViewAnalytics = z.infer<typeof viewAnalyticsSchema>;
 export type ViewFilters = z.infer<typeof viewFiltersSchema>;
 export type ViewStats = z.infer<typeof viewStatsSchema>;

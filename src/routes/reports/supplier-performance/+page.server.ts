@@ -2,7 +2,7 @@ import type { PageServerLoad } from './$types';
 import { redirect } from '@sveltejs/kit';
 import { get } from 'svelte/store';
 import { suppliers as supplierStore } from '$lib/stores/supplierStore.svelte';
-import { purchaseOrders as poStore } from '$lib/stores/purchaseOrderStore';
+import { purchaseOrders as poStore } from '$lib/stores/purchaseOrderStore.svelte';
 import type { Role } from '$lib/schemas/models';
 
 const ALLOWED_ROLES: Role[] = ['admin', 'owner', 'manager'];

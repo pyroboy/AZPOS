@@ -47,13 +47,14 @@ export const authUserSchema = z.object({
   id: z.string(),
   email: z.string().email(),
   full_name: z.string(),
-  role: z.enum(['admin', 'manager', 'cashier', 'customer']),
+  role: z.enum(['guest', 'cashier', 'pharmacist', 'manager', 'admin', 'owner', 'customer']),
   is_active: z.boolean(),
   is_verified: z.boolean(),
   permissions: z.array(z.string()),
   profile: z.object({
     avatar_url: z.string().url().optional(),
     phone: z.string().optional(),
+    pin: z.string().optional(),
     preferences: z.object({
       language: z.string().default('en'),
       timezone: z.string().default('UTC'),
@@ -76,7 +77,8 @@ export const authSessionSchema = z.object({
   access_token: z.string(),
   refresh_token: z.string(),
   expires_at: z.string().datetime(),
-  session_id: z.string()
+  session_id: z.string(),
+  is_staff_mode: z.boolean()
 });
 
 // Schema for profile update
@@ -106,6 +108,11 @@ export const profileUpdateSchema = z.object({
   }).optional()
 });
 
+// Schema for PIN login
+export const pinLoginSchema = z.object({
+  pin: z.string().min(4).max(8).regex(/^\d+$/, "PIN must contain only numbers")
+});
+
 // Schema for change password (authenticated user)
 export const changePasswordSchema = z.object({
   current_password: z.string().min(1),
@@ -133,7 +140,7 @@ export const twoFactorVerifySchema = z.object({
 export const authActivitySchema = z.object({
   id: z.string(),
   user_id: z.string(),
-  action: z.enum(['login', 'logout', 'password_change', 'password_reset', 'email_verification', 'profile_update', 'failed_login']),
+  action: z.enum(['login', 'logout', 'password_change', 'password_reset', 'email_verification', 'profile_update', 'failed_login', 'pin_login', 'failed_pin_login', 'staff_mode_toggle']),
   ip_address: z.string().optional(),
   user_agent: z.string().optional(),
   location: z.object({
@@ -182,6 +189,7 @@ export type Register = z.infer<typeof registerSchema>;
 export type PasswordResetRequest = z.infer<typeof passwordResetRequestSchema>;
 export type PasswordResetConfirm = z.infer<typeof passwordResetConfirmSchema>;
 export type EmailVerification = z.infer<typeof emailVerificationSchema>;
+export type PinLogin = z.infer<typeof pinLoginSchema>;
 export type AuthUser = z.infer<typeof authUserSchema>;
 export type AuthSession = z.infer<typeof authSessionSchema>;
 export type ProfileUpdate = z.infer<typeof profileUpdateSchema>;

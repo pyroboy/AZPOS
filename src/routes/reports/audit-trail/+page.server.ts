@@ -1,14 +1,12 @@
 import { redirect } from '@sveltejs/kit';
 import type { Role } from '$lib/schemas/models';
 import type { PageServerLoad } from './$types';
-import { inventoryAdjustments } from '$lib/stores/stockTransactionStore';
-import { products } from '$lib/stores/productStore';
-import { users } from '$lib/stores/userStore';
-import type { InventoryAdjustment, Product, User } from '$lib/schemas/models';
+import { onGetStockTransactions } from '$lib/server/telefuncs/stockTransaction.telefunc';
+import { onGetProducts } from '$lib/server/telefuncs/product.telefunc';
+import { onGetUsers } from '$lib/server/telefuncs/user.telefunc';
+import type { StockTransaction } from '$lib/types/stockTransaction.schema';
 
-export type DetailedAdjustment = InventoryAdjustment & {
-    transaction_type: string; // e.g., 'Sale', 'Adjustment', 'Return'
-    qty_change: number;
+export type DetailedAdjustment = StockTransaction & {
 	productName: string;
 	userName: string;
 };
@@ -22,24 +20,30 @@ export const load: PageServerLoad = async ({ parent }) => {
 		throw redirect(302, '/reports');
 	}
 
-	// Access store data using proper methods instead of get()
-	const allAdjustments: InventoryAdjustment[] = inventoryAdjustments.getAllAdjustments();
-	const allProducts: Product[] = products.getActiveProducts();
-	const allUsers: User[] = users.getAllActiveUsers();
+	// Fetch data using Telefunc functions instead of store methods
+	try {
+		const [stockTransactions, products, users] = await Promise.all([
+			onGetStockTransactions(),
+			onGetProducts({ is_active: true }),
+			onGetUsers({ is_active: true })
+		]);
 
-	const detailedAdjustments: DetailedAdjustment[] = allAdjustments
-		.map((adj) => {
-			const product = allProducts.find((p) => p.id === adj.product_id);
-			const user = allUsers.find((u) => u.id === adj.user_id);
-			return {
-				...adj,
-				productName: product?.name ?? 'Unknown Product',
-				userName: user?.full_name ?? 'System',
-				transaction_type: 'Adjustment',
-				qty_change: adj.adjustment_type === 'add' ? adj.quantity_adjusted : -adj.quantity_adjusted
-			};
-		})
-		.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+		// Transform stock transactions into detailed adjustments
+		const detailedAdjustments: DetailedAdjustment[] = stockTransactions.transactions
+			.map(transaction => {
+				const product = products.products?.find(p => p.id === transaction.product_id);
+				const processedByUser = users.users?.find(u => u.id === transaction.processed_by);
+				return {
+					...transaction,
+					productName: product?.name ?? 'Unknown Product',
+					userName: processedByUser?.full_name ?? 'System'
+				};
+			})
+			.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
-	return { transactions: detailedAdjustments };
+		return { transactions: detailedAdjustments };
+	} catch (error) {
+		console.error('Error fetching audit trail data:', error);
+		throw new Error('Failed to load audit trail data');
+	}
 };

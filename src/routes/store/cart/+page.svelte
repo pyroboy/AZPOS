@@ -1,11 +1,25 @@
-<!-- Agent: agent_coder | File: +page.svelte | Last Updated: 2025-07-28T10:29:03+08:00 -->
+<!-- Component Integration Guide Applied: TanStack Query + Telefunc Pattern -->
 <script lang="ts">
-	import { cart } from '$lib/stores/cartStore.svelte';
+	// Using grocery cart model as requested
+	import { useGroceryCart } from '$lib/data/groceryCart';
 	import CartItemCard from '$lib/components/store/CartItemCard.svelte';
 	import CartSummary from '$lib/components/store/CartSummary.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { ArrowLeft, ShoppingCart } from 'lucide-svelte';
+	
+	// TanStack Query hook for grocery cart management
+	const {
+		groceryCartQuery,
+		cart,
+		cartItems,
+		cartTotals,
+		clearCart,
+		isLoading,
+		isError,
+		error,
+		isClearingCart
+	} = useGroceryCart();
 	
 	// Navigate functions
 	function continueShopping() {
@@ -16,9 +30,9 @@
 		window.location.href = '/store/checkout';
 	}
 	
-	function clearCart() {
+	function handleClearCart() {
 		if (confirm('Are you sure you want to clear your cart?')) {
-			cart.clear();
+			clearCart();
 		}
 	}
 </script>
@@ -50,19 +64,20 @@
 							Shopping Cart
 						</h1>
 						<p class="text-muted-foreground">
-							{cart.totals.item_count} {cart.totals.item_count === 1 ? 'item' : 'items'} in your cart
+							{cartTotals.item_count} {cartTotals.item_count === 1 ? 'item' : 'items'} in your cart
 						</p>
 					</div>
 				</div>
 				
-				{#if cart.state.items.length > 0}
+				{#if cartItems.length > 0}
 					<Button 
 						variant="outline" 
 						size="sm"
-						onclick={clearCart}
+						onclick={handleClearCart}
 						class="text-destructive hover:text-destructive"
+						disabled={isClearingCart}
 					>
-						Clear Cart
+						{isClearingCart ? 'Clearing...' : 'Clear Cart'}
 					</Button>
 				{/if}
 			</div>
@@ -71,8 +86,22 @@
 	
 	<!-- Main Content -->
 	<div class="container mx-auto px-4 py-8">
-		{#if cart.totals.item_count === 0}
-			<!-- Empty Cart State -->
+		<!-- Loading State -->
+		{#if isLoading}
+			<div class="text-center py-16">
+				<div class="text-4xl mb-4">⏳</div>
+				<p class="text-muted-foreground">Loading your cart...</p>
+			</div>
+		<!-- Error State -->
+		{:else if isError}
+			<div class="text-center py-16">
+				<div class="text-4xl mb-4">❌</div>
+				<h2 class="text-2xl font-bold mb-4">Error Loading Cart</h2>
+				<p class="text-muted-foreground mb-8">Failed to load your cart. Please try again.</p>
+				<Button onclick={() => window.location.reload()}>Reload Page</Button>
+			</div>
+		<!-- Empty Cart State -->
+		{:else if cartTotals.item_count === 0}
 			<div class="text-center py-16">
 				<div class="text-8xl mb-6">🛒</div>
 				<h2 class="text-2xl font-bold mb-4">Your cart is empty</h2>
@@ -84,8 +113,8 @@
 					Start Shopping
 				</Button>
 			</div>
+		<!-- Cart Content -->
 		{:else}
-			<!-- Cart Content -->
 			<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 				<!-- Cart Items -->
 				<div class="lg:col-span-2 space-y-4">
@@ -94,7 +123,7 @@
 							<CardTitle>Cart Items</CardTitle>
 						</CardHeader>
 						<CardContent class="space-y-4">
-							{#each cart.state.items as item (item.cart_item_id)}
+							{#each cartItems as item (item.id)}
 								<CartItemCard {item} />
 							{/each}
 						</CardContent>
@@ -105,7 +134,7 @@
 				<div class="lg:col-span-1">
 					<div class="sticky top-4">
 						<CartSummary 
-							cartTotals={cart.totals}
+							cartTotals={cartTotals}
 							onContinueShopping={continueShopping}
 							onProceedToCheckout={proceedToCheckout}
 						/>

@@ -16,63 +16,53 @@ const defaultTheme: ThemeConfig = {
   id: 'default',
   name: 'Default Theme',
   description: 'Default AZPOS theme',
-  version: '1.0.0',
+  type: 'light' as const,
   colors: {
     primary: '#3B82F6',
     secondary: '#6B7280',
     accent: '#10B981',
-    neutral: '#F3F4F6',
-    base_100: '#FFFFFF',
-    base_200: '#F9FAFB',
-    base_300: '#F3F4F6',
-    info: '#3ABFF8',
-    success: '#36D399',
-    warning: '#FBBD23',
-    error: '#F87272'
+    background: '#FFFFFF',
+    surface: '#F9FAFB',
+    text: '#111827',
+    text_secondary: '#6B7280',
+    border: '#E5E7EB',
+    success: '#10B981',
+    warning: '#F59E0B',
+    error: '#EF4444',
+    info: '#3B82F6'
   },
   typography: {
-    font_family_primary: 'Inter, sans-serif',
-    font_family_secondary: 'Inter, sans-serif',
-    font_size_xs: '0.75rem',
-    font_size_sm: '0.875rem',
-    font_size_base: '1rem',
-    font_size_lg: '1.125rem',
-    font_size_xl: '1.25rem',
-    font_size_2xl: '1.5rem',
-    font_size_3xl: '1.875rem',
-    font_weight_normal: '400',
-    font_weight_medium: '500',
-    font_weight_semibold: '600',
-    font_weight_bold: '700',
-    line_height_tight: '1.25',
-    line_height_normal: '1.5',
-    line_height_relaxed: '1.75'
+    font_family: 'Inter, system-ui, sans-serif',
+    font_size_base: 16,
+    font_size_scale: 1.25,
+    line_height: 1.5,
+    letter_spacing: 0,
+    font_weights: {
+      light: 300,
+      normal: 400,
+      medium: 500,
+      semibold: 600,
+      bold: 700
+    }
   },
   spacing: {
-    xs: '0.25rem',
-    sm: '0.5rem',
-    md: '1rem',
-    lg: '1.5rem',
-    xl: '2rem',
-    '2xl': '3rem',
-    '3xl': '4rem'
+    base_unit: 4,
+    scale: [0, 1, 2, 3, 4, 6, 8, 12, 16, 24, 32, 48, 64]
   },
   border_radius: {
-    none: '0',
-    sm: '0.125rem',
-    md: '0.375rem',
-    lg: '0.5rem',
-    xl: '0.75rem',
-    '2xl': '1rem',
-    full: '9999px'
+    none: 0,
+    sm: 2,
+    md: 6,
+    lg: 8,
+    xl: 12,
+    full: 9999
   },
   shadows: {
-    sm: '0 1px 2px 0 rgb(0 0 0 / 0.05)',
-    md: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)',
-    lg: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
-    xl: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-    '2xl': '0 25px 50px -12px rgb(0 0 0 / 0.25)',
-    none: '0 0 #0000'
+    none: 'none',
+    sm: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+    md: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+    lg: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+    xl: '0 20px 25px -5px rgba(0, 0, 0, 0.1)'
   },
   is_default: true,
   is_system: true,
@@ -90,7 +80,7 @@ export async function onGetCurrentTheme(): Promise<ThemeConfig> {
   // Get user's theme preferences
   const { data: preferences, error: prefError } = await supabase
     .from('user_theme_preferences')
-    .select('theme_id')
+    .select('active_theme_id')
     .eq('user_id', user.id)
     .single();
 
@@ -98,7 +88,7 @@ export async function onGetCurrentTheme(): Promise<ThemeConfig> {
     console.error('Error fetching theme preferences:', prefError);
   }
 
-  let themeId = preferences?.theme_id;
+  let themeId = preferences?.active_theme_id;
 
   // If no user preference, get system default
   if (!themeId) {
@@ -175,7 +165,7 @@ export async function onCreateCustomTheme(customizationData: unknown): Promise<T
     id: themeId,
     name: validatedData.name,
     description: validatedData.description,
-    version: '1.0.0',
+    type: 'light' as const,
     colors: { ...baseTheme.colors, ...validatedData.colors },
     typography: { ...baseTheme.typography, ...validatedData.typography },
     spacing: { ...baseTheme.spacing, ...validatedData.spacing },
@@ -194,7 +184,7 @@ export async function onCreateCustomTheme(customizationData: unknown): Promise<T
       id: customTheme.id,
       name: customTheme.name,
       description: customTheme.description,
-      version: customTheme.version,
+      type: customTheme.type,
       colors: customTheme.colors,
       typography: customTheme.typography,
       spacing: customTheme.spacing,
@@ -297,7 +287,7 @@ export async function onDeleteTheme(themeId: string): Promise<void> {
   await supabase
     .from('user_theme_preferences')
     .delete()
-    .eq('theme_id', themeId);
+    .eq('active_theme_id', themeId);
 
   // Delete the theme
   const { error } = await supabase
@@ -341,12 +331,13 @@ export async function onUpdateUserThemePreferences(preferencesData: unknown): Pr
     .from('user_theme_preferences')
     .upsert({
       user_id: user.id,
-      theme_id: validatedData.theme_id,
-      dark_mode: validatedData.dark_mode,
-      high_contrast: validatedData.high_contrast,
-      reduce_motion: validatedData.reduce_motion,
-      font_size_scale: validatedData.font_size_scale,
-      custom_css: validatedData.custom_css,
+      active_theme_id: validatedData.active_theme_id,
+      auto_switch_enabled: validatedData.auto_switch_enabled || false,
+      light_theme_id: validatedData.light_theme_id,
+      dark_theme_id: validatedData.dark_theme_id,
+      switch_time_light: validatedData.switch_time_light || '06:00',
+      switch_time_dark: validatedData.switch_time_dark || '18:00',
+      custom_overrides: validatedData.custom_overrides,
       updated_at: now
     })
     .select()
@@ -381,7 +372,7 @@ export async function onExportTheme(themeId: string): Promise<ThemeExport> {
     theme: {
       name: theme.name,
       description: theme.description,
-      version: theme.version,
+      type: theme.type,
       colors: theme.colors,
       typography: theme.typography,
       spacing: theme.spacing,
@@ -408,7 +399,7 @@ export async function onImportTheme(themeExportData: unknown): Promise<ThemeConf
     id: themeId,
     name: `${validatedData.theme.name} (Imported)`,
     description: validatedData.theme.description,
-    version: validatedData.theme.version,
+    type: validatedData.theme.type,
     colors: validatedData.theme.colors,
     typography: validatedData.theme.typography,
     spacing: validatedData.theme.spacing,
@@ -427,7 +418,7 @@ export async function onImportTheme(themeExportData: unknown): Promise<ThemeConf
       id: importedTheme.id,
       name: importedTheme.name,
       description: importedTheme.description,
-      version: importedTheme.version,
+      type: importedTheme.type,
       colors: importedTheme.colors,
       typography: importedTheme.typography,
       spacing: importedTheme.spacing,
@@ -464,33 +455,34 @@ export async function onGetThemeStats(): Promise<ThemeStats> {
 
   const { data: preferences, error: preferencesError } = await supabase
     .from('user_theme_preferences')
-    .select('theme_id, dark_mode, high_contrast');
+    .select('active_theme_id, auto_switch_enabled');
 
   if (preferencesError) throw preferencesError;
+
+  // Calculate theme usage
+  const activeUsersByTheme: Record<string, { theme_id: string; theme_name: string; user_count: number; percentage: number }> = {};
+  
+  themes?.forEach(theme => {
+    const usageCount = preferences?.filter(p => p.active_theme_id === theme.id).length || 0;
+    activeUsersByTheme[theme.id] = {
+      theme_id: theme.id,
+      theme_name: theme.name,
+      user_count: usageCount,
+      percentage: preferences?.length ? (usageCount / preferences.length) * 100 : 0
+    };
+  });
 
   const stats: ThemeStats = {
     total_themes: themes?.length || 0,
     system_themes: themes?.filter(t => t.is_system).length || 0,
     custom_themes: themes?.filter(t => !t.is_system).length || 0,
-    users_with_preferences: preferences?.length || 0,
-    dark_mode_users: preferences?.filter(p => p.dark_mode).length || 0,
-    high_contrast_users: preferences?.filter(p => p.high_contrast).length || 0,
-    theme_usage: {}
+    active_users_by_theme: activeUsersByTheme,
+    theme_type_breakdown: {
+      light: themes?.filter(t => t.type === 'light').length || 0,
+      dark: themes?.filter(t => t.type === 'dark').length || 0,
+      auto: themes?.filter(t => t.type === 'auto').length || 0
+    }
   };
-
-  // Calculate theme usage
-  const themeUsage: Record<string, { count: number; percentage: number; theme_name: string }> = {};
-  
-  themes?.forEach(theme => {
-    const usageCount = preferences?.filter(p => p.theme_id === theme.id).length || 0;
-    themeUsage[theme.id] = {
-      count: usageCount,
-      percentage: preferences?.length ? (usageCount / preferences.length) * 100 : 0,
-      theme_name: theme.name
-    };
-  });
-
-  stats.theme_usage = themeUsage;
 
   return stats;
 }

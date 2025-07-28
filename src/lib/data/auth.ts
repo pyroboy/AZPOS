@@ -9,7 +9,9 @@ import {
   onRequestPasswordReset, 
   onVerifyEmail,
   onGetAuthStats,
-  onGetUserActivity
+  onGetUserActivity,
+  onLoginWithPin,
+  onToggleStaffMode
 } from '$lib/server/telefuncs/auth.telefunc';
 import type { 
   AuthUser, 
@@ -21,7 +23,8 @@ import type {
   PasswordResetRequest,
   EmailVerification,
   AuthStats,
-  AuthActivity
+  AuthActivity,
+  PinLogin
 } from '$lib/types/auth.schema';
 
 const authQueryKey = ['auth'];
@@ -30,6 +33,9 @@ const userActivityQueryKey = ['user-activity'];
 
 export function useAuth() {
   const queryClient = useQueryClient();
+  
+  // Internal staff mode state (managed client-side)
+  let staffModeState = $state(false);
 
   // Query for current user
   const currentUserQuery = createQuery<AuthUser | null>({
@@ -81,6 +87,9 @@ export function useAuth() {
       
       // Set current user to null
       queryClient.setQueryData([...authQueryKey, 'current-user'], null);
+      
+      // Reset staff mode on logout
+      staffModeState = false;
     }
   });
 
@@ -114,18 +123,53 @@ export function useAuth() {
       queryClient.invalidateQueries({ queryKey: [...authQueryKey, 'current-user'] });
     }
   });
+  
+  // Mutation to login with PIN (staff authentication)
+  const loginWithPinMutation = createMutation({
+    mutationFn: (pin: string) => onLoginWithPin({ pin }),
+    onSuccess: (authSession) => {
+      // Update current user in cache
+      queryClient.setQueryData([...authQueryKey, 'current-user'], authSession.user);
+      
+      // Enable staff mode when logging in with PIN
+      staffModeState = true;
+      
+      // Invalidate auth-related queries
+      queryClient.invalidateQueries({ queryKey: authQueryKey });
+      queryClient.invalidateQueries({ queryKey: authStatsQueryKey });
+    }
+  });
+  
+  // Mutation to toggle staff mode
+  const toggleStaffModeMutation = createMutation({
+    mutationFn: () => onToggleStaffMode(),
+    onSuccess: () => {
+      // Toggle staff mode state
+      staffModeState = !staffModeState;
+    }
+  });
 
   // Derived reactive state
   const user = $derived(currentUserQuery.data);
   const isAuthenticated = $derived(!!user);
   const isLoading = $derived(currentUserQuery.isPending);
   const authStats = $derived(authStatsQuery.data);
-
+  
+  // Staff mode derived state
+  const isStaffMode = $derived(staffModeState);
+  
   // Role-based helpers
   const isAdmin = $derived(user?.role === 'admin');
   const isManager = $derived(user?.role === 'manager');
   const isCashier = $derived(user?.role === 'cashier');
   const isCustomer = $derived(user?.role === 'customer');
+  const isGuest = $derived(user?.role === 'guest');
+  
+  // Staff helper (true for non-guest/non-customer roles)
+  const isStaff = $derived(!!user && !isGuest && !isCustomer);
+  
+  // User name derived state
+  const userName = $derived(user?.full_name || 'Guest');
   
   const canManageUsers = $derived(isAdmin || isManager);
   const canViewReports = $derived(isAdmin || isManager);
@@ -174,6 +218,14 @@ export function useAuth() {
   function verifyEmail(verificationData: EmailVerification) {
     return verifyEmailMutation.mutateAsync(verificationData);
   }
+  
+  function loginWithPin(pin: string) {
+    return loginWithPinMutation.mutateAsync(pin);
+  }
+  
+  function toggleStaffMode() {
+    return toggleStaffModeMutation.mutateAsync();
+  }
 
   // User activity helper
   function useUserActivity(userId?: string, limit: number = 50) {
@@ -195,11 +247,17 @@ export function useAuth() {
     isLoading,
     authStats,
     
+    // Staff mode state
+    isStaffMode,
+    
     // Role checks
     isAdmin,
     isManager,
     isCashier,
     isCustomer,
+    isGuest,
+    isStaff,
+    userName,
     canManageUsers,
     canViewReports,
     canProcessTransactions,
@@ -217,6 +275,8 @@ export function useAuth() {
     changePassword,
     requestPasswordReset,
     verifyEmail,
+    loginWithPin,
+    toggleStaffMode,
     
     // Mutation states
     loginStatus: $derived(loginMutation.status),
@@ -226,6 +286,8 @@ export function useAuth() {
     changePasswordStatus: $derived(changePasswordMutation.status),
     requestPasswordResetStatus: $derived(requestPasswordResetMutation.status),
     verifyEmailStatus: $derived(verifyEmailMutation.status),
+    loginWithPinStatus: $derived(loginWithPinMutation.status),
+    toggleStaffModeStatus: $derived(toggleStaffModeMutation.status),
     
     // User activity helper
     useUserActivity,

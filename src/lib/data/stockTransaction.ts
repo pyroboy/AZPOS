@@ -6,7 +6,7 @@ import {
   onGetStockTransactions, 
   onGetStockTransactionStats, 
   onGetStockValuation, 
-  onGetStockAgingReport 
+  onGetStockAging 
 } from '$lib/server/telefuncs/stockTransaction.telefunc';
 import type { 
   StockTransaction, 
@@ -32,7 +32,7 @@ export function useStockTransactions() {
   let filters = $state<StockTransactionFilters>({
     page: 1,
     limit: 20,
-    sort_by: 'processed_at',
+    sort_by: 'created_at',
     sort_order: 'desc'
   });
 
@@ -58,7 +58,7 @@ export function useStockTransactions() {
   // Query for stock aging report
   const agingQuery = createQuery<StockAgingReport[]>({
     queryKey: stockAgingQueryKey,
-    queryFn: () => onGetStockAgingReport(),
+    queryFn: () => onGetStockAging(),
     staleTime: 10 * 60 * 1000 // 10 minutes
   });
 
@@ -89,7 +89,7 @@ export function useStockTransactions() {
   // Mutation to process bulk adjustment
   const bulkAdjustmentMutation = createMutation({
     mutationFn: (adjustmentData: BulkAdjustment) => onProcessBulkAdjustment(adjustmentData),
-    onSuccess: (newTransactions) => {
+    onSuccess: () => {
       // Invalidate and refetch related queries
       queryClient.invalidateQueries({ queryKey: stockTransactionsQueryKey });
       queryClient.invalidateQueries({ queryKey: stockStatsQueryKey });
@@ -101,7 +101,7 @@ export function useStockTransactions() {
   // Mutation to process stock transfer
   const stockTransferMutation = createMutation({
     mutationFn: (transferData: StockTransfer) => onProcessStockTransfer(transferData),
-    onSuccess: (newTransactions) => {
+    onSuccess: () => {
       // Invalidate and refetch related queries
       queryClient.invalidateQueries({ queryKey: stockTransactionsQueryKey });
       queryClient.invalidateQueries({ queryKey: stockStatsQueryKey });
@@ -119,34 +119,34 @@ export function useStockTransactions() {
   
   // Filtered transactions
   const stockInTransactions = $derived(
-    transactions.filter(t => ['stock_in', 'adjustment_in', 'transfer_in'].includes(t.movement_type))
+    transactions.filter((t: StockTransaction) => ['stock_in', 'adjustment_in', 'transfer_in'].includes(t.movement_type))
   );
   
   const stockOutTransactions = $derived(
-    transactions.filter(t => ['stock_out', 'adjustment_out', 'transfer_out', 'sale', 'waste', 'damage'].includes(t.movement_type))
+    transactions.filter((t: StockTransaction) => ['stock_out', 'adjustment_out', 'transfer_out', 'sale', 'waste', 'damage'].includes(t.movement_type))
   );
   
   const adjustmentTransactions = $derived(
-    transactions.filter(t => ['adjustment_in', 'adjustment_out'].includes(t.movement_type))
+    transactions.filter((t: StockTransaction) => ['adjustment_in', 'adjustment_out'].includes(t.movement_type))
   );
   
   const transferTransactions = $derived(
-    transactions.filter(t => ['transfer_in', 'transfer_out'].includes(t.movement_type))
+    transactions.filter((t: StockTransaction) => ['transfer_in', 'transfer_out'].includes(t.movement_type))
   );
   
   const saleTransactions = $derived(
-    transactions.filter(t => t.movement_type === 'sale')
+    transactions.filter((t: StockTransaction) => t.movement_type === 'sale')
   );
   
   const wasteTransactions = $derived(
-    transactions.filter(t => ['waste', 'damage'].includes(t.movement_type))
+    transactions.filter((t: StockTransaction) => ['waste', 'damage'].includes(t.movement_type))
   );
   
   const todaysTransactions = $derived(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    return transactions.filter(transaction => {
-      const transactionDate = new Date(transaction.processed_at);
+    return transactions.filter((transaction: StockTransaction) => {
+      const transactionDate = new Date(transaction.processed_at || transaction.created_at);
       transactionDate.setHours(0, 0, 0, 0);
       return transactionDate.getTime() === today.getTime();
     });
@@ -156,7 +156,7 @@ export function useStockTransactions() {
   const movementTypeBreakdown = $derived(() => {
     const breakdown: Record<string, { count: number; total_quantity: number; total_value: number; percentage: number }> = {};
     
-    transactions.forEach(transaction => {
+    transactions.forEach((transaction: StockTransaction) => {
       if (!breakdown[transaction.movement_type]) {
         breakdown[transaction.movement_type] = { count: 0, total_quantity: 0, total_value: 0, percentage: 0 };
       }
@@ -176,7 +176,17 @@ export function useStockTransactions() {
 
   // Valuation summary
   const valuationSummary = $derived(() => {
-    const summary = valuation.reduce((acc, item) => {
+    type ValuationSummary = {
+      total_stock_value: number;
+      total_retail_value: number;
+      total_potential_profit: number;
+      total_items: number;
+      out_of_stock_items: number;
+      low_stock_items: number;
+      avg_margin_percentage: number;
+    };
+    
+    const summary = valuation.reduce((acc: ValuationSummary, item: StockValuation) => {
       acc.total_stock_value += item.stock_value;
       acc.total_retail_value += item.retail_value;
       acc.total_potential_profit += item.potential_profit;
@@ -205,7 +215,20 @@ export function useStockTransactions() {
 
   // Aging summary
   const agingSummary = $derived(() => {
-    const summary = agingReport.reduce((acc, item) => {
+    type AgingSummary = {
+      total_batches: number;
+      total_quantity: number;
+      fresh_batches: number;
+      fresh_quantity: number;
+      aging_batches: number;
+      aging_quantity: number;
+      old_batches: number;
+      old_quantity: number;
+      expired_batches: number;
+      expired_quantity: number;
+    };
+    
+    const summary = agingReport.reduce((acc: AgingSummary, item: StockAgingReport) => {
       acc.total_batches++;
       acc.total_quantity += item.remaining_quantity;
       
@@ -254,7 +277,7 @@ export function useStockTransactions() {
     filters = {
       page: 1,
       limit: 20,
-      sort_by: 'processed_at',
+      sort_by: 'created_at',
       sort_order: 'desc'
     };
   }
@@ -384,10 +407,10 @@ export function useStockTransactions() {
   // Calculate totals for current view
   const currentViewTotals = $derived(() => {
     const total_transactions = transactions.length;
-    const total_quantity_in = stockInTransactions.reduce((sum, t) => sum + t.quantity, 0);
-    const total_quantity_out = stockOutTransactions.reduce((sum, t) => sum + t.quantity, 0);
-    const total_value_in = stockInTransactions.reduce((sum, t) => sum + (t.total_cost || 0), 0);
-    const total_value_out = stockOutTransactions.reduce((sum, t) => sum + (t.total_cost || 0), 0);
+    const total_quantity_in = stockInTransactions.reduce((sum: number, t: StockTransaction) => sum + Math.abs(t.quantity_change), 0);
+    const total_quantity_out = stockOutTransactions.reduce((sum: number, t: StockTransaction) => sum + Math.abs(t.quantity_change), 0);
+    const total_value_in = stockInTransactions.reduce((sum: number, t: StockTransaction) => sum + (t.total_cost || 0), 0);
+    const total_value_out = stockOutTransactions.reduce((sum: number, t: StockTransaction) => sum + (t.total_cost || 0), 0);
     const net_quantity = total_quantity_in - total_quantity_out;
     const net_value = total_value_in - total_value_out;
     
