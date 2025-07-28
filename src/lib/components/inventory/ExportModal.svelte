@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { products } from '$lib/stores/productStore';
-	import { productBatches } from '$lib/stores/productBatchStore';
-	import type { Product, ProductBatch } from '$lib/types';
+	import { useProducts } from '$lib/data/product';
+	import { useInventory } from '$lib/data/inventory';
+	import type { Product } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
@@ -11,19 +11,14 @@
 
 	const dispatch = createEventDispatcher();
 
-	export let isOpen = false;
+	let { isOpen = $bindable(false) }: { isOpen: boolean } = $props();
 
-	let allProducts: Product[] = [];
-	let allBatches: ProductBatch[] = [];
-
-	// Subscribe to stores
-	products.subscribe(value => {
-		allProducts = value.filter(p => !p.is_archived);
-	});
-
-	productBatches.subscribe(value => {
-		allBatches = value;
-	});
+	// Use data hooks instead of stores
+	const { activeProducts } = useProducts();
+	const { inventoryItems } = useInventory();
+	
+	const allProducts = $derived(activeProducts.filter((p: Product) => !p.is_archived));
+	const allBatches = $derived(inventoryItems); // Using inventory items as batch equivalents
 
 	function closeModal() {
 		isOpen = false;
@@ -31,25 +26,13 @@
 	}
 
 	function downloadCSVTemplate() {
-		// Create CSV template with headers for bulk inventory adjustments
-		const headers = [
-			'product_id',
-			'sku',
-			'product_name',
-			'current_stock',
-			'adjustment_quantity',
-			'adjustment_type',
-			'reason',
-			'notes',
-			'batch_number',
-			'expiration_date'
-		];
+		// Create sample data with current products
 
 		// Create sample data with current products
-		const templateData = allProducts.slice(0, 5).map(product => {
-			// Calculate current stock from batches
-			const productBatchesForProduct = allBatches.filter(b => b.product_id === product.id);
-			const currentStock = productBatchesForProduct.reduce((sum, batch) => sum + batch.quantity_on_hand, 0);
+		const templateData = allProducts.slice(0, 5).map((product: Product) => {
+			// Calculate current stock from inventory items
+			const productInventoryItems = allBatches.filter((b: { product_id: string }) => b.product_id === product.id);
+			const currentStock = productInventoryItems.reduce((sum: number, item: { quantity_available: number }) => sum + item.quantity_available, 0);
 
 			return {
 				product_id: product.id,
@@ -90,11 +73,11 @@
 
 	function downloadCurrentInventory() {
 		// Export current inventory levels
-		const inventoryData = allProducts.map(product => {
-			const productBatchesForProduct = allBatches.filter(b => b.product_id === product.id);
-			const totalStock = productBatchesForProduct.reduce((sum, batch) => sum + batch.quantity_on_hand, 0);
-			const avgCost = productBatchesForProduct.length > 0 
-				? productBatchesForProduct.reduce((sum, batch) => sum + batch.purchase_cost, 0) / productBatchesForProduct.length
+		const inventoryData = allProducts.map((product: Product) => {
+			const productInventoryItems = allBatches.filter((b: { product_id: string }) => b.product_id === product.id);
+			const totalStock = productInventoryItems.reduce((sum: number, item: { quantity_available: number }) => sum + item.quantity_available, 0);
+			const avgCost = productInventoryItems.length > 0 
+				? productInventoryItems.reduce((sum: number, item: { cost_per_unit?: number }) => sum + (item.cost_per_unit || 0), 0) / productInventoryItems.length
 				: 0;
 
 			return {
@@ -103,13 +86,13 @@
 				product_name: product.name,
 				category_id: product.category_id,
 				current_stock: totalStock,
-				base_unit: product.base_unit,
-				reorder_point: product.reorder_point || 0,
-				current_price: product.price,
+				base_unit: product.base_unit || 'piece',
+				reorder_point: (product as any).min_stock_level || 0,
+				current_price: (product as any).selling_price || product.price || 0,
 				average_cost: avgCost,
-				supplier_id: product.supplier_id,
+				supplier_id: product.supplier_id || '',
 				aisle: product.aisle || '',
-				batch_count: productBatchesForProduct.length
+				batch_count: productInventoryItems.length
 			};
 		});
 
@@ -121,19 +104,20 @@
 	}
 
 	function downloadBatchReport() {
-		// Export detailed batch information
-		const batchData = allBatches.map(batch => {
-			const product = allProducts.find(p => p.id === batch.product_id);
+		// Export detailed inventory item information
+		const batchData = allBatches.map((item: { id: string; batch_number?: string; product_id: string; quantity_on_hand: number; quantity_available: number; cost_per_unit?: number; expiry_date?: string; created_at: string }) => {
+			const product = allProducts.find((p: Product) => p.id === item.product_id);
 			return {
-				batch_id: batch.id,
-				batch_number: batch.batch_number,
-				product_id: batch.product_id,
+				item_id: item.id,
+				batch_number: item.batch_number || 'N/A',
+				product_id: item.product_id,
 				sku: product?.sku || 'Unknown',
 				product_name: product?.name || 'Unknown Product',
-				quantity_on_hand: batch.quantity_on_hand,
-				purchase_cost: batch.purchase_cost,
-				expiration_date: batch.expiration_date || '',
-				created_at: batch.created_at,
+				quantity_on_hand: item.quantity_on_hand,
+				quantity_available: item.quantity_available,
+				cost_per_unit: item.cost_per_unit || 0,
+				expiry_date: item.expiry_date || '',
+				created_at: item.created_at,
 				base_unit: product?.base_unit || 'piece'
 			};
 		});

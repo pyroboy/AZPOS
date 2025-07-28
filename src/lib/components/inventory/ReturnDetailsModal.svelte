@@ -1,11 +1,14 @@
 <script lang="ts">
-	import type { ReturnRecord } from '$lib/schemas/models';
-	import { updateReturnStatus } from '$lib/stores/returnsStore.svelte';
+	import type { EnhancedReturnRecord } from '$lib/types/returns.schema';
+	import { useReturns } from '$lib/data/returns';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import * as Table from '$lib/components/ui/table';
 	import { toast } from 'svelte-sonner';
+
+	// Get TanStack Query hook for updating returns
+	const { updateStatus, isUpdating } = useReturns();
 
 	let {
 		open = $bindable(false),
@@ -13,7 +16,7 @@
 		onClose
 	}: {
 		open: boolean;
-		record: ReturnRecord | null;
+		record: EnhancedReturnRecord | null;
 		onClose: () => void;
 	} = $props();
 
@@ -21,14 +24,14 @@
 
 	function approveReturn() {
 		if (!record) return;
-		updateReturnStatus(record.id, 'approved');
+		updateStatus({ id: record.id, status: 'approved' });
 		toast.success(`Return ${record.id} has been approved.`);
 		onClose();
 	}
 
 	function rejectReturn() {
 		if (!record) return;
-		updateReturnStatus(record.id, 'rejected');
+		updateStatus({ id: record.id, status: 'rejected', admin_notes: rejectionNotes });
 		toast.error(`Return ${record.id} has been rejected.`);
 		rejectionNotes = '';
 		onClose();
@@ -40,9 +43,7 @@
 		<Dialog.Content class="sm:max-w-2xl">
 			<Dialog.Header>
 				<Dialog.Title>Return Details: {record.id}</Dialog.Title>
-				<Dialog.Description>
-					Review the details of the return and take action.
-				</Dialog.Description>
+				<Dialog.Description>Review the details of the return and take action.</Dialog.Description>
 			</Dialog.Header>
 
 			<div class="grid grid-cols-3 gap-x-8 gap-y-4 my-4 text-sm">
@@ -112,11 +113,22 @@
 					<div class="flex justify-end items-start gap-4">
 						<div class="flex-grow">
 							<label for="rejection-notes" class="text-sm font-medium">Notes (if rejecting)</label>
-							<textarea id="rejection-notes" bind:value={rejectionNotes} class="mt-1 w-full h-20 p-2 border rounded-md text-sm" placeholder="Provide a reason for rejection..."></textarea>
+							<textarea
+								id="rejection-notes"
+								bind:value={rejectionNotes}
+								class="mt-1 w-full h-20 p-2 border rounded-md text-sm"
+								placeholder="Provide a reason for rejection..."
+							></textarea>
 						</div>
 						<div class="flex flex-col gap-2 pt-6">
-							<Button onclick={approveReturn} variant="default">Approve</Button>
-							<Button onclick={rejectReturn} variant="destructive" disabled={!rejectionNotes}>Reject</Button>
+							<Button onclick={approveReturn} variant="default" disabled={isUpdating}
+								>Approve</Button
+							>
+							<Button
+								onclick={rejectReturn}
+								variant="destructive"
+								disabled={!rejectionNotes || isUpdating}>Reject</Button
+							>
 						</div>
 					</div>
 				</div>

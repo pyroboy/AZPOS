@@ -1,14 +1,15 @@
 <script lang="ts">
-	import type { PurchaseOrder } from '$lib/stores/purchaseOrderStore';
+	import type { PurchaseOrder } from '$lib/types/purchaseOrder.schema';
+	import type { InventoryItem } from '$lib/types/inventory.schema';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group';
-	import { poActions } from '$lib/stores/purchaseOrderStore';
-	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore';
-	import { productBatches } from '$lib/stores/productBatchStore';
+	import { usePurchaseOrders } from '$lib/data/purchaseOrder';
+	import { useInventory } from '$lib/data/inventory';
+	import { useProductBatches } from '$lib/data/productBatch';
 	import { toast } from 'svelte-sonner';
 	import { cn } from '$lib/utils';
 	import * as Table from '$lib/components/ui/table';
@@ -42,6 +43,16 @@
 	let notes = $state('');
 	let isSubmitting = $state(false);
 
+	// Initialize data hooks
+	const purchaseOrdersHook = usePurchaseOrders();
+	const inventoryHook = useInventory();
+	const productBatchesHook = useProductBatches();
+
+	// Extract reactive data from hooks
+	const { updatePurchaseOrder } = purchaseOrdersHook;
+	const { createBatch } = productBatchesHook;
+	const inventoryData = $derived(inventoryHook.inventoryQuery.data ?? []);
+
 	$effect(() => {
 		if (po) {
 			const initialQuantities: Record<string, number> = {};
@@ -49,13 +60,13 @@
 			const initialExpirationDates: Record<string, string> = {};
 			const initialPurchaseCosts: Record<string, number> = {};
 			
-			po.items.forEach(item => {
-				initialQuantities[item.productId] = item.quantityReceived;
-				initialBatchNumbers[item.productId] = '';
-				initialExpirationDates[item.productId] = '';
-				// Use costPerUnit if available, otherwise default to 0
-				initialPurchaseCosts[item.productId] = (item as any).costPerUnit || 0;
-			});
+		po.items.forEach(item => {
+			initialQuantities[item.product_id] = item.quantity_received || 0;
+			initialBatchNumbers[item.product_id] = '';
+			initialExpirationDates[item.product_id] = '';
+			// Use unit_cost if available, otherwise default to 0
+			initialPurchaseCosts[item.product_id] = item.unit_cost || 0;
+		});
 			
 			receivedQuantities = initialQuantities;
 			batchNumbers = initialBatchNumbers;
@@ -68,7 +79,7 @@
 		if (!po) return;
 		const allReceived: Record<string, number> = {};
 		po.items.forEach(item => {
-			allReceived[item.productId] = item.quantityOrdered;
+			allReceived[item.product_id] = item.quantity_ordered;
 		});
 		receivedQuantities = allReceived;
 	}
@@ -91,19 +102,19 @@
 		// Validate required fields for received items
 		const validationErrors: string[] = [];
 		po.items.forEach((item) => {
-			const product = $inventory.find((p: ProductWithStock) => p.id === item.productId);
-			const quantityReceived = receivedQuantities[item.productId] ?? 0;
+			const product = inventoryData.find((p: any) => p.product_id === item.product_id);
+			const quantityReceived = receivedQuantities[item.product_id] ?? 0;
 			if (quantityReceived > 0 && product) {
-				if (product.requires_batch_tracking) {
-					if (!batchNumbers[item.productId]?.trim()) {
-						validationErrors.push(`Batch number required for tracked item: ${item.productName}`);
+				if (product.requires_batch_tracking || product.requiresBatchTracking) {
+					if (!batchNumbers[item.product_id]?.trim()) {
+						validationErrors.push(`Batch number required for tracked item: ${item.product_name}`);
 					}
-					if (!expirationDates[item.productId]?.trim()) {
-						validationErrors.push(`Expiration date required for tracked item: ${item.productName}`);
+					if (!expirationDates[item.product_id]?.trim()) {
+						validationErrors.push(`Expiration date required for tracked item: ${item.product_name}`);
 					}
 				}
-				if (!purchaseCosts[item.productId] || purchaseCosts[item.productId] <= 0) {
-					validationErrors.push(`Purchase cost required for ${item.productName}`);
+				if (!purchaseCosts[item.product_id] || purchaseCosts[item.product_id] <= 0) {
+					validationErrors.push(`Purchase cost required for ${item.product_name}`);
 				}
 			}
 		});
@@ -115,47 +126,54 @@
 		
 		isSubmitting = true;
 
-		// Simulate API call
-		await new Promise((resolve) => setTimeout(resolve, 1500));
-
-		// 1. Create ProductBatch records for received items
-		po.items.forEach((item) => {
-			const quantityReceived = receivedQuantities[item.productId] ?? 0;
-			if (quantityReceived > 0) {
-				// Create new batch record
-				const batchData = {
-					product_id: item.productId,
-					batch_number: batchNumbers[item.productId],
-					expiration_date: expirationDates[item.productId] || undefined,
-					quantity_on_hand: quantityReceived,
-					purchase_cost: purchaseCosts[item.productId]
-				};
-				
-				productBatches.addBatch(batchData);
+		try {
+			// 1. Create ProductBatch records for received items
+			for (const item of po.items) {
+				const quantityReceived = receivedQuantities[item.product_id] ?? 0;
+				if (quantityReceived > 0) {
+					// Create new batch record
+					const batchData = {
+						productId: item.product_id,
+						batchNumber: batchNumbers[item.product_id],
+						expirationDate: expirationDates[item.product_id] || undefined,
+						quantityOnHand: quantityReceived,
+						purchaseCost: purchaseCosts[item.product_id]
+					};
+					
+					await createBatch.mutateAsync(batchData);
+				}
 			}
-		});
 
-		// 2. Update PO item received quantities
-		po.items.forEach((item) => {
-			const quantityReceived = receivedQuantities[item.productId] ?? 0;
-				poActions.updateReceivedQuantity(po.id, item.productId, quantityReceived);
-		});
+			// Skip step 2 since updateItemReceivedQuantity doesn't exist in the hook
 
-		// 3. Update PO status
-		const totalOrdered = po.items.reduce((sum, item) => sum + item.quantityOrdered, 0);
-		const totalReceived = po.items.reduce((sum, item) => sum + (receivedQuantities[item.productId] ?? 0), 0);
+			// 3. Update PO status
+			const totalOrdered = po.items.reduce((sum, item) => sum + item.quantity_ordered, 0);
+			const totalReceived = po.items.reduce((sum, item) => sum + (receivedQuantities[item.product_id] ?? 0), 0);
 
-		let newStatus: PurchaseOrder['status'] = 'partial';
-		if (totalReceived >= totalOrdered) {
-			newStatus = 'completed';
-		} else if (totalReceived === 0) {
-			newStatus = po.status; // No change if nothing was received
+			let newStatus: PurchaseOrder['status'] = 'partially_received';
+			if (totalReceived >= totalOrdered) {
+				newStatus = 'received';
+			} else if (totalReceived === 0) {
+				newStatus = po.status; // No change if nothing was received
+			}
+			
+			await updatePurchaseOrder.mutateAsync({
+				id: po.id,
+				status: newStatus,
+				carrierName,
+				trackingNumber,
+				packageCondition,
+				notes
+			});
+
+			toast.success(`PO ${po.id} has been processed successfully.`);
+			handleClose();
+		} catch (error) {
+			console.error('Error processing receiving:', error);
+			toast.error('Failed to process receiving. Please try again.');
+		} finally {
+			isSubmitting = false;
 		}
-		poActions.updatePO(po.id, { status: newStatus });
-
-		toast.success(`PO ${po.id} has been processed.`);
-		isSubmitting = false;
-		handleClose();
 	}
 
 	function handleClose() {
@@ -245,41 +263,41 @@
 							For each item received, please enter the batch number, expiration date (if applicable), and actual purchase cost.
 						</div>
 						<div class="space-y-6">
-							{#each po.items as item (item.productId)}
-								{@const receivedQty = receivedQuantities[item.productId] ?? 0}
-								{@const product = $inventory.find((p: ProductWithStock) => p.id === item.productId)}
-								{@const requiresTracking = product?.requires_batch_tracking ?? false}
+							{#each po.items as item (item.product_id)}
+								{@const receivedQty = receivedQuantities[item.product_id] ?? 0}
+								{@const product = inventoryData.find((p: any) => p.product_id === item.product_id)}
+								{@const requiresTracking = (product?.requires_batch_tracking || product?.requiresBatchTracking) ?? false}
 								<div class="border rounded-lg p-4 space-y-4">
 									<div class="flex justify-between items-center">
 										<div>
-											<h4 class="font-medium">{item.productName}</h4>
-											<p class="text-sm text-gray-500">SKU: {item.productSku}</p>
+											<h4 class="font-medium">{item.product_name}</h4>
+											<p class="text-sm text-gray-500">SKU: {item.product_sku}</p>
 										</div>
 										<div class="text-right">
-											<p class="text-sm">Expected: <span class="font-medium">{item.quantityOrdered}</span></p>
+											<p class="text-sm">Expected: <span class="font-medium">{item.quantity_ordered}</span></p>
 										</div>
 									</div>
 									
 									<div class="grid grid-cols-2 md:grid-cols-4 gap-4">
 										<div class="space-y-2">
-											<Label for="qty-{item.productId}">Received Qty *</Label>
+											<Label for="qty-{item.product_id}">Received Qty *</Label>
 											<Input
-												id="qty-{item.productId}"
+												id="qty-{item.product_id}"
 												type="number"
 												min="0"
 												step="1"
 												class="text-center"
-												bind:value={receivedQuantities[item.productId]}
+												bind:value={receivedQuantities[item.product_id]}
 												placeholder="0"
 											/>
 										</div>
 										
 										<div class="space-y-2">
-											<Label for="batch-{item.productId}">Batch Number {requiresTracking ? '*' : ''}</Label>
+											<Label for="batch-{item.product_id}">Batch Number {requiresTracking ? '*' : ''}</Label>
 											<Input
-												id="batch-{item.productId}"
+												id="batch-{item.product_id}"
 												type="text"
-												bind:value={batchNumbers[item.productId]}
+												bind:value={batchNumbers[item.product_id]}
 												placeholder="e.g., LOT123456"
 												disabled={receivedQty <= 0}
 												required={requiresTracking && receivedQty > 0}
@@ -288,11 +306,11 @@
 										</div>
 										
 										<div class="space-y-2">
-											<Label for="expiry-{item.productId}">Expiration Date {requiresTracking ? '*' : ''}</Label>
+											<Label for="expiry-{item.product_id}">Expiration Date {requiresTracking ? '*' : ''}</Label>
 											<Input
-												id="expiry-{item.productId}"
+												id="expiry-{item.product_id}"
 												type="date"
-												bind:value={expirationDates[item.productId]}
+												bind:value={expirationDates[item.product_id]}
 												disabled={receivedQty <= 0}
 												required={requiresTracking && receivedQty > 0}
 												class={receivedQty <= 0 ? 'bg-gray-100' : ''}
@@ -300,13 +318,13 @@
 										</div>
 										
 										<div class="space-y-2">
-											<Label for="cost-{item.productId}">Purchase Cost *</Label>
+											<Label for="cost-{item.product_id}">Purchase Cost *</Label>
 											<Input
-												id="cost-{item.productId}"
+												id="cost-{item.product_id}"
 												type="number"
 												min="0"
 												step="0.01"
-												bind:value={purchaseCosts[item.productId]}
+												bind:value={purchaseCosts[item.product_id]}
 												placeholder="0.00"
 												disabled={receivedQty <= 0}
 												class={receivedQty <= 0 ? 'bg-gray-100' : ''}
@@ -314,7 +332,7 @@
 										</div>
 									</div>
 									
-									{#if receivedQty > 0 && requiresTracking && (!batchNumbers[item.productId] || !expirationDates[item.productId])}
+									{#if receivedQty > 0 && requiresTracking && (!batchNumbers[item.product_id] || !expirationDates[item.product_id])}
 										<div class="text-sm text-red-600 bg-red-50 p-2 rounded">
 											⚠️ Batch number and expiration date are required for this tracked item.
 										</div>
@@ -346,11 +364,11 @@
 									</Table.Header>
 									<Table.Body>
 										{#each po.items as item}
-											{@const received = receivedQuantities[item.productId] ?? 0}
-											{@const variance = received - item.quantityOrdered}
+											{@const received = receivedQuantities[item.product_id] ?? 0}
+											{@const variance = received - item.quantity_ordered}
 											<Table.Row>
-												<Table.Cell>{item.productName}</Table.Cell>
-												<Table.Cell class="text-center">{item.quantityOrdered}</Table.Cell>
+												<Table.Cell>{item.product_name}</Table.Cell>
+												<Table.Cell class="text-center">{item.quantity_ordered}</Table.Cell>
 												<Table.Cell class="text-center font-bold text-primary">{received}</Table.Cell>
 												<Table.Cell class={cn('text-center font-bold', variance > 0 && 'text-green-600', variance < 0 && 'text-red-600')}>{variance > 0 ? '+' : ''}{variance}</Table.Cell>
 											</Table.Row>

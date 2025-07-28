@@ -1,12 +1,21 @@
 <script lang="ts">
-	import { createEventDispatcher } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
 	import Receipt from './Receipt.svelte';
-	import type { ReceiptData } from '$lib/stores/receiptStore';
+	import { useReceipts } from '$lib/data/receipt';
 	import { Printer, X } from 'lucide-svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
+	import type { GeneratedReceipt } from '$lib/types/receipt.schema';
 
-	export let receiptData: ReceiptData | null;
+	// Props according to the new pattern
+	type Props = {
+		receiptData: GeneratedReceipt | null;
+		onClose?: () => void;
+	};
+
+	let { receiptData, onClose }: Props = $props();
+
+	// Get receipt operations from TanStack Query hook
+	const { generateReceipt, generateReceiptStatus } = useReceipts();
 
 	function printReceipt() {
 		const printableArea = document.getElementById('receipt-printable-area');
@@ -43,11 +52,8 @@
 		}
 	}
 
-	const dispatch = createEventDispatcher<{ close: void }>();
-
 	function handleClose() {
-		receiptData = null;
-		dispatch('close');
+		onClose?.();
 	}
 
 	$: open = !!receiptData;

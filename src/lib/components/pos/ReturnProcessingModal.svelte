@@ -8,19 +8,27 @@
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import { AlertTriangle } from 'lucide-svelte';
 
-	import { transactions as transactionStore } from '$lib/stores/transactionStore';
-	import { returns as returnStore } from '$lib/stores/returnStore';
-	import { productBatches as productBatchStore } from '$lib/stores/productBatchStore';
-	import { products as productStore } from '$lib/stores/productStore';
-	import { session } from '$lib/stores/sessionStore';
+	// Import TanStack Query hooks according to Component Integration Guide
+	import { useTransactions } from '$lib/data/transaction';
+	import { useReturns } from '$lib/data/returns';
+	import { useProducts } from '$lib/data/product';
+	import { useSession } from '$lib/data/session';
+	import type { Transaction, NewReturnInput } from '$lib/types/transaction.schema';
+	import type { ReturnItem } from '$lib/types/returns.schema';
+	import type { Product } from '$lib/types/product.schema';
 
-	import type { Transaction, TransactionItem, ReturnItem } from '$lib/schemas/models';
-
-	let {
-		open = $bindable(false)
-	}: {
+	// Props according to the new pattern
+	type Props = {
 		open?: boolean;
-	} = $props();
+	};
+
+	let { open = $bindable(false) }: Props = $props();
+
+	// Get data and actions from TanStack Query hooks
+	const { useTransaction } = useTransactions();
+	const { createReturn, isCreating } = useReturns();
+	const { products } = useProducts();
+	const { sessionData } = useSession();
 
 	let transactionIdInput = $state('');
 	let foundTransaction = $state<Transaction | null>(null);
@@ -28,15 +36,28 @@
 	let errorMessage = $state<string | null>(null);
 	let step = $state<'search' | 'selection' | 'summary'>('search');
 
+	// Create transaction query when we have an ID
+	$: transactionQuery = transactionIdInput.trim() ? useTransaction(transactionIdInput.trim()) : null;
+
 	function findTransaction() {
 		errorMessage = null;
-		const result = transactionStore.findById(transactionIdInput.trim());
-		if (result) {
-			foundTransaction = result;
-			step = 'selection';
-		} else {
+		if (!transactionQuery) {
+			errorMessage = 'Please enter a transaction ID.';
+			return;
+		}
+
+		// Check if transaction exists and is loaded
+		if (transactionQuery.isLoading) {
+			errorMessage = 'Loading transaction...';
+			return;
+		}
+
+		if (transactionQuery.isError || !transactionQuery.data) {
 			foundTransaction = null;
 			errorMessage = 'Transaction not found. Please check the ID and try again.';
+		} else {
+			foundTransaction = transactionQuery.data;
+			step = 'selection';
 		}
 	}
 
@@ -50,22 +71,14 @@
 		selectedItemsToReturn = newSet;
 	}
 
-	function processReturn() {
+	async function processReturn() {
 		if (!foundTransaction || selectedItemsToReturn.size === 0) return;
 
 		const itemsToReturn = foundTransaction.items.filter(item => selectedItemsToReturn.has(item.id));
 
-		// 1. Update inventory for each returned item
-		for (const item of itemsToReturn) {
-			// Disposition should be handled by a select in a real scenario
-			if (item.batch_id) {
-				productBatchStore.addStockToBatch(item.batch_id, item.quantity);
-			}
-		}
-
-		// 2. Create a return record
+		// Create a return record using TanStack Query mutation
 		const returnItems: ReturnItem[] = itemsToReturn.map(item => {
-			const product = $productStore.find(p => p.id === item.product_id);
+			const product = getProduct(item.product_id);
 			return {
 				product_id: item.product_id,
 				product_name: product?.name ?? 'Unknown Product',
@@ -74,19 +87,21 @@
 			};
 		});
 
-		const newReturn = returnStore.addReturn({
+		const newReturnData: NewReturnInput = {
 			order_id: foundTransaction.id,
 			customer_name: 'Walk-in Customer', // Placeholder
 			items: returnItems,
 			reason: 'changed_mind', // Placeholder
-			notes: `Refund of $${returnTotal.toFixed(2)} processed by ${$session.currentUser?.username ?? 'system'}.`,
-			created_at: new Date().toISOString(),
-			updated_at: new Date().toISOString()
-		});
+			notes: `Refund of $${returnTotal.toFixed(2)} processed by ${sessionData?.user?.username ?? 'system'}.`
+		};
 
-		alert(`Return processed successfully! Return ID: ${newReturn.id}`);
-
-		closeModal();
+		try {
+			const newReturn = await createReturn(newReturnData);
+			alert(`Return processed successfully! Return ID: ${newReturn.id}`);
+			closeModal();
+		} catch (error) {
+			errorMessage = `Failed to process return: ${error.message}`;
+		}
 	}
 
 	function closeModal() {
@@ -112,7 +127,8 @@
 			.reduce((sum, item) => sum + item.price_at_sale * item.quantity, 0) ?? 0
 	);
 
-	const getProduct = (productId: string) => $productStore.find((p) => p.id === productId);
+	const getProduct = (productId: string): Product | undefined => 
+		products.find((p: Product) => p.id === productId);
 
 
 

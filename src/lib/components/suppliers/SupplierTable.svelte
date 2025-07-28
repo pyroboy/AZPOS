@@ -1,27 +1,44 @@
 <script lang="ts">
-	import { suppliers } from '$lib/stores/supplierStore.svelte';
-	import { products } from '$lib/stores/productStore';
-	import type { PurchaseOrder, Supplier } from '$lib/schemas/models';
+import { useSuppliers } from '$lib/data/supplier';
+	import type { Supplier } from '$lib/types/supplier.schema';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '$lib/components/ui/table';
-	import { ChevronDown, ChevronRight, Edit } from 'lucide-svelte';
 	import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '$lib/components/ui/dropdown-menu';
-	import { MoreHorizontal } from 'lucide-svelte';
-	import { Pencil } from 'lucide-svelte';
-	import { ToggleLeft, ToggleRight } from 'lucide-svelte';
-    import { Toggle } from '$lib/components/ui/toggle';
+	import { MoreHorizontal, Pencil, ToggleLeft, ToggleRight } from 'lucide-svelte';
 
-	let expandedSupplierId = $state<string | null>(null);
+const { 
+	suppliersQuery, 
+	suppliers, 
+	activeSuppliers, 
+	updateSupplier, 
+	isLoading, 
+	isError, 
+	error, 
+	isUpdating, 
+	updateError 
+} = useSuppliers();
+
+// Props for handling edit action
+let { onEditSupplier }: { onEditSupplier?: (supplier: Supplier) => void } = $props();
 
 
-	function getProduct(id: string) {
-		return products.findById(id);
+
+function handleToggleStatus(supplierId: string) {
+	const supplier = suppliers.find((s: Supplier) => s.id === supplierId);
+	if (supplier) {
+		updateSupplier({ 
+			supplierId, 
+			supplierData: { is_active: !supplier.is_active } 
+		});
 	}
+}
 
-	function handleToggleStatus(supplierId: string) {
-		suppliers.toggleSupplierActive(supplierId);
+function handleEditSupplier(supplier: Supplier) {
+	if (onEditSupplier) {
+		onEditSupplier(supplier);
 	}
+}
 </script>
 
 <div class="border rounded-lg">
@@ -37,8 +54,23 @@
 			</TableRow>
 		</TableHeader>
 		<TableBody>
-			{#if suppliers.suppliers.length > 0}
-				{#each suppliers.suppliers as supplier (supplier.id)}
+			{#if $suppliersQuery.isPending}
+				<TableRow>
+					<TableCell colspan={6} class="h-24 text-center">
+						<div class="flex items-center justify-center space-x-2">
+							<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900"></div>
+							<span>Loading suppliers...</span>
+						</div>
+					</TableCell>
+				</TableRow>
+			{:else if $suppliersQuery.isError}
+				<TableRow>
+					<TableCell colspan={6} class="h-24 text-center text-red-500">
+						Error loading suppliers: {error?.message || 'Unknown error'}
+					</TableCell>
+				</TableRow>
+			{:else if suppliers.length > 0}
+				{#each suppliers as supplier (supplier.id)}
 					<TableRow>
 						<TableCell class="font-medium">{supplier.name}</TableCell>
 						<TableCell>
@@ -46,7 +78,7 @@
 								{supplier.is_active ? 'Active' : 'Inactive'}
 							</Badge>
 						</TableCell>
-						<TableCell>{supplier.contact_person ?? 'N/A'}</TableCell>
+					<TableCell>{supplier.contacts?.[0]?.name ?? 'N/A'}</TableCell>
 						<TableCell>{supplier.email ?? 'N/A'}</TableCell>
 						<TableCell>{supplier.phone ?? 'N/A'}</TableCell>
 						<TableCell class="text-right">
@@ -60,18 +92,18 @@
 								<DropdownMenuContent align="end">
 									<DropdownMenuLabel>Actions</DropdownMenuLabel>
 									<!-- on:click is not supported here, will be handled by dialog -->
-									<DropdownMenuItem>
+									<DropdownMenuItem onclick={() => handleEditSupplier(supplier)}>
 										<Pencil class="mr-2 h-4 w-4" />
 										<span>Edit</span>
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
-									<DropdownMenuItem>
+									<DropdownMenuItem onclick={() => handleToggleStatus(supplier.id)} disabled={isUpdating}>
 										{#if supplier.is_active}
 											<ToggleLeft class="mr-2 h-4 w-4" />
-											<span>Deactivate</span>
+											<span>{isUpdating ? 'Deactivating...' : 'Deactivate'}</span>
 										{:else}
 											<ToggleRight class="mr-2 h-4 w-4" />
-											<span>Activate</span>
+											<span>{isUpdating ? 'Activating...' : 'Activate'}</span>
 										{/if}
 									</DropdownMenuItem>
 								</DropdownMenuContent>

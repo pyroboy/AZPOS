@@ -4,9 +4,9 @@
 	import { zod } from 'sveltekit-superforms/adapters';
 	import { productSchema } from '$lib/schemas/models';
 	import type { Product, Supplier } from '$lib/schemas/models';
-	import { products } from '$lib/stores/productStore';
-	import { suppliers } from '$lib/stores/supplierStore.svelte';
-	import { categories } from '$lib/stores/categoryStore';
+	import { useProducts } from '$lib/data/product';
+	import { useSuppliers } from '$lib/data/supplier';
+	import { useCategories } from '$lib/data/category';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -25,6 +25,23 @@
 	let imageUrlPreview = $state('');
 	let skuStatus: 'idle' | 'checking' | 'taken' | 'available' = $state('idle');
 
+	// Get data and actions from the hooks
+	const {
+		products,
+		createProduct,
+		isCreating
+	} = useProducts();
+
+	const {
+		suppliers,
+		isLoading: isSuppliersLoading
+	} = useSuppliers();
+
+	const {
+		categories,
+		isLoading: isCategoriesLoading
+	} = useCategories();
+
 	// Variant state
 	let enableVariants = $state(false);
 	type VariantOption = { name: string; values: string };
@@ -42,9 +59,9 @@
 			const lowerCaseSearch = bundleSearchTerm.toLowerCase();
 			const selectedIds = new Set(selectedComponents.map((c) => c.id));
 
-			return $products
+			return products
 				.filter(
-					(p) =>
+					(p: Product) =>
 						!selectedIds.has(p.id) &&
 						(p.name.toLowerCase().includes(lowerCaseSearch) ||
 							p.sku.toLowerCase().includes(lowerCaseSearch))
@@ -113,7 +130,7 @@
 			return;
 		}
 		skuStatus = 'checking';
-		const isTaken = $products.some(p => p.sku.toLowerCase() === sku.toLowerCase());
+		const isTaken = products.some((p: Product) => p.sku.toLowerCase() === sku.toLowerCase());
 		setTimeout(() => { // Simulate network latency
 			skuStatus = isTaken ? 'taken' : 'available';
 		}, 500);
@@ -157,14 +174,19 @@
 							: undefined
 				};
 
-				products.addProduct(productData);
-
-				toast.success(`Product "${$formData.name}" has been added.`);
-				if (closeOnSave) {
-					open = false; // Close dialog on success
-				} else {
-					resetComponentState();
-				}
+				createProduct(productData, {
+					onSuccess: () => {
+						toast.success(`Product "${$formData.name}" has been added.`);
+						if (closeOnSave) {
+							open = false; // Close dialog on success
+						} else {
+							resetComponentState();
+						}
+					},
+					onError: (error: any) => {
+						toast.error(`Failed to add product: ${error.message}`);
+					}
+				});
 			}
 		}
 	});
@@ -185,9 +207,9 @@
 	// DERIVED STATE & EFFECTS HOOKED TO FORM DATA
 	// These must be declared *after* `formData` is initialized by `superForm`.
 
-		const selectedSupplier = $derived(suppliers.suppliers.find((s: Supplier) => s.id === $formData.supplier_id));
+	const selectedSupplier = $derived(suppliers.find((s: Supplier) => s.id === $formData.supplier_id));
 	const selectedSupplierLabel = $derived(selectedSupplier?.name ?? 'Select a supplier');
-	const selectedCategory = $derived($categories.find(c => c.id === $formData.category_id));
+	const selectedCategory = $derived(categories.find((c: any) => c.id === $formData.category_id));
 	const selectedCategoryLabel = $derived(selectedCategory?.name ?? 'Select a category');
 
 	$effect(() => {
@@ -289,7 +311,7 @@
 											{selectedCategoryLabel}
 										</Select.Trigger>
 										<Select.Content>
-											{#each $categories as category}
+											{#each categories as category}
 												<Select.Item value={category.id} label={category.name}>{category.name}</Select.Item>
 											{/each}
 										</Select.Content>
@@ -303,7 +325,7 @@
 											{selectedSupplierLabel}
 										</Select.Trigger>
 										<Select.Content>
-																						{#each suppliers.suppliers as supplier}
+											{#each suppliers as supplier}
 												<Select.Item value={supplier.id} label={supplier.name}>{supplier.name}</Select.Item>
 											{/each}
 										</Select.Content>

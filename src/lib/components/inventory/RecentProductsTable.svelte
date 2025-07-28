@@ -1,14 +1,17 @@
 <script lang="ts">
-	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore';
+	import { useProducts } from '$lib/data/product';
 	import * as Table from '$lib/components/ui/table';
 	import { currency } from '$lib/utils/currency';
+	import type { Product } from '$lib/types/product.schema';
+
+	// Get products using TanStack Query hook
+	const { products, isLoading, isError, error } = useProducts();
 
 	// Sort once by internal created_at DESC and take the first 10 rows.
-	// Note: inventory is now a reactive value, not a store, so no $ prefix needed
-	const recentProducts: ProductWithStock[] = $derived(
-		inventory
+	const recentProducts = $derived(
+		products
 			.slice() // Create a shallow copy to avoid mutating the original
-			.sort((a: ProductWithStock, b: ProductWithStock) => {
+			.sort((a: Product, b: Product) => {
 				const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
 				const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
 				return bDate - aDate;
@@ -28,7 +31,17 @@
 		</Table.Row>
 	</Table.Header>
 	<Table.Body>
-		{#if recentProducts.length > 0}
+		{#if isLoading}
+			<Table.Row>
+				<Table.Cell colspan={5} class="text-center">Loading products...</Table.Cell>
+			</Table.Row>
+		{:else if isError}
+			<Table.Row>
+				<Table.Cell colspan={5} class="text-center text-red-500">
+					Error loading products: {error?.message || 'Unknown error'}
+				</Table.Cell>
+			</Table.Row>
+		{:else if recentProducts.length > 0}
 			{#each recentProducts as product (product.id)}
 				<Table.Row>
 					<Table.Cell>
@@ -40,8 +53,8 @@
 					</Table.Cell>
 					<Table.Cell class="font-bold">{product.name}</Table.Cell>
 					<Table.Cell class="font-mono">{product.sku}</Table.Cell>
-					<Table.Cell class="text-right">{product.stock}</Table.Cell>
-					<Table.Cell class="text-right">{currency(product.price)}</Table.Cell>
+					<Table.Cell class="text-right">{product.stock_quantity}</Table.Cell>
+					<Table.Cell class="text-right">{currency(product.selling_price)}</Table.Cell>
 				</Table.Row>
 			{/each}
 		{:else}

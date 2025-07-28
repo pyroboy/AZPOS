@@ -1,6 +1,6 @@
 <script lang="ts">
     import type { Product } from '$lib/types';
-	import { getModifiersForProduct } from '$lib/stores/modifierStore';
+	import { useModifiers } from '$lib/data/modifier';
 	import type { Modifier } from '$lib/types';
     import { cn } from '$lib/utils';
     import * as Dialog from '$lib/components/ui/dialog';
@@ -10,14 +10,15 @@
 
     let { product, onClose, onApply }: { product: Product; onClose: () => void; onApply: (selectedModifiers: Modifier[]) => void; } = $props();
 
-    let availableModifiers = $state<Modifier[]>([]);
+    // Use the modifiers hook
+    const { getModifiersForProduct, isLoading } = useModifiers();
+    
     let selectedModifiers = $state<Modifier[]>([]);
     let modifierContainer = $state<HTMLDivElement | undefined>(undefined);
     let applyButton = $state<HTMLButtonElement | undefined>(undefined);
 
-    $effect(() => {
-        availableModifiers = getModifiersForProduct(product.id);
-    });
+    // Get available modifiers for this product
+    const availableModifiers = $derived(getModifiersForProduct(product.id));
 
     function toggleModifier(modifier: Modifier) {
         const isSelected = selectedModifiers.some(m => m.id === modifier.id);
@@ -56,7 +57,9 @@
             </Dialog.Header>
             
             <div class="py-4 space-y-2">
-                {#if availableModifiers.length === 0}
+                {#if isLoading}
+                    <p class="text-muted-foreground text-center">Loading modifiers...</p>
+                {:else if availableModifiers.length === 0}
                     <p class="text-muted-foreground text-center">No modifiers available for this product.</p>
                 {:else}
                     <div bind:this={modifierContainer} class="flex flex-wrap gap-2">

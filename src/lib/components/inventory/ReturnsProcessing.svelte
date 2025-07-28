@@ -1,18 +1,22 @@
 <script lang="ts">
-	import { returns } from '$lib/stores/returnsStore.svelte';
+	import { useReturns } from '$lib/data/returns';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Eye } from 'lucide-svelte';
 	import ReturnDetailsModal from './ReturnDetailsModal.svelte';
-	import type { ReturnRecord } from '$lib/schemas/models';
+	import type { EnhancedReturnRecord } from '$lib/types/returns.schema';
+
+	// Get returns using TanStack Query hook
+	const { returns, isLoading, isError, error } = useReturns();
+
 	let searchTerm = $state('');
 	let isModalOpen = $state(false);
-	let selectedReturn: ReturnRecord | null = $state(null);
+	let selectedReturn: EnhancedReturnRecord | null = $state(null);
 
 	const filteredReturns = $derived(
-		returns.filter((r) => {
+		returns.filter((r: EnhancedReturnRecord) => {
 			const lowerSearch = searchTerm.toLowerCase();
 			if (!lowerSearch) return true;
 			return (
@@ -31,7 +35,7 @@
 		});
 	}
 
-	function viewDetails(record: ReturnRecord) {
+	function viewDetails(record: EnhancedReturnRecord) {
 		selectedReturn = record;
 		isModalOpen = true;
 	}
@@ -67,11 +71,19 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				{#if filteredReturns.length === 0}
+				{#if isLoading}
 					<Table.Row>
-						<Table.Cell colspan={7} class="h-24 text-center">
-							No returns found.
+						<Table.Cell colspan={7} class="h-24 text-center">Loading returns...</Table.Cell>
+					</Table.Row>
+				{:else if isError}
+					<Table.Row>
+						<Table.Cell colspan={7} class="h-24 text-center text-red-500">
+							Error loading returns: {error?.message || 'Unknown error'}
 						</Table.Cell>
+					</Table.Row>
+				{:else if filteredReturns.length === 0}
+					<Table.Row>
+						<Table.Cell colspan={7} class="h-24 text-center">No returns found.</Table.Cell>
 					</Table.Row>
 				{:else}
 					{#each filteredReturns as ret (ret.id)}
@@ -79,17 +91,20 @@
 							<Table.Cell class="font-medium">{ret.id}</Table.Cell>
 							<Table.Cell>{ret.order_id}</Table.Cell>
 							<Table.Cell>{ret.customer_name}</Table.Cell>
-							<Table.Cell>{ret.items.reduce((sum, i) => sum + i.quantity, 0)}</Table.Cell>
+							<Table.Cell>{ret.items.reduce((sum: number, i: any) => sum + i.quantity, 0)}</Table.Cell>
 							<Table.Cell>{formatDate(ret.return_date)}</Table.Cell>
 							<Table.Cell>
 								<Badge
-									variant={{
-										pending: 'secondary',
-										approved: 'success',
-										rejected: 'destructive',
-										completed: 'default',
-										processing: 'default'
-									}[ret.status] as 'secondary' | 'success' | 'destructive' | 'default'}
+									variant={(() => {
+										const statusMap: Record<string, 'secondary' | 'success' | 'destructive' | 'default'> = {
+											pending: 'secondary',
+											approved: 'success',
+											rejected: 'destructive',
+											completed: 'default',
+											processing: 'default'
+										};
+										return statusMap[ret.status] || 'secondary';
+									})()}
 								>
 									{ret.status}
 								</Badge>
