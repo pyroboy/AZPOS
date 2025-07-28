@@ -56,7 +56,7 @@ function calculateDateRange(
 }
 
 // Helper function to calculate cost variance for purchase orders
-function calculateCostVariance(items: any[]): {
+function calculateCostVariance(items: Record<string, unknown>[]): {
 	total: number;
 	average: number;
 	percentage: number;
@@ -68,16 +68,14 @@ function calculateCostVariance(items: any[]): {
 	let totalVariance = 0;
 	let totalOrders = 0;
 	let totalExpected = 0;
-	let totalActual = 0;
 
 	items.forEach((item) => {
-		const expectedCost = item.quantity_ordered * item.unit_cost;
-		const actualCost = item.quantity_received * item.unit_cost; // Simplified - in reality might have different costs
+		const expectedCost = (item.quantity_ordered as number) * (item.unit_cost as number);
+		const actualCost = (item.quantity_received as number) * (item.unit_cost as number); // Simplified - in reality might have different costs
 		const variance = actualCost - expectedCost;
 
 		totalVariance += variance;
 		totalExpected += expectedCost;
-		totalActual += actualCost;
 		totalOrders++;
 	});
 
@@ -162,7 +160,7 @@ export async function onGetSupplierPerformanceReport(
 
 	// Process metrics for each supplier
 	const metrics: SupplierPerformanceMetric[] = [];
-	let totalStats = {
+	const totalStats = {
 		total_suppliers: 0,
 		active_suppliers: 0,
 		suppliers_with_orders: 0,
@@ -290,8 +288,8 @@ export async function onGetSupplierPerformanceReport(
 	const sortOrder = validatedFilters.sort_order;
 
 	metrics.sort((a, b) => {
-		let valueA: any;
-		let valueB: any;
+		let valueA: string | number;
+		let valueB: string | number;
 
 		switch (sortField) {
 			case 'supplier_name':
@@ -469,7 +467,7 @@ export async function onGetSupplierPerformanceDetail(
 export async function onExportSupplierPerformanceReport(
 	filters?: SupplierPerformanceFilters,
 	format: 'csv' | 'xlsx' = 'csv'
-): Promise<{ data: any[]; filename: string }> {
+): Promise<{ data: Record<string, unknown>[]; filename: string }> {
 	const { user } = getContext();
 	if (!user || (user.role !== 'admin' && user.role !== 'manager' && user.role !== 'owner')) {
 		throw new Error('Not authorized - admin/manager/owner access required');

@@ -4,7 +4,6 @@ import {
 	userThemePreferencesSchema,
 	themeExportSchema,
 	type ThemeConfig,
-	type ThemeCustomization,
 	type UserThemePreferences,
 	type ThemeExport,
 	type ThemeStats
@@ -175,7 +174,7 @@ export async function onCreateCustomTheme(customizationData: unknown): Promise<T
 		updated_at: now
 	};
 
-	const { data: savedTheme, error } = await supabase
+	const { error } = await supabase
 		.from('themes')
 		.insert({
 			id: customTheme.id,
@@ -233,7 +232,7 @@ export async function onUpdateTheme(
 
 	const now = new Date().toISOString();
 
-	const updateData: any = {
+	const updateData: Record<string, unknown> = {
 		updated_at: now
 	};
 
@@ -413,7 +412,7 @@ export async function onImportTheme(themeExportData: unknown): Promise<ThemeConf
 		updated_at: now
 	};
 
-	const { data: savedTheme, error } = await supabase
+	const { error } = await supabase
 		.from('themes')
 		.insert({
 			id: importedTheme.id,
@@ -450,7 +449,7 @@ export async function onGetThemeStats(): Promise<ThemeStats> {
 
 	const { data: themes, error: themesError } = await supabase
 		.from('themes')
-		.select('id, name, is_system, is_default, created_at');
+		.select('id, name, type, is_system, is_default, created_at');
 
 	if (themesError) throw themesError;
 
@@ -481,11 +480,11 @@ export async function onGetThemeStats(): Promise<ThemeStats> {
 		system_themes: themes?.filter((t) => t.is_system).length || 0,
 		custom_themes: themes?.filter((t) => !t.is_system).length || 0,
 		active_users_by_theme: activeUsersByTheme,
-			theme_type_breakdown: {
-				light: themes?.filter((t: any) => t.type === 'light').length || 0,
-				dark: themes?.filter((t: any) => t.type === 'dark').length || 0,
-				auto: themes?.filter((t: any) => t.type === 'auto').length || 0
-			}
+		theme_type_breakdown: {
+			light: themes?.filter((t) => (t as { type: string }).type === 'light').length || 0,
+			dark: themes?.filter((t) => (t as { type: string }).type === 'dark').length || 0,
+			auto: themes?.filter((t) => (t as { type: string }).type === 'auto').length || 0
+		}
 	};
 
 	return stats;
@@ -501,8 +500,9 @@ export async function onValidateTheme(
 	try {
 		themeCustomizationSchema.parse(themeData);
 		return { is_valid: true, errors: [] };
-	} catch (error: any) {
-		const errors = error.errors?.map((e: any) => `${e.path.join('.')}: ${e.message}`) || [
+	} catch (error: unknown) {
+		const zodError = error as { errors?: Array<{ path: (string | number)[]; message: string }> };
+		const errors = zodError.errors?.map((e: { path: (string | number)[]; message: string }) => `${e.path.join('.')}: ${e.message}`) || [
 			'Invalid theme configuration'
 		];
 		return { is_valid: false, errors };

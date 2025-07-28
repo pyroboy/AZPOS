@@ -11,20 +11,20 @@ import {
 import { createSupabaseClient } from '$lib/server/db';
 
 // Helper function to transform inventory adjustments to sales items
-function transformAdjustmentToSaleItem(adjustment: any, product: any): SalesItem {
+function transformAdjustmentToSaleItem(adjustment: Record<string, unknown>, product: Record<string, unknown> | undefined): SalesItem {
 	return {
-		id: adjustment.id,
-		product_id: adjustment.product_id,
-		product_name: product?.name ?? 'Unknown Product',
-		product_sku: product?.sku,
-		quantity: Math.abs(adjustment.quantity_adjusted),
-		price_per_unit: product?.price ?? 0,
-		total_amount: product ? Math.abs(adjustment.quantity_adjusted) * product.price : 0,
-		batch_id: adjustment.batch_id,
-		adjustment_id: adjustment.id,
-		sale_date: adjustment.created_at,
-		user_id: adjustment.user_id,
-		reason: adjustment.reason
+		id: adjustment.id as string,
+		product_id: adjustment.product_id as string,
+		product_name: (product?.name as string) ?? 'Unknown Product',
+		product_sku: product?.sku as string | undefined,
+		quantity: Math.abs(adjustment.quantity_adjusted as number),
+		price_per_unit: (product?.price as number) ?? 0,
+		total_amount: product ? Math.abs(adjustment.quantity_adjusted as number) * (product.price as number) : 0,
+		batch_id: adjustment.batch_id as string | undefined,
+		adjustment_id: adjustment.id as string | undefined,
+		sale_date: adjustment.created_at as string,
+		user_id: adjustment.user_id as string | undefined,
+		reason: adjustment.reason as string | undefined
 	};
 }
 
@@ -274,11 +274,11 @@ export async function onGetSalesSummary(
 			dateFrom = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
 			break;
 		case 'week':
-			const weekStart = new Date(now);
+			{ const weekStart = new Date(now);
 			weekStart.setDate(now.getDate() - now.getDay());
 			weekStart.setHours(0, 0, 0, 0);
 			dateFrom = weekStart.toISOString();
-			break;
+			break; }
 		case 'month':
 			dateFrom = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 			break;

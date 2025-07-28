@@ -4,8 +4,6 @@ import {
 	updateSessionSchema,
 	sessionFiltersSchema,
 	type SessionState,
-	type CreateSession,
-	type UpdateSession,
 	type SessionFilters,
 	type PaginatedSessions,
 	type SessionStats,
@@ -85,10 +83,9 @@ export async function onUpdateSession(
 			throw new Error('Not authorized to update this session');
 		}
 
-		const now = new Date().toISOString();
-		const updateData: any = {
-			last_activity: now
-		};
+	const updateData: Record<string, unknown> = {
+		last_activity: new Date().toISOString()
+	};
 
 		if (validatedData.session_data) {
 			// This would update session data if the schema supported it
@@ -331,9 +328,8 @@ export async function onGetSessionStats(): Promise<SessionStats> {
 
 		if (error) throw error;
 
-		const now = new Date();
-		const today = new Date();
-		today.setHours(0, 0, 0, 0);
+	const today = new Date();
+	today.setHours(0, 0, 0, 0);
 
 		const thisWeek = new Date();
 		thisWeek.setDate(thisWeek.getDate() - 7);
@@ -464,7 +460,7 @@ async function logSessionActivity(
 	sessionId: string | null,
 	action: 'created' | 'updated' | 'extended' | 'terminated' | 'expired' | 'data_updated',
 	userId: string,
-	details?: any
+	details?: Record<string, unknown>
 ): Promise<void> {
 	try {
 		const supabase = createSupabaseClient();

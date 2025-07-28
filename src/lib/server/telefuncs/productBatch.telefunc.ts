@@ -3,7 +3,6 @@ import {
 	productBatchInputSchema,
 	productBatchFiltersSchema,
 	type ProductBatch,
-	type ProductBatchInput,
 	type ProductBatchFilters,
 	type PaginatedProductBatches,
 	type ProductBatchStats
