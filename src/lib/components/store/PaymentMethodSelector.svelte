@@ -80,8 +80,10 @@
 								? 'bg-primary/10 text-primary' 
 								: 'bg-muted text-muted-foreground'
 						}`}>
-							{@const IconComponent = method.icon}
-							<IconComponent class="h-5 w-5" />
+							{#if method.icon}
+								{@const IconComponent = method.icon}
+								<IconComponent class="h-5 w-5" />
+							{/if}
 						</div>
 						
 						<!-- Method Details -->

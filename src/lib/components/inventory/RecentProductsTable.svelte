@@ -4,9 +4,10 @@
 	import { currency } from '$lib/utils/currency';
 
 	// Sort once by internal created_at DESC and take the first 10 rows.
+	// Note: inventory is now a reactive value, not a store, so no $ prefix needed
 	const recentProducts: ProductWithStock[] = $derived(
-		($inventory as ProductWithStock[])
-			.slice() // Create a shallow copy to avoid mutating the original store
+		inventory
+			.slice() // Create a shallow copy to avoid mutating the original
 			.sort((a: ProductWithStock, b: ProductWithStock) => {
 				const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
 				const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;

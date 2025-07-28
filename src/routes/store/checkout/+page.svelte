@@ -22,7 +22,7 @@
 	let paymentMethod = $state('cash');
 	let specialInstructions = $state('');
 	let processing = $state(false);
-	let error = $state(null);
+	let error = $state<string | null>(null);
 	
 	// Redirect if cart is empty
 	onMount(() => {

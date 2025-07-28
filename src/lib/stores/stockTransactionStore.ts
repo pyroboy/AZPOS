@@ -27,6 +27,7 @@ const initialAdjustments: InventoryAdjustment[] = [
 
 function createInventoryAdjustmentStore() {
     const { subscribe, set, update } = writable<InventoryAdjustment[]>(initialAdjustments);
+    let currentData = [...initialAdjustments];
 
     return {
         subscribe,
@@ -36,9 +37,16 @@ function createInventoryAdjustmentStore() {
                 created_at: new Date().toISOString(),
                 ...adjustment
             };
+            currentData = [...currentData, newAdjustment];
             update(adjustments => [...adjustments, newAdjustment]);
         },
-        reset: () => set(initialAdjustments),
+        getAllAdjustments: (): InventoryAdjustment[] => {
+            return [...currentData];
+        },
+        reset: () => {
+            currentData = [...initialAdjustments];
+            set(initialAdjustments);
+        },
     };
 }
 

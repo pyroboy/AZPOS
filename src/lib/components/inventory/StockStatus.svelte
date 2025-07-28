@@ -1,6 +1,6 @@
 <!-- StockStatus.svelte -->
 <script lang="ts">
-    import { useInventory } from '$lib/stores/inventory';
+    import { inventory, inventoryManager, type ProductWithStock } from '$lib/stores/inventoryStore';
     import { viewMode } from '$lib/stores/viewStore';
     import { goto } from '$app/navigation';
     import { Button } from '$lib/components/ui/button';
@@ -13,27 +13,72 @@
     import { Input } from '$lib/components/ui/input';
     import { LayoutGrid, List, Trash2, X } from 'lucide-svelte';
     import { SORT_OPTIONS, STOCK_STATUS_FILTERS } from '$lib/constants/inventory';
-    const {
-        products,
-        categories,
-        totals,
-        selection,
-        filters,
-        editing,
-        isBulkEditModalOpen,
-        toggleCategory,
-        clearFilters,
-        toggleSelectAll,
-        handleRowSelect,
-        startEditing,
-        cancelEdit,
-        saveEdit
-    } = useInventory();
 
-    // Destructure nested stores for direct use with the '$' prefix in the template
-    const { totalSKUs, totalUnits, outOfStockCount, itemsToReorderCount } = totals;
-    const { selectedProductIds, areAllVisibleRowsSelected } = selection;
-    const { searchTerm, activeCategories, sortOrder, stockStatusFilter } = filters;
+    // Use the new Svelte 5 reactive inventory system
+    let searchTerm = $state('');
+    let selectedCategories = $state<string[]>([]);
+    let selectedProducts = $state<Set<string>>(new Set());
+    let isBulkEditModalOpen = $state(false);
+
+    // Reactive filtered products
+    const products = $derived.by(() => {
+        return inventory.filter((product: ProductWithStock) => {
+            const matchesSearch = !searchTerm || 
+                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+
+            const matchesCategory = selectedCategories.length === 0 || 
+                selectedCategories.includes(product.category_id);
+
+            return matchesSearch && matchesCategory && !product.is_archived;
+        });
+    });
+
+    // Calculate totals
+    const totals = $derived({
+        totalProducts: products.length,
+        totalValue: products.reduce((sum, p) => sum + (p.stock * p.price), 0),
+        lowStockCount: products.filter(p => p.stock < 10).length,
+        outOfStockCount: products.filter(p => p.stock === 0).length
+    });
+
+    // Items to reorder count
+    const itemsToReorderCount = $derived(
+        products.filter(p => p.stock < 10).length
+    );
+
+    // Helper functions
+    function toggleCategory(categoryId: string) {
+        if (selectedCategories.includes(categoryId)) {
+            selectedCategories = selectedCategories.filter(id => id !== categoryId);
+        } else {
+            selectedCategories = [...selectedCategories, categoryId];
+        }
+    }
+
+    function clearFilters() {
+        searchTerm = '';
+        selectedCategories = [];
+        selectedProducts = new Set();
+    }
+
+    function toggleSelectAll() {
+        if (selectedProducts.size === products.length) {
+            selectedProducts = new Set();
+        } else {
+            selectedProducts = new Set(products.map(p => p.id));
+        }
+    }
+
+    function handleRowSelect(productId: string) {
+        const newSelection = new Set(selectedProducts);
+        if (newSelection.has(productId)) {
+            newSelection.delete(productId);
+        } else {
+            newSelection.add(productId);
+        }
+        selectedProducts = newSelection;
+    }
     const { editingCell, editValue } = editing;
 
     function handleBarcodeScanned(code: string) {

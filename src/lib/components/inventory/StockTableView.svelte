@@ -1,9 +1,25 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { products } from '$lib/stores/productStore'; // The base store with the loader method
-    import { filteredProducts } from '$lib/stores/inventory/products';
+	import { inventory, inventoryManager, type ProductWithStock } from '$lib/stores/inventoryStore';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import ImagePreview from '$lib/components/inventory/ImagePreview.svelte';
+
+	// Use the new Svelte 5 reactive inventory instead of old stores
+	let searchTerm = $state('');
+	let selectedCategory = $state('');
+
+	// Filtered products using the new reactive inventory
+	const filteredProducts = $derived.by(() => {
+		return inventory.filter((product: ProductWithStock) => {
+			const matchesSearch = !searchTerm || 
+				product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+				product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+			
+			const matchesCategory = !selectedCategory || product.category_id === selectedCategory;
+			
+			return matchesSearch && matchesCategory && !product.is_archived;
+		});
+	});
 	const colors = [
 		'#ffadad', '#ffd6a5', '#fdffb6', '#caffbf',
 		'#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'
@@ -51,7 +67,7 @@
     </Table.Header>
 
     <Table.Body>
-      {#each $filteredProducts as product (product.id)}
+      {#each filteredProducts as product (product.id)}
         <Table.Row>
           <Table.Cell>
             <ImagePreview src={product.image_url} fallbackSrc={product.image_url} alt={product.name} product={product} />

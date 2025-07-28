@@ -7,7 +7,7 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group';
 	import { poActions } from '$lib/stores/purchaseOrderStore';
-	import { inventory } from '$lib/stores/inventoryStore';
+	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore';
 	import { productBatches } from '$lib/stores/productBatchStore';
 	import { toast } from 'svelte-sonner';
 	import { cn } from '$lib/utils';
@@ -91,7 +91,7 @@
 		// Validate required fields for received items
 		const validationErrors: string[] = [];
 		po.items.forEach((item) => {
-			const product = $inventory.find(p => p.id === item.productId);
+			const product = $inventory.find((p: ProductWithStock) => p.id === item.productId);
 			const quantityReceived = receivedQuantities[item.productId] ?? 0;
 			if (quantityReceived > 0 && product) {
 				if (product.requires_batch_tracking) {
@@ -247,7 +247,7 @@
 						<div class="space-y-6">
 							{#each po.items as item (item.productId)}
 								{@const receivedQty = receivedQuantities[item.productId] ?? 0}
-								{@const product = $inventory.find(p => p.id === item.productId)}
+								{@const product = $inventory.find((p: ProductWithStock) => p.id === item.productId)}
 								{@const requiresTracking = product?.requires_batch_tracking ?? false}
 								<div class="border rounded-lg p-4 space-y-4">
 									<div class="flex justify-between items-center">

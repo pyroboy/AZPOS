@@ -6,8 +6,8 @@
 
     let { data }: { data: PageData } = $props();
 
-    const totalRevenue = data.salesWithProfit.reduce((sum, sale) => sum + sale.revenue, 0);
-    const totalCogs = data.salesWithProfit.reduce((sum, sale) => sum + sale.costOfGoodsSold, 0);
+    const totalRevenue = data.salesWithProfit.reduce((sum: number, sale: any) => sum + sale.revenue, 0);
+    const totalCogs = data.salesWithProfit.reduce((sum: number, sale: any) => sum + sale.costOfGoodsSold, 0);
     const totalProfit = totalRevenue - totalCogs;
     const averageMargin = totalRevenue > 0 ? (totalProfit / totalRevenue) * 100 : 0;
 

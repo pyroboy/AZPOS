@@ -30,7 +30,6 @@ export interface EnhancedCartItem {
 }
 
 export interface CartState {
-	[x: string]: any;
 	items: EnhancedCartItem[];
 	discount: { type: 'percentage' | 'fixed'; value: number } | null;
 	session_id?: string;
@@ -56,6 +55,7 @@ export interface CartStore extends Writable<CartState> {
   clear: () => void;
   clearCart: () => void; // Backward compatibility
   totals: Readable<CartTotals>;
+  item_count: number;
   syncWithServer: () => Promise<void>;
   loadFromSession: () => void;
   saveToSession: () => void;
@@ -159,6 +159,9 @@ function createCartStore(): CartStore {
     set,
     update,
     totals,
+    get item_count() {
+      return get(totals).item_count;
+    },
     addItem: (product: Product, batch: ProductBatch, quantity: number, modifiers: Modifier[] = [], notes?: string) => {
       update((state) => {
         // Validate quantity (max 999 as per schema)

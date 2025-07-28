@@ -1,7 +1,6 @@
 import { redirect } from '@sveltejs/kit';
 import type { Role } from '$lib/schemas/models';
 import type { PageServerLoad } from './$types';
-import { get } from 'svelte/store';
 import { inventoryAdjustments } from '$lib/stores/stockTransactionStore';
 import { products } from '$lib/stores/productStore';
 import { users } from '$lib/stores/userStore';
@@ -23,9 +22,10 @@ export const load: PageServerLoad = async ({ parent }) => {
 		throw redirect(302, '/reports');
 	}
 
-	const allAdjustments: InventoryAdjustment[] = get(inventoryAdjustments);
-	const allProducts: Product[] = get(products);
-	const allUsers: User[] = get(users);
+	// Access store data using proper methods instead of get()
+	const allAdjustments: InventoryAdjustment[] = inventoryAdjustments.getAllAdjustments();
+	const allProducts: Product[] = products.getActiveProducts();
+	const allUsers: User[] = users.getAllActiveUsers();
 
 	const detailedAdjustments: DetailedAdjustment[] = allAdjustments
 		.map((adj) => {

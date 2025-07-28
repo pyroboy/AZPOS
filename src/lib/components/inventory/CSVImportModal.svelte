@@ -9,7 +9,6 @@
 	import { Upload, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-svelte';
 	import Papa from 'papaparse';
 	import { adjustmentReasons } from '$lib/schemas/models';
-	import { get } from 'svelte/store';
 
 	let {
 		show = $bindable(false),
@@ -21,7 +20,7 @@
 		onImportSuccess: (summary: { valid: number; invalid: number }) => void;
 	} = $props();
 
-	const allProducts = get(products);
+	const allProducts = products.getActiveProducts();
 	const validReasons = Object.values(adjustmentReasons);
 
 	let selectedFile = $state<File | null>(null);

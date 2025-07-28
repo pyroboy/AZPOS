@@ -6,7 +6,7 @@
 	import * as Select from '$lib/components/ui/select';
 	import { products } from '$lib/stores/productStore';
 	import * as Switch from '$lib/components/ui/switch/index.js';
-	import { inventory } from '$lib/stores/inventoryStore';
+	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore';
 	import { categories } from '$lib/stores/categoryStore';
 	import type { Product } from '$lib/types';
 
@@ -21,9 +21,9 @@
 
 	$effect(() => {
 		if (open && productIds.length > 0) {
-			const selectedProducts = $inventory.filter(p => productIds.includes(p.id));
+			const selectedProducts = $inventory.filter((p: ProductWithStock) => productIds.includes(p.id));
 			const firstProductTracking = selectedProducts[0].requires_batch_tracking;
-			const allSame = selectedProducts.every(p => p.requires_batch_tracking === firstProductTracking);
+			const allSame = selectedProducts.every((p: ProductWithStock) => p.requires_batch_tracking === firstProductTracking);
 			
 			if (allSame) {
 				requiresBatchTracking = firstProductTracking ? 'yes' : 'no';

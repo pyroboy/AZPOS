@@ -72,11 +72,11 @@
 	// --- Derived State ---
 	const categories = $derived([
 		'All',
-		...new Set($inventory.map((p) => p.category_id).filter((c): c is string => !!c))
+		...new Set($inventory.map((p: any) => p.category_id).filter((c: any): c is string => !!c))
 	]);
 
 	const filteredProducts = $derived(
-		$inventory.filter((p) => {
+		$inventory.filter((p: any) => {
 			if (p.is_archived) return false;
 			const matchesCategory = activeCategory === 'All' || p.category_id === activeCategory;
 			const lowerSearch = searchTerm.toLowerCase();
@@ -214,7 +214,7 @@
 			items: transactionItems,
 			subtotal: finalizedCart.subtotal,
 			tax_amount: finalizedCart.tax,
-			discount_amount: finalizedCart.discountAmount,
+			discount_amount: finalizedCart.discount_amount,
 			total_amount: finalizedCart.total,
 			payments: [
 				{
@@ -263,7 +263,7 @@
 				})),
 				subtotal: finalizedCart.subtotal,
 				tax: finalizedCart.tax,
-				discount: finalizedCart.discountAmount,
+				discount: finalizedCart.discount_amount,
 				total: finalizedCart.total,
 				paymentMethod: paymentDetails.paymentMethod,
 				amountPaid: paymentDetails.cashTendered || paymentDetails.total,
@@ -415,7 +415,7 @@
 					<BarcodeInput
 						placeholder="Scan barcode..."
 						onscan={(code: string) => {
-							const hit = filteredProducts.find((p) => p.sku === code || p.id === code);
+							const hit = filteredProducts.find((p: any) => p.sku === code || p.id === code);
 							if (hit) handleProductClick(hit);
 						}}
 					/>
@@ -526,10 +526,10 @@
 				<span>Tax (12%)</span>
 				<span>{currency(finalizedCart.tax)}</span>
 			</div>
-			{#if finalizedCart.discountAmount > 0}
+			{#if finalizedCart.discount_amount > 0}
 				<div class="flex justify-between text-green-600">
 					<span>Discount</span>
-					<span>-{currency(finalizedCart.discountAmount)}</span>
+					<span>-{currency(finalizedCart.discount_amount)}</span>
 				</div>
 			{/if}
 			<div class="flex justify-between font-bold text-lg border-t pt-2 mt-2">
