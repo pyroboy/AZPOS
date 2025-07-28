@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { discounts } from '$lib/stores/discountStore';
+	import { discounts , addDiscount, updateDiscount, toggleActivation, deleteDiscount} from '$lib/stores/discountStore.svelte';
 			import type { Discount } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '$lib/components/ui/card';
@@ -47,14 +47,14 @@
 		}
 
 		if (editingDiscount) {
-			discounts.updateDiscount({
+			updateDiscount({
 				...editingDiscount,
 				name: discountName,
 				type: discountType,
 				value: discountValue
 			});
 		} else {
-			discounts.addDiscount({
+			addDiscount({
 				name: discountName,
 				type: discountType,
 				value: discountValue,
@@ -67,7 +67,7 @@
 
 	function handleDelete(id: string) {
 		if (confirm('Are you sure you want to delete this discount?')) {
-			discounts.deleteDiscount(id);
+			deleteDiscount(id);
 		}
 	}
 
@@ -97,7 +97,7 @@
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {#each $discounts as discount (discount.id)}
+                    {#each discounts as discount (discount.id)}
                         <TableRow>
                             <TableCell class="font-medium">{discount.name}</TableCell>
                             <TableCell>{discount.type}</TableCell>
@@ -108,7 +108,7 @@
                                 </Badge>
                             </TableCell>
                             <TableCell class="text-right">
-                                <Button variant="ghost" size="icon" onclick={() => discounts.toggleActivation(discount.id)} title={discount.is_active ? 'Deactivate' : 'Activate'}>
+                                <Button variant="ghost" size="icon" onclick={() => toggleActivation(discount.id)} title={discount.is_active ? 'Deactivate' : 'Activate'}>
                                     {#if discount.is_active}
                                         <ToggleRight class="h-4 w-4" />
                                     {:else}

@@ -2,7 +2,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
 	import { page } from '$app/stores';
-	import { cart } from '$lib/stores/cartStore';
+	import { cart } from '$lib/stores/cartStore.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
@@ -191,7 +191,7 @@
 					Back to Store
 				</Button>
 				
-				{#if $cartTotals.item_count > 0}
+				{#if cart.state.items.length > 0}
 					<div class="ml-auto">
 						<Button 
 							variant="outline" 
@@ -200,7 +200,7 @@
 							class="gap-2"
 						>
 							<ShoppingCart class="h-4 w-4" />
-							Cart ({$cartTotals.item_count})
+							Cart ({cart.state.items.length})
 						</Button>
 					</div>
 				{/if}

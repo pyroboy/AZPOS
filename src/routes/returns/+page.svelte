@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { returns } from '$lib/stores/returnStore';
+    import { returns, setReturns, approveReturn, rejectReturn } from '$lib/stores/returnsStore.svelte';
     import * as Table from '$lib/components/ui/table/index.js';
     import { Badge } from '$lib/components/ui/badge';
     import { Button } from '$lib/components/ui/button';
@@ -8,13 +8,16 @@
     let { data } = $props<{ data: PageData }>();
 
     // Set the store with data from the load function
-    returns.set(data.returns);
+    setReturns(data.returns);
 
-    const getStatusVariant = (status: 'pending' | 'approved' | 'rejected') => {
+    const getStatusVariant = (status: 'pending' | 'approved' | 'rejected' | 'completed' | 'processing') => {
         switch (status) {
             case 'approved': return 'default';
             case 'pending': return 'secondary';
             case 'rejected': return 'destructive';
+            case 'completed': return 'outline';
+            case 'processing': return 'secondary';
+            default: return 'secondary';
         }
     };
 </script>
@@ -36,7 +39,7 @@
                 </Table.Row>
             </Table.Header>
             <Table.Body>
-                {#each $returns as r (r.id)}
+                {#each returns as r (r.id)}
                     <Table.Row>
                         <Table.Cell class="font-medium">{r.id}</Table.Cell>
                         <Table.Cell>{r.order_id}</Table.Cell>
@@ -45,12 +48,12 @@
                         <Table.Cell>
                             <Badge variant={getStatusVariant(r.status)}>{r.status}</Badge>
                         </Table.Cell>
-                        <Table.Cell>{new Date(r.created_at).toLocaleDateString()}</Table.Cell>
+                        <Table.Cell>{new Date(r.return_date).toLocaleDateString()}</Table.Cell>
                         <Table.Cell class="text-right">
                             {#if r.status === 'pending'}
                                 <div class="flex gap-2 justify-end">
-                                    <Button size="sm" onclick={() => returns.approveReturn(r.id)}>Approve</Button>
-                                    <Button size="sm" variant="destructive" onclick={() => returns.rejectReturn(r.id)}>Reject</Button>
+                                    <Button size="sm" onclick={() => approveReturn(r.id)}>Approve</Button>
+                                    <Button size="sm" variant="destructive" onclick={() => rejectReturn(r.id)}>Reject</Button>
                                 </div>
                             {/if}
                         </Table.Cell>

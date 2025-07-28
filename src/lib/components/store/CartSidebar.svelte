@@ -1,6 +1,6 @@
 <!-- Agent: agent_coder | File: CartSidebar.svelte | Last Updated: 2025-07-28T10:29:03+08:00 -->
 <script lang="ts">
-	import { cart } from '$lib/stores/cartStore';
+	import { cart } from '$lib/stores/cartStore.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '$lib/components/ui/sheet';
@@ -13,7 +13,7 @@
 	} = $props();
 	
 	// Reactive cart state
-	let cartState = $derived($cart);
+	let cartState = $derived(cart.state);
 	let cartTotals = $derived(cart.totals);
 	
 	// Format price
@@ -56,8 +56,8 @@
 			<SheetTitle class="flex items-center gap-2">
 				<ShoppingCart class="h-5 w-5" />
 				Shopping Cart
-				{#if $cartTotals.item_count > 0}
-					<Badge variant="secondary">{$cartTotals.item_count} items</Badge>
+				{#if cartState.items.length > 0}
+					<Badge variant="secondary">{cartState.items.length} items</Badge>
 				{/if}
 			</SheetTitle>
 		</SheetHeader>
@@ -107,7 +107,7 @@
 									<!-- Modifiers -->
 									{#if item.selected_modifiers && item.selected_modifiers.length > 0}
 										<div class="text-xs text-muted-foreground mb-2">
-											{item.selected_modifiers.map(m => m.modifier_name).join(', ')}
+											{item.selected_modifiers.map((m: any) => m.modifier_name).join(', ')}
 										</div>
 									{/if}
 									
@@ -176,26 +176,26 @@
 					<div class="space-y-2">
 						<div class="flex justify-between text-sm">
 							<span>Subtotal</span>
-							<span>{formatPrice($cartTotals.subtotal)}</span>
+							<span>{formatPrice(cartTotals.subtotal)}</span>
 						</div>
 						
-						{#if $cartTotals.discount_amount > 0}
+						{#if cartTotals.discount_amount > 0}
 							<div class="flex justify-between text-sm text-green-600">
 								<span>Discount</span>
-								<span>-{formatPrice($cartTotals.discount_amount)}</span>
+								<span>-{formatPrice(cartTotals.discount_amount)}</span>
 							</div>
 						{/if}
 						
 						<div class="flex justify-between text-sm">
 							<span>Tax</span>
-							<span>{formatPrice($cartTotals.tax)}</span>
+							<span>{formatPrice(cartTotals.tax)}</span>
 						</div>
 						
 						<Separator />
 						
 						<div class="flex justify-between font-semibold">
 							<span>Total</span>
-							<span>{formatPrice($cartTotals.total)}</span>
+							<span>{formatPrice(cartTotals.total)}</span>
 						</div>
 					</div>
 					

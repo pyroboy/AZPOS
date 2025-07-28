@@ -1,8 +1,7 @@
 <!-- Agent: agent_coder | File: +page.svelte | Last Updated: 2025-07-28T10:41:46+08:00 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { page } from '$app/stores';
-	import { cart } from '$lib/stores/cartStore';
+	import { cart } from '$lib/stores/cartStore.svelte';
 	import ProductCard from '$lib/components/store/ProductCard.svelte';
 	import SearchBar from '$lib/components/store/SearchBar.svelte';
 	// import CategoryFilter from '$lib/components/store/CategoryFilter.svelte';
@@ -13,8 +12,7 @@
 	import { ShoppingCart } from 'lucide-svelte';
 	import StaffModeBadge from '$lib/components/ui/StaffModeBadge.svelte';
 	import RoleGuard from '$lib/components/ui/RoleGuard.svelte';
-	import { auth, isStaffMode, canManageStore } from '$lib/stores/authStore';
-
+	
 	// Reactive state using Svelte 5 runes
 	let searchQuery = $state('');
 	let selectedCategory = $state('all');
@@ -26,7 +24,7 @@
 	let viewMode = $state('grid'); // 'grid' or 'list'
 
 	// Reactive cart state
-	const cartState = $derived($cart);
+	const cartState = $derived(cart.state);
 	const cartTotals = $derived(cart.totals);
 
 	// Filtered products using $derived

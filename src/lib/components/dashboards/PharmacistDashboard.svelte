@@ -1,18 +1,18 @@
 <script lang="ts">
 	import * as Card from '$lib/components/ui/card';
     import * as Table from '$lib/components/ui/table';
-    import { products } from '$lib/stores/productStore';
+    import { products } from '$lib/stores/productStore.svelte';
 	import type { Product } from '$lib/types';
-    import { inventory } from '$lib/stores/inventoryStore';
+    import { inventory } from '$lib/stores/inventoryStore.svelte';
 
     // Reactive state for low-stock products
     const lowStockProducts = $derived(
-        $inventory.filter(p => p.stock < (p.reorder_point ?? 10)).slice(0, 5)
+        inventory.filter(p => p.stock < (p.reorder_point ?? 10)).slice(0, 5)
     );
 
     // Reactive state for near-expiry products (expiring in the next 90 days)
     const nearExpiryProducts = $derived(
-        $inventory
+        inventory
             .flatMap(p => 
                 p.batches.map(b => ({ ...p, ...b, product_name: p.name }))
             )

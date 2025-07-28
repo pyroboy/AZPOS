@@ -1,18 +1,18 @@
 <script lang="ts">
-	import { returns, type ReturnRecord } from '$lib/stores/returnsStore';
+	import { returns } from '$lib/stores/returnsStore.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Eye } from 'lucide-svelte';
 	import ReturnDetailsModal from './ReturnDetailsModal.svelte';
-
+	import type { ReturnRecord } from '$lib/schemas/models';
 	let searchTerm = $state('');
 	let isModalOpen = $state(false);
 	let selectedReturn: ReturnRecord | null = $state(null);
 
 	const filteredReturns = $derived(
-		$returns.filter((r) => {
+		returns.filter((r) => {
 			const lowerSearch = searchTerm.toLowerCase();
 			if (!lowerSearch) return true;
 			return (
@@ -75,7 +75,7 @@
 					</Table.Row>
 				{:else}
 					{#each filteredReturns as ret (ret.id)}
-						<Table.Row class="cursor-pointer hover:bg-muted/50" onclick={() => viewDetails(ret)}>
+						<Table.Row class="cursor-pointer hover:bg-muted/50" onclick={() => viewDetails()}>
 							<Table.Cell class="font-medium">{ret.id}</Table.Cell>
 							<Table.Cell>{ret.order_id}</Table.Cell>
 							<Table.Cell>{ret.customer_name}</Table.Cell>

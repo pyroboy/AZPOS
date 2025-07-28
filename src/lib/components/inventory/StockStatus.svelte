@@ -1,10 +1,9 @@
 <!-- StockStatus.svelte -->
 <script lang="ts">
-    import { inventory, inventoryManager, type ProductWithStock } from '$lib/stores/inventoryStore';
-    import { viewMode } from '$lib/stores/viewStore';
+    import { inventoryManager, type ProductWithStock } from '$lib/stores/inventoryStore.svelte';
+    import { setViewMode, viewMode } from '$lib/stores/viewStore.svelte';
     import { goto } from '$app/navigation';
     import { Button } from '$lib/components/ui/button';
-    import BarcodeInput from '$lib/components/inventory/BarcodeInput.svelte';
     import StockKPI from './StockKPI.svelte';
     import StockCardView from './StockCardView.svelte';
     import StockTableView from './StockTableView.svelte';
@@ -14,75 +13,30 @@
     import { LayoutGrid, List, Trash2, X } from 'lucide-svelte';
     import { SORT_OPTIONS, STOCK_STATUS_FILTERS } from '$lib/constants/inventory';
 
-    // Use the new Svelte 5 reactive inventory system
-    let searchTerm = $state('');
-    let selectedCategories = $state<string[]>([]);
-    let selectedProducts = $state<Set<string>>(new Set());
-    let isBulkEditModalOpen = $state(false);
-
-    // Reactive filtered products
-    const products = $derived.by(() => {
-        return inventory.filter((product: ProductWithStock) => {
-            const matchesSearch = !searchTerm || 
-                product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                product.sku.toLowerCase().includes(searchTerm.toLowerCase());
-
-            const matchesCategory = selectedCategories.length === 0 || 
-                selectedCategories.includes(product.category_id);
-
-            return matchesSearch && matchesCategory && !product.is_archived;
-        });
-    });
-
-    // Calculate totals
-    const totals = $derived({
-        totalProducts: products.length,
-        totalValue: products.reduce((sum, p) => sum + (p.stock * p.price), 0),
-        lowStockCount: products.filter(p => p.stock < 10).length,
-        outOfStockCount: products.filter(p => p.stock === 0).length
-    });
+    // Access inventory manager properties directly to avoid binding issues
+    // Don't destructure reactive properties that need to be bound
+    
+    // Get categories from products (derived)
+    const categories = $derived(
+        [...new Set(inventoryManager.products.map(p => p.category_id).filter(Boolean))]
+    );
 
     // Items to reorder count
     const itemsToReorderCount = $derived(
-        products.filter(p => p.stock < 10).length
+        inventoryManager.filteredProducts.filter(p => p.stock < 10).length
     );
 
-    // Helper functions
+    // Helper functions using inventory manager methods
     function toggleCategory(categoryId: string) {
-        if (selectedCategories.includes(categoryId)) {
-            selectedCategories = selectedCategories.filter(id => id !== categoryId);
-        } else {
-            selectedCategories = [...selectedCategories, categoryId];
-        }
+        inventoryManager.toggleCategory(categoryId);
     }
 
     function clearFilters() {
-        searchTerm = '';
-        selectedCategories = [];
-        selectedProducts = new Set();
+        inventoryManager.clearFilters();
     }
-
-    function toggleSelectAll() {
-        if (selectedProducts.size === products.length) {
-            selectedProducts = new Set();
-        } else {
-            selectedProducts = new Set(products.map(p => p.id));
-        }
-    }
-
-    function handleRowSelect(productId: string) {
-        const newSelection = new Set(selectedProducts);
-        if (newSelection.has(productId)) {
-            newSelection.delete(productId);
-        } else {
-            newSelection.add(productId);
-        }
-        selectedProducts = newSelection;
-    }
-    const { editingCell, editValue } = editing;
 
     function handleBarcodeScanned(code: string) {
-        $searchTerm = code;
+        inventoryManager.searchTerm = code;
     }
 </script>
 
@@ -101,23 +55,23 @@
                     <Input
                         class="max-w-sm"
                         placeholder="Search by name or SKU..."
-                        bind:value={$searchTerm}
+                        bind:value={inventoryManager.searchTerm}
                     />
                 </div>
 
-                {#if $selectedProductIds.length > 0}
+                {#if inventoryManager.selectedProductIds.length > 0}
                     <div class="flex items-center gap-2">
                         <Button
                             variant="outline"
-                            onclick={() => $isBulkEditModalOpen = true}
-                            disabled={$selectedProductIds.length === 0}
+                            onclick={() => inventoryManager.isBulkEditModalOpen = true}
+                            disabled={inventoryManager.selectedProductIds.length === 0}
                         >
-                            Edit Selected ({$selectedProductIds.length})
+                            Edit Selected ({inventoryManager.selectedProductIds.length})
                         </Button>
                         <Button
                             variant="secondary"
                             size="icon"
-                            onclick={() => $selectedProductIds = []}
+                            onclick={() => inventoryManager.selectedProductIds = []}
                         >
                             <Trash2 class="h-4 w-4" />
                         </Button>
@@ -126,9 +80,9 @@
             </div>
 
             <div class="flex items-center gap-2">
-                                <Select.Root type="single" bind:value={$stockStatusFilter}>
+                                <Select.Root type="single" bind:value={inventoryManager.stockStatusFilter}>
                     <Select.Trigger class="w-[180px]">
-                      {STOCK_STATUS_FILTERS.find(o => o.value === $stockStatusFilter)?.label ?? ''}
+                      {STOCK_STATUS_FILTERS.find(o => o.value === inventoryManager.stockStatusFilter)?.label ?? ''}
                     </Select.Trigger>
                     <Select.Content>
                         {#each STOCK_STATUS_FILTERS as option (option.value)}
@@ -137,9 +91,9 @@
                     </Select.Content>
                 </Select.Root>
 
-				<Select.Root type="single" bind:value={$sortOrder}>
+				<Select.Root type="single" bind:value={inventoryManager.sortOrder}>
                     <Select.Trigger class="w-[180px]">
-                      {SORT_OPTIONS.find(o => o.value === $sortOrder)?.label ?? ''}
+                      {SORT_OPTIONS.find(o => o.value === inventoryManager.sortOrder)?.label ?? ''}
                     </Select.Trigger>
                     <Select.Content>
                         {#each SORT_OPTIONS as option (option.value)}
@@ -149,16 +103,16 @@
                 </Select.Root>
 
                 <Button
-                    variant={$viewMode === 'card' ? 'default' : 'outline'}
+                    variant={viewMode === 'card' ? 'default' : 'outline'}
                     size="icon"
-                    onclick={() => $viewMode = 'card'}
+                    onclick={() =>  setViewMode('card')}
                 >
                     <LayoutGrid class="h-4 w-4" />
                 </Button>
                 <Button
-                    variant={$viewMode === 'table' ? 'default' : 'outline'}
+                    variant={viewMode === 'table' ? 'default' : 'outline'}
                     size="icon"
-                    onclick={() => $viewMode = 'table'}
+                    onclick={() => setViewMode('table')}
                 >
                     <List class="h-4 w-4" />
                 </Button>
@@ -169,16 +123,16 @@
         <div class="flex flex-wrap items-center justify-between gap-2">
             <div class="flex items-center gap-2 flex-wrap"> 
                 <p class="text-sm font-medium">Categories:</p>
-                {#each $categories as category}
+                {#each categories as category}
                     <Button 
-                        variant={$activeCategories.includes(category) ? 'default' : 'outline'}
+                        variant={inventoryManager.activeCategories.includes(category) ? 'default' : 'outline'}
                         size="sm"
                         onclick={() => toggleCategory(category)}
                     >
                         {category}
                     </Button>
                 {/each}
-                {#if $activeCategories.length > 0}
+                {#if inventoryManager.activeCategories.length > 0}
                     <Button variant="ghost" size="sm" onclick={clearFilters} class="flex items-center gap-1">
                         <X class="h-4 w-4"/>
                         Clear
@@ -186,7 +140,7 @@
                 {/if}
             </div>
 
-            {#if $itemsToReorderCount > 0}
+            {#if itemsToReorderCount > 0}
                 <button
                     onclick={() => goto('/inventory/reorder')}
                     class="flex items-center gap-2 rounded-full bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning-foreground transition-colors hover:bg-warning/20"
@@ -195,8 +149,8 @@
                         <span class="relative inline-flex h-3 w-3 rounded-full bg-warning"></span>
                     </div>
                     <span>
-                        {$itemsToReorderCount}
-                        {$itemsToReorderCount === 1 ? 'item' : 'items'} to reorder
+                        {itemsToReorderCount}
+                        {itemsToReorderCount === 1 ? 'item' : 'items'} to reorder
                     </span>
                 </button>
             {/if}
@@ -204,8 +158,8 @@
     </div>
 
     <!-- Product Display -->
-    {#if $products.length > 0}
-        {#if $viewMode === 'card'}
+    {#if inventoryManager.filteredProducts.length > 0}
+        {#if viewMode === 'card'}
             <StockCardView />
         {:else}
             <StockTableView />
@@ -218,5 +172,5 @@
     {/if}
 
     <!-- Bulk-edit modal -->
-    <BulkEditModal bind:open={$isBulkEditModalOpen} productIds={$selectedProductIds} onclose={() => $isBulkEditModalOpen = false} />
+    <BulkEditModal bind:open={inventoryManager.isBulkEditModalOpen} productIds={inventoryManager.selectedProductIds} onclose={() => inventoryManager.isBulkEditModalOpen = false} />
 </div>

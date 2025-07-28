@@ -6,12 +6,12 @@
 	import { setContext } from 'svelte';
 
 	// Stores for context
-	import { inventory } from '$lib/stores/inventoryStore';
-	import { settingsStore } from '$lib/stores/settingsStore';
+	import { inventory } from '$lib/stores/inventoryStore.svelte';
+	import { settings } from '$lib/stores/settingsStore.svelte';
 
 	// Provide stores to child components via context
 	setContext('inventory', inventory);
-	setContext('settings', settingsStore);
+	setContext('settings', settings);
 
 	// Components for the Admin Dashboard
 	import PricingControl from '$lib/components/inventory/PricingControl.svelte';

@@ -5,9 +5,8 @@
 	import * as ToggleGroup from '$lib/components/ui/toggle-group';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { inventory } from '$lib/stores/inventoryStore';
-	import { productBatches } from '$lib/stores/productBatchStore';
-	import type { ProductWithStock } from '$lib/stores/inventoryStore';
+	import { inventory, inventoryManager } from '$lib/stores/inventoryStore.svelte';
+	import type { ProductWithStock } from '$lib/stores/inventoryStore.svelte';
 	import type { ProductBatch } from '$lib/types';
 	import { toast } from 'svelte-sonner';
 	import { z, type ZodError } from 'zod';
@@ -23,7 +22,7 @@
 
 	const isBulkMode = $derived(productList && productList.length > 0);
 
-	const productWithStock = $derived($inventory.find((p) => p.id === product?.id));
+	const productWithStock = $derived(inventory.find((p) => p.id === product?.id));
 	const existingBatches = $derived(productWithStock?.batches ?? []);
 	const currentStock = $derived(productWithStock?.stock ?? 0);
 
@@ -128,7 +127,7 @@
 			} else if (product) {
                 if (data.isNewBatch) {
                     // Create a new batch
-                    productBatches.addBatch({
+                    inventoryManager.addBatch({
                         product_id: product.id,
                         batch_number: data.new_batch_number!,
                         quantity_on_hand: data.quantity,
@@ -141,13 +140,13 @@
                     const batchId = data.selectedBatchId!;
                     switch(data.adjustment_type) {
                         case 'add':
-                            productBatches.addStockToBatch(batchId, data.quantity);
+                            inventoryManager.addStockToBatch(batchId, data.quantity);
                             break;
                         case 'remove':
-                            productBatches.removeStockFromBatch(batchId, data.quantity);
+                            inventoryManager.removeStockFromBatch(batchId, data.quantity);
                             break;
                         case 'set':
-                            productBatches.setStockForBatch(batchId, data.quantity);
+                            inventoryManager.setStockForBatch(batchId, data.quantity);
                             break;
                     }
                     toast.success(`Stock for batch updated successfully.`);

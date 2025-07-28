@@ -1,15 +1,11 @@
 <!-- Agent: agent_coder | File: +page.svelte | Last Updated: 2025-07-28T10:29:03+08:00 -->
 <script lang="ts">
-	import { cart } from '$lib/stores/cartStore';
+	import { cart } from '$lib/stores/cartStore.svelte';
 	import CartItemCard from '$lib/components/store/CartItemCard.svelte';
 	import CartSummary from '$lib/components/store/CartSummary.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { ArrowLeft, ShoppingCart } from 'lucide-svelte';
-	
-	// Reactive cart state
-	const cartState = $derived($cart);
-	const cartTotals = $derived(cart.totals);
 	
 	// Navigate functions
 	function continueShopping() {
@@ -54,12 +50,12 @@
 							Shopping Cart
 						</h1>
 						<p class="text-muted-foreground">
-							{$cartTotals.item_count} {$cartTotals.item_count === 1 ? 'item' : 'items'} in your cart
+							{cart.totals.item_count} {cart.totals.item_count === 1 ? 'item' : 'items'} in your cart
 						</p>
 					</div>
 				</div>
 				
-				{#if cartState.items.length > 0}
+				{#if cart.state.items.length > 0}
 					<Button 
 						variant="outline" 
 						size="sm"
@@ -75,7 +71,7 @@
 	
 	<!-- Main Content -->
 	<div class="container mx-auto px-4 py-8">
-		{#if cartState.items.length === 0}
+		{#if cart.totals.item_count === 0}
 			<!-- Empty Cart State -->
 			<div class="text-center py-16">
 				<div class="text-8xl mb-6">🛒</div>
@@ -98,7 +94,7 @@
 							<CardTitle>Cart Items</CardTitle>
 						</CardHeader>
 						<CardContent class="space-y-4">
-							{#each cartState.items as item (item.cart_item_id)}
+							{#each cart.state.items as item (item.cart_item_id)}
 								<CartItemCard {item} />
 							{/each}
 						</CardContent>
@@ -109,7 +105,7 @@
 				<div class="lg:col-span-1">
 					<div class="sticky top-4">
 						<CartSummary 
-							{cartTotals}
+							cartTotals={cart.totals}
 							onContinueShopping={continueShopping}
 							onProceedToCheckout={proceedToCheckout}
 						/>

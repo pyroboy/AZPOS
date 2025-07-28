@@ -8,7 +8,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import type { ActionData } from './$types';
 	import { enhance } from '$app/forms';
-	import { users } from '$lib/stores/userStore';
+	import { users } from '$lib/stores/userStore.svelte';
 
 	let { form }: { form: ActionData | undefined } = $props();
 
@@ -90,7 +90,7 @@
                     </Table.Row>
                 </Table.Header>
                 <Table.Body>
-                    {#each $users as user (user.id)}
+                    {#each users as user (user.id)}
                         <Table.Row>
                             <Table.Cell>{user.full_name}</Table.Cell>
                             <Table.Cell>{user.username}</Table.Cell>

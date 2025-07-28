@@ -4,10 +4,9 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import * as Select from '$lib/components/ui/select';
-	import { products } from '$lib/stores/productStore';
 	import * as Switch from '$lib/components/ui/switch/index.js';
-	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore';
-	import { categories } from '$lib/stores/categoryStore';
+	import { inventory, type ProductWithStock } from '$lib/stores/inventoryStore.svelte';
+	import { categories } from '$lib/stores/categoryStore.svelte';
 	import type { Product } from '$lib/types';
 
 	let { open = $bindable(), productIds, onclose } = $props<{ open: boolean; productIds: string[]; onclose: () => void }>();
@@ -16,12 +15,12 @@
 	let reorderPoint = $state<number | undefined>(undefined);
 	let requiresBatchTracking = $state<'yes' | 'no' | 'indeterminate'>('indeterminate');
 
-	let selectedCategoryLabel = $derived($categories.find((category) => category.id === category_id)?.name);
+	let selectedCategoryLabel = $derived(categories.find((category) => category.id === category_id)?.name);
 	const selectedProductsCount = $derived(productIds.length);
 
 	$effect(() => {
 		if (open && productIds.length > 0) {
-			const selectedProducts = $inventory.filter((p: ProductWithStock) => productIds.includes(p.id));
+			const selectedProducts = inventory.filter((p: ProductWithStock) => productIds.includes(p.id));
 			const firstProductTracking = selectedProducts[0].requires_batch_tracking;
 			const allSame = selectedProducts.every((p: ProductWithStock) => p.requires_batch_tracking === firstProductTracking);
 			
@@ -50,7 +49,7 @@
 		}
 
 		if (Object.keys(updates).length > 0) {
-			products.bulkUpdateProducts({ ids: productIds, data: updates });
+			inventoryManager.updateProducts(productIds, updates);
 		}
 
 		// Reset form and close modal
@@ -80,7 +79,7 @@
 							{selectedCategoryLabel}
 						</Select.Trigger>
 						<Select.Content>
-							{#each $categories as category}
+							{#each categories as category}
 								<Select.Item value={category.id} label={category.name}>{category.name}</Select.Item>
 							{/each}
 						</Select.Content>

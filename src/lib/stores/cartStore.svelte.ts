@@ -296,9 +296,8 @@ function createCartStore() {
 	// Return the public API
 	return {
 		// Expose state via getters to make it readonly from the outside
-		get state() { return state; },
-		get totals() { return totals; },
-		get item_count() { return totals.item_count; },
+		state,
+		totals,
 
 		// Expose methods
 		addItem,

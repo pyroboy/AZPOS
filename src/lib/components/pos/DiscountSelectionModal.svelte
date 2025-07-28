@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { discounts } from '$lib/stores/discountStore';
+	import { discounts , addDiscount, updateDiscount, toggleActivation, deleteDiscount} from '$lib/stores/discountStore.svelte';
 	import type { Discount } from '$lib/schemas/models';
 	import {
 		Dialog,
@@ -22,7 +22,7 @@
 		onApply: (discount: Discount) => void;
 	} = $props();
 
-	const activeDiscounts = $derived($discounts.filter((d) => d.is_active));
+	const activeDiscounts = $derived(discounts.filter((d) => d.is_active));
 	let selectedDiscountId = $state<string | undefined>(undefined);
 	let focusContainer = $state<HTMLDivElement | undefined>(undefined);
 

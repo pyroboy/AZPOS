@@ -1,26 +1,26 @@
 <script lang="ts">
-	import { theme } from '$lib/stores/themeStore';
+	import { theme } from '$lib/stores/themeStore.svelte';
 	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
 	import { browser } from '$app/environment';
 
-	const isDarkMode = $derived(theme, ($theme) => {
+	const isDarkMode = $derived.by(() => {
 		if (!browser) return false; // Default to false on server
-		if ($theme === 'system') {
+		if (theme.theme === 'system') {
 			return window.matchMedia('(prefers-color-scheme: dark)').matches;
 		}
-		return $theme === 'dark';
+		return theme.theme === 'dark';
 	});
 
 	function toggleTheme(checked: boolean) {
-		theme.set(checked ? 'dark' : 'light');
+		theme.setTheme(checked ? 'dark' : 'light');
 	}
 </script>
 
 <div class="p-8">
 	<h1 class="text-2xl font-bold mb-4">Settings</h1>
 	<div class="flex items-center space-x-2">
-		<Switch id="dark-mode" bind:checked={$isDarkMode} />
+		<Switch id="dark-mode" checked={isDarkMode} onCheckedChange={toggleTheme} />
 		<Label for="dark-mode">Dark Mode</Label>
 	</div>
 </div>

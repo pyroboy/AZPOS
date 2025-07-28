@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { products } from '$lib/stores/productStore'; // The base store with the loader method
-	import { filteredProducts } from '$lib/stores/inventory/products';
+	import { inventoryManager } from '$lib/stores/inventoryStore.svelte'; // The base store with the loader method
+	import { filteredProducts } from '$lib/stores/inventoryStore.svelte';
     import { Badge } from '$lib/components/ui/badge';
     import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
     import ImagePreview from '$lib/components/inventory/ImagePreview.svelte';
@@ -34,7 +34,7 @@
 	onMount(() => {
 		const observer = new IntersectionObserver(entries => {
 			if (entries[0].isIntersecting) {
-				products.loadMoreProducts();
+				inventoryManager.loadProducts();
 			}
 		}, { rootMargin: '20%' });
 
@@ -45,7 +45,7 @@
 </script>
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {#each $filteredProducts as product (product.id)}
+          {#each inventoryManager.filteredProducts as product (product.id)}
             <Card>
               <CardHeader class="p-0">
                 <ImagePreview src={product.image_url} product={product} fallbackSrc={product.image_url} />

@@ -7,10 +7,11 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { Badge } from '$lib/components/ui/badge';
 	import { ShoppingCart, Tag, CreditCard } from 'lucide-svelte';
+	import type { CartTotals } from '$lib/stores/cartStore.svelte';
 	
 	// Props interface
 	interface Props {
-		cartTotals: any;
+		cartTotals: CartTotals;
 		onContinueShopping?: (event?: MouseEvent) => void;
 		onProceedToCheckout?: (event?: MouseEvent) => void;
 	}
@@ -82,7 +83,7 @@
 	<CardContent class="space-y-4">
 		<!-- Item Count -->
 		<div class="flex justify-between text-sm">
-			<span>Items ({cartTotals.itemCount})</span>
+			<span>Items ({cartTotals.item_count})</span>
 			<span>{formatPrice(cartTotals.subtotal)}</span>
 		</div>
 		
@@ -124,10 +125,10 @@
 				<span>{formatPrice(cartTotals.subtotal)}</span>
 			</div>
 			
-			{#if cartTotals.discountAmount > 0}
+			{#if cartTotals.discount_amount > 0}
 				<div class="flex justify-between text-sm text-green-600">
 					<span>Discount</span>
-					<span>-{formatPrice(cartTotals.discountAmount)}</span>
+					<span>-{formatPrice(cartTotals.discount_amount)}</span>
 				</div>
 			{/if}
 			
@@ -145,10 +146,10 @@
 		</div>
 		
 		<!-- Savings Badge -->
-		{#if cartTotals.discountAmount > 0}
+		{#if cartTotals.discount_amount > 0}
 			<div class="text-center">
 				<Badge variant="secondary" class="bg-green-100 text-green-800">
-					You saved {formatPrice(cartTotals.discountAmount)}!
+					You saved {formatPrice(cartTotals.discount_amount)}!
 				</Badge>
 			</div>
 		{/if}

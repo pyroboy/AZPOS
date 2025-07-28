@@ -1,7 +1,7 @@
 <!-- Agent: agent_coder | File: +page.svelte | Last Updated: 2025-07-28T10:29:03+08:00 -->
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { cart } from '$lib/stores/cartStore';
+	import { cart } from '$lib/stores/cartStore.svelte';
 	import CheckoutForm from '$lib/components/store/CheckoutForm.svelte';
 	import OrderReview from '$lib/components/store/OrderReview.svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -9,7 +9,7 @@
 	import { ArrowLeft, Lock } from 'lucide-svelte';
 	
 	// Reactive cart state
-	let cartState = $derived($cart);
+	let cartState = $derived(cart.state);
 	let cartTotals = $derived(cart.totals);
 	
 	// Checkout state
@@ -262,24 +262,24 @@
 							<div class="border-t pt-4 space-y-2">
 								<div class="flex justify-between text-sm">
 									<span>Subtotal</span>
-									<span>{formatPrice($cartTotals.subtotal)}</span>
+									<span>{formatPrice(cartTotals.subtotal)}</span>
 								</div>
 								
-								{#if $cartTotals.discount_amount > 0}
+								{#if cartTotals.discount_amount > 0}
 									<div class="flex justify-between text-sm text-green-600">
 										<span>Discount</span>
-										<span>-{formatPrice($cartTotals.discount_amount)}</span>
+										<span>-{formatPrice(cartTotals.discount_amount)}</span>
 									</div>
 								{/if}
 								
 								<div class="flex justify-between text-sm">
 									<span>Tax</span>
-									<span>{formatPrice($cartTotals.tax)}</span>
+									<span>{formatPrice(cartTotals.tax)}</span>
 								</div>
 								
 								<div class="flex justify-between font-bold text-lg border-t pt-2">
 									<span>Total</span>
-									<span>{formatPrice($cartTotals.total)}</span>
+									<span>{formatPrice(cartTotals.total)}</span>
 								</div>
 							</div>
 							

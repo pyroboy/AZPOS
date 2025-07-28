@@ -5,11 +5,11 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import '$lib/stores/themeStore';
 
-	import { session } from '$lib/stores/sessionStore';
+	import { session } from '$lib/stores/sessionStore.svelte';
 	import type { LayoutData } from './$types';
-		import { page } from '$app/stores';
-	import { products } from '$lib/stores/productStore';
-	import { productBatches } from '$lib/stores/productBatchStore';
+	import { page } from '$app/stores';
+	import { productManager } from '$lib/stores/productStore.svelte';
+	import { inventoryManager } from '$lib/stores/inventoryStore.svelte';
 
 	// The `data` prop is reactive and contains the `user` from the load function.
 	const { data, children } = $props<{ data: LayoutData; children: any }>();
@@ -25,10 +25,10 @@
 	// This process is called "hydration".
 	$effect(() => {
 		if (data.products) {
-			products.set(data.products);
+			productManager.setProducts(data.products);
 		}
 		if (data.productBatches) {
-			productBatches.set(data.productBatches);
+			inventoryManager.productBatches = data.productBatches;
 		}
 	});
 </script>
