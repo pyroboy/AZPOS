@@ -8,10 +8,10 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { Plus, Minus, Trash2, Edit3 } from 'lucide-svelte';
 	import type { GroceryCartItem } from '$lib/types/groceryCart.schema';
-	
+
 	// Props
 	let { item }: { item: GroceryCartItem } = $props();
-	
+
 	// Get grocery cart actions from the hook
 	const {
 		updateQuantity,
@@ -21,11 +21,11 @@
 		isRemovingItem,
 		updateItemStatus
 	} = useGroceryCart();
-	
+
 	// Local state
 	let editingNotes = $state(false);
 	let tempNotes = $state(item.special_instructions || '');
-	
+
 	// Format price
 	function formatPrice(price: number): string {
 		return new Intl.NumberFormat('en-US', {
@@ -33,7 +33,7 @@
 			currency: 'USD'
 		}).format(price);
 	}
-	
+
 	// Update quantity handler
 	function handleUpdateQuantity(newQuantity: number): void {
 		if (newQuantity <= 0) {
@@ -42,30 +42,30 @@
 			updateQuantity(item.id, newQuantity);
 		}
 	}
-	
+
 	// Remove item handler
 	function handleRemoveItem() {
 		if (confirm(`Remove ${item.product?.name || 'this item'} from cart?`)) {
 			removeItem(item.id);
 		}
 	}
-	
+
 	// Handle notes editing
 	function startEditingNotes(): void {
 		tempNotes = item.special_instructions || '';
 		editingNotes = true;
 	}
-	
+
 	function saveNotes(): void {
 		updateSpecialInstructions(item.id, tempNotes);
 		editingNotes = false;
 	}
-	
+
 	function cancelEditingNotes(): void {
 		editingNotes = false;
 		tempNotes = item.special_instructions || '';
 	}
-	
+
 	function handleNotesKeydown(event: KeyboardEvent): void {
 		if (event.key === 'Enter' && !event.shiftKey) {
 			event.preventDefault();
@@ -74,7 +74,7 @@
 			cancelEditingNotes();
 		}
 	}
-	
+
 	// Handle direct quantity input
 	function handleQuantityInput(event: Event): void {
 		const target = event.target as HTMLInputElement;
@@ -83,7 +83,7 @@
 			handleUpdateQuantity(value);
 		}
 	}
-	
+
 	// Derived states for UI feedback
 	const isUpdating = $derived(isUpdatingItem && updateItemStatus === 'pending');
 	const isRemoving = $derived(isRemovingItem && updateItemStatus === 'pending');
@@ -93,8 +93,8 @@
 	<!-- Product Image -->
 	<div class="w-20 h-20 bg-muted rounded-md overflow-hidden flex-shrink-0">
 		{#if item.product?.image_url}
-			<img 
-				src={item.product.image_url} 
+			<img
+				src={item.product.image_url}
 				alt={item.product.name}
 				class="w-full h-full object-cover"
 			/>
@@ -104,7 +104,7 @@
 			</div>
 		{/if}
 	</div>
-	
+
 	<!-- Item Details -->
 	<div class="flex-1 min-w-0">
 		<!-- Product Name and SKU -->
@@ -115,7 +115,7 @@
 				<p class="text-xs text-muted-foreground">{item.product.category_name}</p>
 			{/if}
 		</div>
-		
+
 		<!-- Product Availability Status -->
 		{#if item.product}
 			<div class="mb-2">
@@ -124,19 +124,15 @@
 						In Stock ({item.product.stock_quantity || 0} available)
 					</Badge>
 				{:else}
-					<Badge variant="destructive" class="text-xs">
-						Out of Stock
-					</Badge>
+					<Badge variant="destructive" class="text-xs">Out of Stock</Badge>
 				{/if}
-				
+
 				{#if item.substitution_allowed}
-					<Badge variant="outline" class="text-xs ml-1">
-						Substitutions OK
-					</Badge>
+					<Badge variant="outline" class="text-xs ml-1">Substitutions OK</Badge>
 				{/if}
 			</div>
 		{/if}
-		
+
 		<!-- Notes Section -->
 		<div class="mb-3">
 			{#if editingNotes}
@@ -154,11 +150,7 @@
 							{tempNotes.length}/500 characters
 						</span>
 						<div class="flex gap-2">
-							<Button 
-								size="sm" 
-								onclick={saveNotes}
-								disabled={isUpdating}
-							>
+							<Button size="sm" onclick={saveNotes} disabled={isUpdating}>
 								{isUpdating ? 'Saving...' : 'Save'}
 							</Button>
 							<Button size="sm" variant="outline" onclick={cancelEditingNotes}>Cancel</Button>
@@ -175,14 +167,12 @@
 						</div>
 					{:else}
 						<div class="flex-1">
-							<p class="text-sm text-muted-foreground">
-								No special instructions
-							</p>
+							<p class="text-sm text-muted-foreground">No special instructions</p>
 						</div>
 					{/if}
-					<Button 
-						size="sm" 
-						variant="ghost" 
+					<Button
+						size="sm"
+						variant="ghost"
 						onclick={startEditingNotes}
 						class="h-6 w-6 p-0"
 						disabled={isUpdating}
@@ -192,9 +182,9 @@
 				</div>
 			{/if}
 		</div>
-		
+
 		<Separator class="my-3" />
-		
+
 		<!-- Quantity Controls and Pricing -->
 		<div class="flex items-center justify-between">
 			<!-- Quantity Controls -->
@@ -209,7 +199,7 @@
 				>
 					<Minus class="h-3 w-3" />
 				</Button>
-				
+
 				<Input
 					type="number"
 					min="1"
@@ -219,7 +209,7 @@
 					class="w-16 h-8 text-center text-sm"
 					disabled={isUpdating}
 				/>
-				
+
 				<Button
 					variant="outline"
 					size="icon"
@@ -230,7 +220,7 @@
 					<Plus class="h-3 w-3" />
 				</Button>
 			</div>
-			
+
 			<!-- Pricing -->
 			<div class="text-right">
 				<div class="text-sm text-muted-foreground">
@@ -241,7 +231,7 @@
 				</div>
 			</div>
 		</div>
-		
+
 		<!-- Remove Button -->
 		<div class="mt-3 flex justify-end">
 			<Button

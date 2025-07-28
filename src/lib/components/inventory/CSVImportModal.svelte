@@ -3,7 +3,13 @@
 	import { useInventory } from '$lib/data/inventory';
 	import type { CsvAdjustment } from '$lib/schemas/models';
 	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import {
+		Card,
+		CardContent,
+		CardDescription,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Upload, FileText, AlertTriangle, CheckCircle, XCircle } from 'lucide-svelte';
@@ -23,12 +29,15 @@
 	// Use data hooks instead of stores
 	const { activeProducts } = useProducts();
 	const { createMovement, isCreatingMovement } = useInventory();
-	
+
 	const allProducts = $derived(activeProducts);
 	const validReasons = Object.values(adjustmentReasons);
 
 	let selectedFile = $state<File | null>(null);
-	let validationResult = $state<{ valid: CsvAdjustment[]; invalid: Record<string, unknown>[] } | null>(null);
+	let validationResult = $state<{
+		valid: CsvAdjustment[];
+		invalid: Record<string, unknown>[];
+	} | null>(null);
 	let isProcessing = $state(false);
 	let dialog: HTMLDialogElement;
 
@@ -61,38 +70,44 @@
 				const valid: CsvAdjustment[] = [];
 				const invalid: Record<string, unknown>[] = [];
 
-		(results.data as Record<string, unknown>[]).forEach((row: Record<string, unknown>, index: number) => {
-			const errors: string[] = [];
-			const product = allProducts.find(
-				(p: { id: string; name: string }) => p.id === row.product_id || p.name === row.product_name
-			);
+				(results.data as Record<string, unknown>[]).forEach(
+					(row: Record<string, unknown>, index: number) => {
+						const errors: string[] = [];
+						const product = allProducts.find(
+							(p: { id: string; name: string }) =>
+								p.id === row.product_id || p.name === row.product_name
+						);
 
-				if (!product) {
-					errors.push('Product not found.');
-				}
+						if (!product) {
+							errors.push('Product not found.');
+						}
 
-				const quantity = Number(row.adjustment_quantity);
-				if (isNaN(quantity) || !Number.isInteger(quantity) || quantity <= 0) {
-					errors.push('Adjustment quantity must be a positive integer.');
-				}
+						const quantity = Number(row.adjustment_quantity);
+						if (isNaN(quantity) || !Number.isInteger(quantity) || quantity <= 0) {
+							errors.push('Adjustment quantity must be a positive integer.');
+						}
 
-				const reasonStr = String(row.reason || '');
-				if (!validReasons.includes(reasonStr as any)) {
-					errors.push(`Invalid reason. Must be one of: ${validReasons.join(', ')}`);
-				}
+						const reasonStr = String(row.reason || '');
+						if (!validReasons.includes(reasonStr as any)) {
+							errors.push(`Invalid reason. Must be one of: ${validReasons.join(', ')}`);
+						}
 
-				if (errors.length > 0) {
-					invalid.push({ ...row, _errors: errors, _row: index + 2 });
-				} else {
-					const adjustmentType = String(row.adjustment_type || 'add') as 'set' | 'add' | 'remove';
-					valid.push({ 
-						product_id: String(product!.id), 
-						adjustment_quantity: quantity, 
-						adjustment_type: adjustmentType,
-						reason: reasonStr
-					} as CsvAdjustment);
-				}
-			});
+						if (errors.length > 0) {
+							invalid.push({ ...row, _errors: errors, _row: index + 2 });
+						} else {
+							const adjustmentType = String(row.adjustment_type || 'add') as
+								| 'set'
+								| 'add'
+								| 'remove';
+							valid.push({
+								product_id: String(product!.id),
+								adjustment_quantity: quantity,
+								adjustment_type: adjustmentType,
+								reason: reasonStr
+							} as CsvAdjustment);
+						}
+					}
+				);
 
 				validationResult = { valid, invalid };
 			}
@@ -145,9 +160,7 @@
 				<Upload class="h-6 w-6" />
 				Import Inventory Adjustments
 			</h2>
-			<button onclick={handleClose} class="text-gray-500 hover:text-gray-700">
-				✕
-			</button>
+			<button onclick={handleClose} class="text-gray-500 hover:text-gray-700"> ✕ </button>
 		</div>
 
 		<!-- Content -->
@@ -173,7 +186,11 @@
 								onchange={handleFileSelect}
 								class="hidden"
 							/>
-							<Button variant="outline" class="w-full cursor-pointer" onclick={() => document.getElementById('csv-upload')?.click()}>
+							<Button
+								variant="outline"
+								class="w-full cursor-pointer"
+								onclick={() => document.getElementById('csv-upload')?.click()}
+							>
 								<span>
 									{#if selectedFile}
 										{selectedFile.name}
@@ -211,16 +228,16 @@
 									Invalid Rows ({invalidRows.length})
 								</h4>
 								<div class="max-h-48 overflow-y-auto border rounded-md">
-							{#each invalidRows as row (row._row)}
-									<div class="p-3 border-b bg-red-50">
+									{#each invalidRows as row (row._row)}
+										<div class="p-3 border-b bg-red-50">
 											<div class="font-medium">Row {row._row}</div>
 											<div class="text-sm text-gray-600">
 												Product: {row.product_name || row.product_id}
 											</div>
 											<div class="text-sm text-red-600 mt-1">
-										{#each (Array.isArray(row._errors) ? row._errors : []) as error, errorIndex (errorIndex)}
-												<div>• {error}</div>
-										{/each}
+												{#each Array.isArray(row._errors) ? row._errors : [] as error, errorIndex (errorIndex)}
+													<div>• {error}</div>
+												{/each}
 											</div>
 										</div>
 									{/each}
@@ -235,8 +252,8 @@
 									Valid Rows ({validRows.length})
 								</h4>
 								<div class="max-h-48 overflow-y-auto border rounded-md">
-								{#each validRows.slice(0, 10) as row, rowIndex (rowIndex)}
-									<div class="p-3 border-b bg-green-50">
+									{#each validRows.slice(0, 10) as row, rowIndex (rowIndex)}
+										<div class="p-3 border-b bg-green-50">
 											<div class="flex justify-between">
 												<div>
 													<div class="font-medium">{row.product_name || row.product_id}</div>
@@ -265,14 +282,12 @@
 
 		<!-- Actions -->
 		<div class="flex justify-between mt-6">
-			<Button variant="outline" onclick={handleClose}>
-				Cancel
-			</Button>
+			<Button variant="outline" onclick={handleClose}>Cancel</Button>
 
 			{#if validRows.length > 0}
 				<Button
 					onclick={processImport}
-								disabled={isProcessing || isCreatingMovement}
+					disabled={isProcessing || isCreatingMovement}
 					class="flex items-center gap-2"
 				>
 					{#if isProcessing || isCreatingMovement}

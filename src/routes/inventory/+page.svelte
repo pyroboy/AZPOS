@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { Toaster } from '$lib/components/ui/sonner';
-	import { Tabs, TabsContent, TabsList, TabsTrigger } from "$lib/components/ui/tabs";
-	import { page } from "$app/stores";
-	import { goto } from "$app/navigation";
+	import { Tabs, TabsContent, TabsList, TabsTrigger } from '$lib/components/ui/tabs';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 
 	// Dynamically import tab components for code-splitting
 	const tabComponents = {
@@ -19,8 +19,8 @@
 
 	// Sync tab with URL
 	$: {
-		const tabParam = $page.url.searchParams.get("tab") as Tab;
-		activeTab = tabParam || "stock";
+		const tabParam = $page.url.searchParams.get('tab') as Tab;
+		activeTab = tabParam || 'stock';
 	}
 
 	function handleTabChange(value: any) {

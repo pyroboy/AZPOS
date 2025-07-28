@@ -30,7 +30,9 @@
 	let viewMode = $state<'card' | 'table'>('card');
 
 	// Get categories from products (derived)
-	const categories = $derived([...new Set(products.map((p: Product) => p.category_id).filter(Boolean))]);
+	const categories = $derived([
+		...new Set(products.map((p: Product) => p.category_id).filter(Boolean))
+	]);
 
 	// Filtered products based on current filters
 	const filteredProducts = $derived(() => {
@@ -40,13 +42,16 @@
 		if (searchTerm.trim()) {
 			const search = searchTerm.toLowerCase();
 			filtered = filtered.filter(
-				(p: Product) => p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search)
+				(p: Product) =>
+					p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search)
 			);
 		}
 
 		// Category filter
 		if (activeCategories.length > 0) {
-			filtered = filtered.filter((p: Product) => p.category_id && activeCategories.includes(p.category_id));
+			filtered = filtered.filter(
+				(p: Product) => p.category_id && activeCategories.includes(p.category_id)
+			);
 		}
 
 		// Stock status filter
@@ -54,7 +59,8 @@
 			switch (stockStatusFilter) {
 				case 'low_stock':
 					filtered = filtered.filter(
-						(p: Product) => (p.stock_quantity || 0) > 0 && (p.stock_quantity || 0) < (p.min_stock_level || 10)
+						(p: Product) =>
+							(p.stock_quantity || 0) > 0 && (p.stock_quantity || 0) < (p.min_stock_level || 10)
 					);
 					break;
 				case 'out_of_stock':
@@ -75,16 +81,24 @@
 				filtered = filtered.sort((a: Product, b: Product) => b.name.localeCompare(a.name));
 				break;
 			case 'stock_asc':
-				filtered = filtered.sort((a: Product, b: Product) => (a.stock_quantity || 0) - (b.stock_quantity || 0));
+				filtered = filtered.sort(
+					(a: Product, b: Product) => (a.stock_quantity || 0) - (b.stock_quantity || 0)
+				);
 				break;
 			case 'stock_desc':
-				filtered = filtered.sort((a: Product, b: Product) => (b.stock_quantity || 0) - (a.stock_quantity || 0));
+				filtered = filtered.sort(
+					(a: Product, b: Product) => (b.stock_quantity || 0) - (a.stock_quantity || 0)
+				);
 				break;
 			case 'price_asc':
-				filtered = filtered.sort((a: Product, b: Product) => (a.selling_price || 0) - (b.selling_price || 0));
+				filtered = filtered.sort(
+					(a: Product, b: Product) => (a.selling_price || 0) - (b.selling_price || 0)
+				);
 				break;
 			case 'price_desc':
-				filtered = filtered.sort((a: Product, b: Product) => (b.selling_price || 0) - (a.selling_price || 0));
+				filtered = filtered.sort(
+					(a: Product, b: Product) => (b.selling_price || 0) - (a.selling_price || 0)
+				);
 				break;
 		}
 
@@ -93,7 +107,8 @@
 
 	// Items to reorder count
 	const itemsToReorderCount = $derived(
-		filteredProducts().filter((p: Product) => (p.stock_quantity || 0) < (p.min_stock_level || 10)).length
+		filteredProducts().filter((p: Product) => (p.stock_quantity || 0) < (p.min_stock_level || 10))
+			.length
 	);
 
 	// Helper functions

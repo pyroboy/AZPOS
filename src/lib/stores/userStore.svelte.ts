@@ -1,7 +1,5 @@
 import type { User, Role } from '$lib/schemas/models';
-import {
-    SvelteDate,
-  } from 'svelte/reactivity';
+import { SvelteDate } from 'svelte/reactivity';
 
 const initialUsers: User[] = [
 	{
@@ -60,11 +58,11 @@ const initialUsers: User[] = [
 export const users = $state<User[]>(initialUsers);
 
 // Derived state for active users
-export const activeUsers = $derived(users.filter(u => u.is_active));
+export const activeUsers = $derived(users.filter((u) => u.is_active));
 
 // Export functions that directly mutate the state
 export function deactivateUser(userId: string) {
-	const userIndex = users.findIndex(user => user.id === userId);
+	const userIndex = users.findIndex((user) => user.id === userId);
 	if (userIndex !== -1) {
 		users[userIndex] = {
 			...users[userIndex],
@@ -75,18 +73,16 @@ export function deactivateUser(userId: string) {
 }
 
 export function getAllActiveUsers(): User[] {
-	return users.filter(u => u.is_active);
+	return users.filter((u) => u.is_active);
 }
 
 export function findByUsername(username: string): User | undefined {
 	if (!username) return undefined;
-	return users.find(
-		u => u.username.toLowerCase() === username.toLowerCase() && u.is_active
-	);
+	return users.find((u) => u.username.toLowerCase() === username.toLowerCase() && u.is_active);
 }
 
 export function findById(userId: string): User | undefined {
-	return users.find(u => u.id === userId);
+	return users.find((u) => u.id === userId);
 }
 
 export function addUser(fullName: string, username: string, role: Role, pin: string) {

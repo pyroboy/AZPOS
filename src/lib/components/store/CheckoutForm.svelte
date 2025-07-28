@@ -7,72 +7,72 @@
 	import { Textarea } from '$lib/components/ui/textarea';
 	import PaymentMethodSelector from '$lib/components/store/PaymentMethodSelector.svelte';
 	import { User, CreditCard, MessageSquare } from 'lucide-svelte';
-	
+
 	// Props
-	let { 
+	let {
 		customerInfo = $bindable({
 			name: '',
 			email: '',
 			phone: ''
-		}) as { name: string, email: string, phone: string },
+		}) as { name: string; email: string; phone: string },
 		paymentMethod = $bindable('cash') as string,
 		specialInstructions = $bindable('') as string,
 		onSubmit = () => {},
 		processing = false
 	} = $props();
-	
+
 	// Form validation
 	let errors = $state<Record<string, string>>({});
-	
+
 	// Validate form
 	function validateForm(): boolean {
 		const newErrors: Record<string, string> = {};
-		
+
 		// Customer info validation (optional but if provided, must be valid)
 		if (customerInfo.email && !isValidEmail(customerInfo.email)) {
 			newErrors.email = 'Please enter a valid email address';
 		}
-		
+
 		if (customerInfo.phone && !isValidPhone(customerInfo.phone)) {
 			newErrors.phone = 'Please enter a valid phone number';
 		}
-		
+
 		if (customerInfo.name && customerInfo.name.length < 2) {
 			newErrors.name = 'Name must be at least 2 characters';
 		}
-		
+
 		// Special instructions length check
 		if (specialInstructions.length > 500) {
 			newErrors.specialInstructions = 'Special instructions must be 500 characters or less';
 		}
-		
+
 		errors = newErrors;
 		return Object.keys(newErrors).length === 0;
 	}
-	
+
 	// Email validation
 	function isValidEmail(email: string): boolean {
 		const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 		return emailRegex.test(email);
 	}
-	
+
 	// Phone validation (basic)
 	function isValidPhone(phone: string): boolean {
 		const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
 		return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
 	}
-	
+
 	// Handle form submission
 	function handleSubmit(): void {
 		if (validateForm() && !processing) {
 			onSubmit();
 		}
 	}
-	
+
 	// Real-time validation
 	function handleInputChange(field: keyof typeof customerInfo, value: string): void {
 		customerInfo[field] = value;
-		
+
 		// Clear error when user starts typing
 		if (errors[field]) {
 			const newErrors = { ...errors };
@@ -107,7 +107,7 @@
 						<p class="text-sm text-destructive mt-1">{errors.name}</p>
 					{/if}
 				</div>
-				
+
 				<div>
 					<Label for="customer-phone">Phone Number</Label>
 					<Input
@@ -123,7 +123,7 @@
 					{/if}
 				</div>
 			</div>
-			
+
 			<div>
 				<Label for="customer-email">Email Address</Label>
 				<Input
@@ -137,13 +137,11 @@
 				{#if errors.email}
 					<p class="text-sm text-destructive mt-1">{errors.email}</p>
 				{/if}
-				<p class="text-xs text-muted-foreground mt-1">
-					Optional - for order updates and receipt
-				</p>
+				<p class="text-xs text-muted-foreground mt-1">Optional - for order updates and receipt</p>
 			</div>
 		</CardContent>
 	</Card>
-	
+
 	<!-- Payment Method -->
 	<Card>
 		<CardHeader>
@@ -156,7 +154,7 @@
 			<PaymentMethodSelector bind:selectedMethod={paymentMethod} />
 		</CardContent>
 	</Card>
-	
+
 	<!-- Special Instructions -->
 	<Card>
 		<CardHeader>
@@ -187,17 +185,14 @@
 			</div>
 		</CardContent>
 	</Card>
-	
+
 	<!-- Submit Button -->
 	<div class="flex justify-end">
-		<Button 
-			size="lg" 
-			onclick={handleSubmit}
-			disabled={processing}
-			class="gap-2"
-		>
+		<Button size="lg" onclick={handleSubmit} disabled={processing} class="gap-2">
 			{#if processing}
-				<div class="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"></div>
+				<div
+					class="animate-spin w-4 h-4 border-2 border-current border-t-transparent rounded-full"
+				></div>
 				Processing Order...
 			{:else}
 				<CreditCard class="h-5 w-5" />

@@ -1,13 +1,24 @@
 <script lang="ts">
 	import type { Product, ProductBatch } from '$lib/types';
 	import { useProductBatchesByProduct } from '$lib/data/productBatch';
-	import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetFooter } from '$lib/components/ui/sheet';
+	import {
+		Sheet,
+		SheetContent,
+		SheetHeader,
+		SheetTitle,
+		SheetDescription,
+		SheetFooter
+	} from '$lib/components/ui/sheet';
 	import { Button } from '$lib/components/ui/button';
 	import { RadioGroup, RadioGroupItem } from '$lib/components/ui/radio-group';
 
-import { Label } from '$lib/components/ui/label';
+	import { Label } from '$lib/components/ui/label';
 
-	let { open = $bindable(), product, onSelect }: {
+	let {
+		open = $bindable(),
+		product,
+		onSelect
+	}: {
 		open?: boolean;
 		product: Product | null;
 		onSelect: (batch: ProductBatch) => void;
@@ -21,7 +32,7 @@ import { Label } from '$lib/components/ui/label';
 	// Derived sorted and filtered batches
 	const batches = $derived(() => {
 		if (!open || !product || !allBatches) return [];
-		
+
 		return allBatches
 			.filter((b: ProductBatch) => b.product_id === product.id && b.quantity_on_hand > 0)
 			.sort((a: ProductBatch, b: ProductBatch) => {
@@ -73,14 +84,18 @@ import { Label } from '$lib/components/ui/label';
 			<div class="py-4">
 				<RadioGroup bind:value={selectedBatchId} class="gap-4">
 					{#each batches() as batch (batch.id)}
-						<div class="flex items-center space-x-2 rounded-md border p-4 hover:bg-accent hover:text-accent-foreground">
+						<div
+							class="flex items-center space-x-2 rounded-md border p-4 hover:bg-accent hover:text-accent-foreground"
+						>
 							<RadioGroupItem value={batch.id} id={batch.id} />
 							<Label for={batch.id} class="flex-1 cursor-pointer">
 								<div class="font-medium">Batch: {batch.batch_number}</div>
 								<div class="text-sm text-muted-foreground">
 									<span>Qty: {batch.quantity_on_hand}</span>
 									{#if batch.expiration_date}
-										<span class="ml-4">Expires: {new Date(batch.expiration_date).toLocaleDateString()}</span>
+										<span class="ml-4"
+											>Expires: {new Date(batch.expiration_date).toLocaleDateString()}</span
+										>
 									{/if}
 								</div>
 							</Label>

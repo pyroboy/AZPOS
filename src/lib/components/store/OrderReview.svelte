@@ -4,13 +4,10 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { Card, CardContent, CardHeader, CardTitle } from '$lib/components/ui/card';
 	import { ShoppingBag } from 'lucide-svelte';
-	
+
 	// Props
-	let { 
-		items = [],
-		totals
-	} = $props();
-	
+	let { items = [], totals } = $props();
+
 	// Format price
 	function formatPrice(price: number): string {
 		return new Intl.NumberFormat('en-US', {
@@ -18,7 +15,7 @@
 			currency: 'USD'
 		}).format(price);
 	}
-	
+
 	// Get total items count
 	let totalItemsCount = $derived(items.reduce((sum, item) => sum + item.quantity, 0));
 </script>
@@ -29,10 +26,11 @@
 		<div class="flex items-center gap-2 mb-4">
 			<ShoppingBag class="h-5 w-5" />
 			<h3 class="text-lg font-semibold">
-				Order Items ({totalItemsCount} {totalItemsCount === 1 ? 'item' : 'items'})
+				Order Items ({totalItemsCount}
+				{totalItemsCount === 1 ? 'item' : 'items'})
 			</h3>
 		</div>
-		
+
 		<div class="space-y-3">
 			{#each items as item (item.cart_item_id)}
 				<Card>
@@ -41,18 +39,20 @@
 							<!-- Product Image -->
 							<div class="w-16 h-16 bg-muted rounded-md overflow-hidden flex-shrink-0">
 								{#if item.image_url}
-									<img 
-										src={item.image_url} 
+									<img
+										src={item.image_url}
 										alt={item.product_name}
 										class="w-full h-full object-cover"
 									/>
 								{:else}
-									<div class="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+									<div
+										class="w-full h-full flex items-center justify-center text-muted-foreground text-xs"
+									>
 										No Image
 									</div>
 								{/if}
 							</div>
-							
+
 							<!-- Item Details -->
 							<div class="flex-1 min-w-0">
 								<div class="flex justify-between items-start mb-2">
@@ -67,7 +67,7 @@
 										</div>
 									</div>
 								</div>
-								
+
 								<!-- Modifiers -->
 								{#if item.selected_modifiers && item.selected_modifiers.length > 0}
 									<div class="mb-2">
@@ -76,14 +76,16 @@
 												<Badge variant="secondary" class="text-xs">
 													{modifier.modifier_name}
 													{#if modifier.price_adjustment !== 0}
-														({modifier.price_adjustment > 0 ? '+' : ''}{formatPrice(modifier.price_adjustment)})
+														({modifier.price_adjustment > 0 ? '+' : ''}{formatPrice(
+															modifier.price_adjustment
+														)})
 													{/if}
 												</Badge>
 											{/each}
 										</div>
 									</div>
 								{/if}
-								
+
 								<!-- Applied Discounts -->
 								{#if item.applied_discounts && item.applied_discounts.length > 0}
 									<div class="mb-2">
@@ -96,12 +98,13 @@
 										</div>
 									</div>
 								{/if}
-								
+
 								<!-- Notes -->
 								{#if item.notes}
 									<div class="mt-2 p-2 bg-muted rounded-md">
 										<p class="text-sm text-muted-foreground italic">
-											<strong>Note:</strong> {item.notes}
+											<strong>Note:</strong>
+											{item.notes}
 										</p>
 									</div>
 								{/if}
@@ -112,7 +115,7 @@
 			{/each}
 		</div>
 	</div>
-	
+
 	<!-- Order Summary -->
 	<Card>
 		<CardHeader>
@@ -124,26 +127,26 @@
 					<span>Subtotal ({totalItemsCount} items)</span>
 					<span>{formatPrice(totals.subtotal)}</span>
 				</div>
-				
+
 				{#if totals.discountAmount > 0}
 					<div class="flex justify-between text-green-600">
 						<span>Discount Applied</span>
 						<span>-{formatPrice(totals.discountAmount)}</span>
 					</div>
 				{/if}
-				
+
 				<div class="flex justify-between">
 					<span>Tax (12%)</span>
 					<span>{formatPrice(totals.tax)}</span>
 				</div>
-				
+
 				<Separator />
-				
+
 				<div class="flex justify-between font-bold text-lg">
 					<span>Total</span>
 					<span>{formatPrice(totals.total)}</span>
 				</div>
-				
+
 				{#if totals.discountAmount > 0}
 					<div class="text-center">
 						<Badge variant="secondary" class="bg-green-100 text-green-800">
@@ -154,7 +157,7 @@
 			</div>
 		</CardContent>
 	</Card>
-	
+
 	<!-- Order Policies -->
 	<Card>
 		<CardContent class="p-4">

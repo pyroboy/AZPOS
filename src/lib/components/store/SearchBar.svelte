@@ -3,7 +3,7 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { Search, X } from 'lucide-svelte';
-	
+
 	// Props interface
 	interface Props {
 		searchQuery?: string;
@@ -11,38 +11,38 @@
 		debounceMs?: number;
 		onSearch?: (query: string) => void;
 	}
-	
-	let { 
+
+	let {
 		searchQuery = $bindable(''),
 		placeholder = 'Search for products...',
 		debounceMs = 300,
 		onSearch = () => {}
 	}: Props = $props();
-	
+
 	// Internal state
 	let debounceTimer: NodeJS.Timeout | undefined;
-	
+
 	// Debounced search to avoid excessive API calls
 	function handleInput(event: Event) {
 		const value = (event.target as HTMLInputElement).value;
-		
+
 		// Clear existing timer
 		if (debounceTimer) {
 			clearTimeout(debounceTimer);
 		}
-		
+
 		// Set new timer
 		debounceTimer = setTimeout(() => {
 			searchQuery = value;
 		}, debounceMs);
 	}
-	
+
 	// Clear search
 	function clearSearch(): void {
 		searchQuery = '';
 		onSearch('');
 	}
-	
+
 	// Handle keyboard shortcuts
 	function handleKeydown(event: KeyboardEvent): void {
 		// Escape key clears search
@@ -54,8 +54,10 @@
 
 <div class="relative">
 	<!-- Search Icon -->
-	<Search class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none" />
-	
+	<Search
+		class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground pointer-events-none"
+	/>
+
 	<!-- Search Input -->
 	<Input
 		type="text"
@@ -65,7 +67,7 @@
 		onkeydown={handleKeydown}
 		value={searchQuery}
 	/>
-	
+
 	<!-- Clear Button -->
 	{#if searchQuery}
 		<Button

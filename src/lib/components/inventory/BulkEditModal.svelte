@@ -11,16 +11,16 @@
 	import type { Category } from '$lib/types/category.schema';
 	import type { InventoryItem } from '$lib/types/inventory.schema';
 
-	let { 
-		open = $bindable(), 
-		productIds, 
+	let {
+		open = $bindable(),
+		productIds,
 		categories = [],
-		onClose 
-	} = $props<{ 
-		open: boolean; 
-		productIds: string[]; 
+		onClose
+	} = $props<{
+		open: boolean;
+		productIds: string[];
 		categories?: Category[];
-		onClose?: () => void; 
+		onClose?: () => void;
 	}>();
 
 	// Get TanStack Query hooks
@@ -32,19 +32,25 @@
 	let requiresBatchTracking = $state<'yes' | 'no' | 'indeterminate'>('indeterminate');
 	let price = $state<number | undefined>(undefined);
 
-	const selectedCategoryLabel = $derived(categories.find((category: Category) => category.id === category_id)?.name);
+	const selectedCategoryLabel = $derived(
+		categories.find((category: Category) => category.id === category_id)?.name
+	);
 	const selectedProductsCount = $derived(productIds.length);
-	
+
 	// Get selected products for preview
 	const selectedProducts = $derived(products.filter((p: Product) => productIds.includes(p.id)));
-	const selectedInventoryItems = $derived(inventoryItems.filter((item: InventoryItem) => productIds.includes(item.product_id)));
+	const selectedInventoryItems = $derived(
+		inventoryItems.filter((item: InventoryItem) => productIds.includes(item.product_id))
+	);
 
 	$effect(() => {
 		if (open && productIds.length > 0 && selectedProducts.length > 0) {
 			// Check if all selected products have batch tracking enabled
 			// Note: batch tracking is determined by the presence of batch_number in inventory items
-			const productHasBatches = selectedInventoryItems.some((item: InventoryItem) => item.batch_number);
-			
+			const productHasBatches = selectedInventoryItems.some(
+				(item: InventoryItem) => item.batch_number
+			);
+
 			// For now, we'll default to 'indeterminate' since requires_batch_tracking
 			// is not part of the current product schema
 			requiresBatchTracking = 'indeterminate';
@@ -62,7 +68,7 @@
 
 		// Build the updates object based on the schema
 		const updates: BulkProductUpdate['updates'] = {};
-		
+
 		if (category_id.trim()) {
 			updates.category_id = category_id.trim();
 		}
@@ -84,7 +90,7 @@
 				product_ids: productIds,
 				updates: updates
 			};
-			
+
 			bulkUpdate(bulkUpdateData);
 		}
 
@@ -103,8 +109,8 @@
 		<Dialog.Header>
 			<Dialog.Title>Bulk Edit Products</Dialog.Title>
 			<Dialog.Description>
-				Editing {selectedProductsCount} selected item{selectedProductsCount === 1 ? '' : 's'}. Fields left
-				blank will not be changed.
+				Editing {selectedProductsCount} selected item{selectedProductsCount === 1 ? '' : 's'}.
+				Fields left blank will not be changed.
 			</Dialog.Description>
 		</Dialog.Header>
 
@@ -126,11 +132,11 @@
 			</div>
 			<div class="grid grid-cols-4 items-center gap-4">
 				<Label for="reorder-point" class="text-right">Reorder Point</Label>
-				<Input 
-					id="reorder-point" 
-					type="number" 
-					bind:value={reorderPoint} 
-					class="col-span-3" 
+				<Input
+					id="reorder-point"
+					type="number"
+					bind:value={reorderPoint}
+					class="col-span-3"
 					placeholder="e.g. 20"
 					min="0"
 					disabled={isBulkUpdating}
@@ -139,10 +145,14 @@
 			<div class="grid grid-cols-4 items-center gap-4">
 				<Label for="requires-batch-tracking" class="text-right">Batch Tracking</Label>
 				<div class="col-span-3 flex items-center space-x-2">
-					<Switch.Root 
-						id="requires-batch-tracking" 
+					<Switch.Root
+						id="requires-batch-tracking"
 						checked={requiresBatchTracking === 'yes'}
-						data-state={requiresBatchTracking === 'indeterminate' ? 'indeterminate' : (requiresBatchTracking === 'yes' ? 'checked' : 'unchecked')}
+						data-state={requiresBatchTracking === 'indeterminate'
+							? 'indeterminate'
+							: requiresBatchTracking === 'yes'
+								? 'checked'
+								: 'unchecked'}
 						disabled={isBulkUpdating}
 						onCheckedChange={(checked) => {
 							requiresBatchTracking = checked ? 'yes' : 'no';
@@ -160,11 +170,11 @@
 			<div class="grid grid-cols-4 items-center gap-4">
 				<Label for="price" class="text-right">Selling Price</Label>
 				<div class="col-span-3">
-					<Input 
-						id="price" 
-						type="number" 
-						bind:value={price} 
-						class="col-span-3" 
+					<Input
+						id="price"
+						type="number"
+						bind:value={price}
+						class="col-span-3"
 						placeholder="e.g. 29.99"
 						step="0.01"
 						min="0"
@@ -176,22 +186,16 @@
 
 		{#if bulkUpdateError}
 			<div class="text-red-500 text-sm mb-4 px-4">
-				<strong>Error:</strong> {bulkUpdateError.message || 'Failed to update products'}
+				<strong>Error:</strong>
+				{bulkUpdateError.message || 'Failed to update products'}
 			</div>
 		{/if}
 
 		<Dialog.Footer>
-			<Button 
-				variant="outline" 
-				onclick={() => (open = false)}
-				disabled={isBulkUpdating}
-			>
+			<Button variant="outline" onclick={() => (open = false)} disabled={isBulkUpdating}>
 				Cancel
 			</Button>
-			<Button 
-				onclick={handleSubmit}
-				disabled={isBulkUpdating || selectedProductsCount === 0}
-			>
+			<Button onclick={handleSubmit} disabled={isBulkUpdating || selectedProductsCount === 0}>
 				{#if isBulkUpdating}
 					<div class="flex items-center space-x-2">
 						<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
@@ -204,4 +208,3 @@
 		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>
-

@@ -15,8 +15,14 @@
 
 	// Helper functions for display
 	const colors = [
-		'#ffadad', '#ffd6a5', '#fdffb6', '#caffbf',
-		'#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'
+		'#ffadad',
+		'#ffd6a5',
+		'#fdffb6',
+		'#caffbf',
+		'#9bf6ff',
+		'#a0c4ff',
+		'#bdb2ff',
+		'#ffc6ff'
 	];
 
 	function getInitials(name: string): string {
@@ -38,13 +44,13 @@
 		if (checked) {
 			selectedProductIds = [...selectedProductIds, productId];
 		} else {
-			selectedProductIds = selectedProductIds.filter(id => id !== productId);
+			selectedProductIds = selectedProductIds.filter((id) => id !== productId);
 		}
 	}
 
 	function handleSelectAll(checked: boolean): void {
 		if (checked) {
-			selectedProductIds = products.map(p => p.id);
+			selectedProductIds = products.map((p) => p.id);
 		} else {
 			selectedProductIds = [];
 		}
@@ -63,7 +69,7 @@
 	<Table.Header>
 		<Table.Row>
 			<Table.Head class="w-[50px]">
-				<Checkbox 
+				<Checkbox
 					checked={isAllSelected}
 					indeterminate={isIndeterminate}
 					onCheckedChange={handleSelectAll}
@@ -83,7 +89,7 @@
 		{#each products as product (product.id)}
 			<Table.Row>
 				<Table.Cell>
-					<Checkbox 
+					<Checkbox
 						checked={selectedProductIds.includes(product.id)}
 						onCheckedChange={(checked) => handleSelectProduct(product.id, checked)}
 						aria-label={`Select ${product.name}`}
@@ -91,14 +97,14 @@
 				</Table.Cell>
 				<Table.Cell>
 					{#if product.image_url}
-						<ImagePreview 
-							src={product.image_url} 
-							fallbackSrc={product.image_url} 
-							alt={product.name} 
-							product={product} 
+						<ImagePreview
+							src={product.image_url}
+							fallbackSrc={product.image_url}
+							alt={product.name}
+							{product}
 						/>
 					{:else}
-						<div 
+						<div
 							class="flex h-10 w-10 items-center justify-center rounded-md text-xs font-medium text-white"
 							style="background-color: {getRandomColor(product.id)}"
 						>
@@ -115,4 +121,3 @@
 		{/each}
 	</Table.Body>
 </Table.Root>
-

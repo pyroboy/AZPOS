@@ -51,8 +51,8 @@ Create `telefunc.config.js` in your project root:
 
 ```javascript
 export default {
-  baseUrl: 'http://localhost:5173',
-  telefuncUrl: '/_telefunc'
+	baseUrl: 'http://localhost:5173',
+	telefuncUrl: '/_telefunc'
 };
 ```
 
@@ -65,16 +65,14 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { telefunc } from 'telefunc/vite';
 
 export default {
-  plugins: [
-    sveltekit(),
-    telefunc()
-  ]
+	plugins: [sveltekit(), telefunc()]
 };
 ```
 
 ## 6. Migration Status
 
 ### ✅ Completed
+
 - Cart schema definitions (`src/lib/types/cart.schema.ts`)
 - Server-side Telefunc functions (`src/lib/server/telefuncs/cart.telefunc.ts`)
 - Data access layer (`src/lib/data/cart.ts`)
@@ -82,6 +80,7 @@ export default {
 - Layout updated with QueryClient provider
 
 ### 🔄 Next Steps
+
 1. Install dependencies (see above)
 2. Set up environment variables
 3. Apply database schema
@@ -91,42 +90,39 @@ export default {
 ## 7. Component Migration Example
 
 ### Before (Runes Store):
+
 ```svelte
 <script>
-  import { cart } from '$lib/stores/cartStore.svelte';
-  
-  // Direct access to reactive state
-  const items = cart.state.items;
-  const totals = cart.totals;
-  
-  function addItem(product) {
-    cart.addItem(product, 1);
-  }
+	import { cart } from '$lib/stores/cartStore.svelte';
+
+	// Direct access to reactive state
+	const items = cart.state.items;
+	const totals = cart.totals;
+
+	function addItem(product) {
+		cart.addItem(product, 1);
+	}
 </script>
 ```
 
 ### After (TanStack Query):
+
 ```svelte
 <script>
-  import { useCart } from '$lib/data/cart';
-  
-  // Hook provides reactive queries and mutations
-  const { 
-    items, 
-    cartTotals, 
-    addItemOptimistic, 
-    isLoading 
-  } = useCart();
-  
-  function addItem(product) {
-    addItemOptimistic(product, 1);
-  }
+	import { useCart } from '$lib/data/cart';
+
+	// Hook provides reactive queries and mutations
+	const { items, cartTotals, addItemOptimistic, isLoading } = useCart();
+
+	function addItem(product) {
+		addItemOptimistic(product, 1);
+	}
 </script>
 
 {#if isLoading}
-  <p>Loading cart...</p>
+	<p>Loading cart...</p>
 {:else}
-  <!-- Cart content -->
+	<!-- Cart content -->
 {/if}
 ```
 
@@ -151,6 +147,7 @@ export default {
 ## 10. Rollback Plan
 
 If issues arise, you can temporarily revert to the original cart store by:
+
 1. Commenting out the TanStack Query provider in layout
 2. Reverting component imports back to `cartStore.svelte`
 3. The original store files remain intact during migration

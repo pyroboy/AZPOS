@@ -1,6 +1,13 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
-	import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import {
+		Card,
+		CardContent,
+		CardDescription,
+		CardFooter,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import ImagePreview from '$lib/components/inventory/ImagePreview.svelte';
 	import type { Product } from '$lib/types/product.schema';
@@ -14,8 +21,14 @@
 	let { products, selectedProductIds = $bindable([]) }: Props = $props();
 
 	const colors = [
-		'#ffadad', '#ffd6a5', '#fdffb6', '#caffbf',
-		'#9bf6ff', '#a0c4ff', '#bdb2ff', '#ffc6ff'
+		'#ffadad',
+		'#ffd6a5',
+		'#fdffb6',
+		'#caffbf',
+		'#9bf6ff',
+		'#a0c4ff',
+		'#bdb2ff',
+		'#ffc6ff'
 	];
 
 	function getInitials(name: string): string {
@@ -31,7 +44,9 @@
 		return colors[index];
 	}
 
-	function getStockBadgeColor(stock: number): 'destructive' | 'secondary' | 'outline' | 'default' | 'success' {
+	function getStockBadgeColor(
+		stock: number
+	): 'destructive' | 'secondary' | 'outline' | 'default' | 'success' {
 		if (stock === 0) return 'destructive';
 		if (stock < 20) return 'secondary';
 		return 'outline';
@@ -42,7 +57,7 @@
 		if (checked) {
 			selectedProductIds = [...selectedProductIds, productId];
 		} else {
-			selectedProductIds = selectedProductIds.filter(id => id !== productId);
+			selectedProductIds = selectedProductIds.filter((id) => id !== productId);
 		}
 	}
 </script>
@@ -51,7 +66,7 @@
 	{#each products as product (product.id)}
 		<Card class="relative">
 			<div class="absolute top-2 left-2 z-10">
-				<Checkbox 
+				<Checkbox
 					checked={selectedProductIds.includes(product.id)}
 					onCheckedChange={(checked) => handleSelectProduct(product.id, checked)}
 					aria-label={`Select ${product.name}`}
@@ -60,9 +75,9 @@
 			</div>
 			<CardHeader class="p-0">
 				{#if product.image_url}
-					<ImagePreview src={product.image_url} product={product} fallbackSrc={product.image_url} />
+					<ImagePreview src={product.image_url} {product} fallbackSrc={product.image_url} />
 				{:else}
-					<div 
+					<div
 						class="flex h-48 w-full items-center justify-center rounded-t-lg text-2xl font-bold text-white"
 						style="background-color: {getRandomColor(product.id)}"
 					>
@@ -91,4 +106,3 @@
 		</Card>
 	{/each}
 </div>
-

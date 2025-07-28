@@ -32,5 +32,3 @@
 		<p>Your dashboard is not available at the moment.</p>
 	</div>
 {/if}
-
-

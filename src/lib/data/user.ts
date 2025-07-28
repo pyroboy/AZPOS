@@ -1,21 +1,21 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import { 
-  onGetUsers, 
-  onGetUser, 
-  onCreateUser, 
-  onUpdateUser, 
-  onChangePassword, 
-  onGetUserStats,
-  onGetUserActivity
+import {
+	onGetUsers,
+	onGetUser,
+	onCreateUser,
+	onUpdateUser,
+	onChangePassword,
+	onGetUserStats,
+	onGetUserActivity
 } from '$lib/server/telefuncs/user.telefunc';
-import type { 
-  User, 
-  UserInput, 
-  UserFilters, 
-  PaginatedUsers, 
-  UserStats,
-  ChangePassword,
-  UserActivity
+import type {
+	User,
+	UserInput,
+	UserFilters,
+	PaginatedUsers,
+	UserStats,
+	ChangePassword,
+	UserActivity
 } from '$lib/types/user.schema';
 
 const usersQueryKey = ['users'];
@@ -23,299 +23,273 @@ const userStatsQueryKey = ['user-stats'];
 const userActivityQueryKey = ['user-activity'];
 
 export function useUsers() {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  // State for filters
-  let filters = $state<UserFilters>({
-    page: 1,
-    limit: 20,
-    sort_by: 'created_at',
-    sort_order: 'desc'
-  });
+	// State for filters
+	let filters = $state<UserFilters>({
+		page: 1,
+		limit: 20,
+		sort_by: 'created_at',
+		sort_order: 'desc'
+	});
 
-  // Query for paginated users
-  const usersQuery = createQuery<PaginatedUsers>({
-    queryKey: $derived([...usersQueryKey, filters]),
-    queryFn: () => onGetUsers(filters)
-  });
+	// Query for paginated users
+	const usersQuery = createQuery<PaginatedUsers>({
+		queryKey: $derived([...usersQueryKey, filters]),
+		queryFn: () => onGetUsers(filters)
+	});
 
-  // Query for user statistics
-  const statsQuery = createQuery<UserStats>({
-    queryKey: userStatsQueryKey,
-    queryFn: onGetUserStats
-  });
+	// Query for user statistics
+	const statsQuery = createQuery<UserStats>({
+		queryKey: userStatsQueryKey,
+		queryFn: onGetUserStats
+	});
 
-  // Mutation to create user
-  const createUserMutation = createMutation({
-    mutationFn: (userData: UserInput) => onCreateUser(userData),
-    onSuccess: (newUser) => {
-      // Invalidate and refetch users
-      queryClient.invalidateQueries({ queryKey: usersQueryKey });
-      queryClient.invalidateQueries({ queryKey: userStatsQueryKey });
-      
-      // Optimistically add to cache
-      queryClient.setQueryData<PaginatedUsers>(
-        [...usersQueryKey, filters],
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            users: [newUser, ...old.users]
-          };
-        }
-      );
-    }
-  });
+	// Mutation to create user
+	const createUserMutation = createMutation({
+		mutationFn: (userData: UserInput) => onCreateUser(userData),
+		onSuccess: (newUser) => {
+			// Invalidate and refetch users
+			queryClient.invalidateQueries({ queryKey: usersQueryKey });
+			queryClient.invalidateQueries({ queryKey: userStatsQueryKey });
 
-  // Mutation to update user
-  const updateUserMutation = createMutation({
-    mutationFn: ({ id, data }: { id: string; data: UserInput }) => onUpdateUser(id, data),
-    onSuccess: (updatedUser) => {
-      // Invalidate and refetch users
-      queryClient.invalidateQueries({ queryKey: usersQueryKey });
-      queryClient.invalidateQueries({ queryKey: userStatsQueryKey });
-      
-      // Update specific user in cache
-      queryClient.setQueryData<User>(
-        ['user', updatedUser.id],
-        updatedUser
-      );
-      
-      // Update user in list cache
-      queryClient.setQueryData<PaginatedUsers>(
-        [...usersQueryKey, filters],
-        (old) => {
-          if (!old) return old;
-          return {
-            ...old,
-            users: old.users.map(user =>
-              user.id === updatedUser.id ? updatedUser : user
-            )
-          };
-        }
-      );
-    }
-  });
+			// Optimistically add to cache
+			queryClient.setQueryData<PaginatedUsers>([...usersQueryKey, filters], (old) => {
+				if (!old) return old;
+				return {
+					...old,
+					users: [newUser, ...old.users]
+				};
+			});
+		}
+	});
 
-  // Mutation to change password
-  const changePasswordMutation = createMutation({
-    mutationFn: (passwordData: ChangePassword) => onChangePassword(passwordData)
-  });
+	// Mutation to update user
+	const updateUserMutation = createMutation({
+		mutationFn: ({ id, data }: { id: string; data: UserInput }) => onUpdateUser(id, data),
+		onSuccess: (updatedUser) => {
+			// Invalidate and refetch users
+			queryClient.invalidateQueries({ queryKey: usersQueryKey });
+			queryClient.invalidateQueries({ queryKey: userStatsQueryKey });
 
-  // Derived reactive state
-  const users = $derived(usersQuery.data?.users || []);
-  const pagination = $derived(usersQuery.data?.pagination);
-  const stats = $derived(statsQuery.data);
-  
-  // Filtered users
-  const activeUsers = $derived(
-    users.filter((user: User) => user.is_active)
-  );
-  
-  const inactiveUsers = $derived(
-    users.filter((user: User) => !user.is_active)
-  );
-  
-  const verifiedUsers = $derived(
-    users.filter((user: User) => user.is_verified)
-  );
-  
-  const unverifiedUsers = $derived(
-    users.filter((user: User) => !user.is_verified)
-  );
-  
-  const adminUsers = $derived(
-    users.filter((user: User) => user.role === 'admin')
-  );
-  
-  const managerUsers = $derived(
-    users.filter((user: User) => user.role === 'manager')
-  );
-  
-  const cashierUsers = $derived(
-    users.filter((user: User) => user.role === 'cashier')
-  );
-  
-  const customerUsers = $derived(
-    users.filter((user: User) => user.role === 'customer')
-  );
+			// Update specific user in cache
+			queryClient.setQueryData<User>(['user', updatedUser.id], updatedUser);
 
-  // Helper functions
-  function updateFilters(newFilters: Partial<UserFilters>) {
-    filters = { ...filters, ...newFilters };
-  }
+			// Update user in list cache
+			queryClient.setQueryData<PaginatedUsers>([...usersQueryKey, filters], (old) => {
+				if (!old) return old;
+				return {
+					...old,
+					users: old.users.map((user) => (user.id === updatedUser.id ? updatedUser : user))
+				};
+			});
+		}
+	});
 
-  function resetFilters() {
-    filters = {
-      page: 1,
-      limit: 20,
-      sort_by: 'created_at',
-      sort_order: 'desc'
-    };
-  }
+	// Mutation to change password
+	const changePasswordMutation = createMutation({
+		mutationFn: (passwordData: ChangePassword) => onChangePassword(passwordData)
+	});
 
-  function goToPage(page: number) {
-    updateFilters({ page });
-  }
+	// Derived reactive state
+	const users = $derived(usersQuery.data?.users || []);
+	const pagination = $derived(usersQuery.data?.pagination);
+	const stats = $derived(statsQuery.data);
 
-  function setSearch(search: string) {
-    updateFilters({ search: search || undefined, page: 1 });
-  }
+	// Filtered users
+	const activeUsers = $derived(users.filter((user: User) => user.is_active));
 
-  function setRoleFilter(role: UserFilters['role']) {
-    updateFilters({ role, page: 1 });
-  }
+	const inactiveUsers = $derived(users.filter((user: User) => !user.is_active));
 
-  function setActiveFilter(is_active: boolean | undefined) {
-    updateFilters({ is_active, page: 1 });
-  }
+	const verifiedUsers = $derived(users.filter((user: User) => user.is_verified));
 
-  function setVerifiedFilter(is_verified: boolean | undefined) {
-    updateFilters({ is_verified, page: 1 });
-  }
+	const unverifiedUsers = $derived(users.filter((user: User) => !user.is_verified));
 
-  function setCreatedDateRange(created_from?: string, created_to?: string) {
-    updateFilters({ created_from, created_to, page: 1 });
-  }
+	const adminUsers = $derived(users.filter((user: User) => user.role === 'admin'));
 
-  function setLastLoginRange(last_login_from?: string, last_login_to?: string) {
-    updateFilters({ last_login_from, last_login_to, page: 1 });
-  }
+	const managerUsers = $derived(users.filter((user: User) => user.role === 'manager'));
 
-  function setSorting(sort_by: UserFilters['sort_by'], sort_order: UserFilters['sort_order']) {
-    updateFilters({ sort_by, sort_order, page: 1 });
-  }
+	const cashierUsers = $derived(users.filter((user: User) => user.role === 'cashier'));
 
-  // User operations
-  function createUser(userData: UserInput) {
-    return createUserMutation.mutateAsync(userData);
-  }
+	const customerUsers = $derived(users.filter((user: User) => user.role === 'customer'));
 
-  function updateUser(id: string, userData: UserInput) {
-    return updateUserMutation.mutateAsync({ id, data: userData });
-  }
+	// Helper functions
+	function updateFilters(newFilters: Partial<UserFilters>) {
+		filters = { ...filters, ...newFilters };
+	}
 
-  function changePassword(passwordData: ChangePassword) {
-    return changePasswordMutation.mutateAsync(passwordData);
-  }
+	function resetFilters() {
+		filters = {
+			page: 1,
+			limit: 20,
+			sort_by: 'created_at',
+			sort_order: 'desc'
+		};
+	}
 
-  // Single user query helper
-  function useUser(userId: string) {
-    return createQuery<User>({
-      queryKey: ['user', userId],
-      queryFn: () => onGetUser(userId),
-      enabled: !!userId
-    });
-  }
+	function goToPage(page: number) {
+		updateFilters({ page });
+	}
 
-  // User activity query helper
-  function useUserActivity(userId?: string, limit: number = 50) {
-    return createQuery<UserActivity[]>({
-      queryKey: [...userActivityQueryKey, userId, limit],
-      queryFn: () => onGetUserActivity(userId, limit)
-    });
-  }
+	function setSearch(search: string) {
+		updateFilters({ search: search || undefined, page: 1 });
+	}
 
-  // Role-based helpers
-  function canUserPerformAction(user: User, action: string): boolean {
-    const rolePermissions = {
-      admin: ['*'], // Admin can do everything
-      manager: [
-        'view_users', 'create_user', 'update_user', 'view_stats',
-        'manage_inventory', 'manage_products', 'process_transactions'
-      ],
-      cashier: [
-        'process_transactions', 'view_products', 'view_inventory'
-      ],
-      customer: [
-        'view_profile', 'update_profile'
-      ]
-    };
+	function setRoleFilter(role: UserFilters['role']) {
+		updateFilters({ role, page: 1 });
+	}
 
-    const permissions = rolePermissions[user.role] || [];
-    return permissions.includes('*') || permissions.includes(action) || user.permissions.includes(action);
-  }
+	function setActiveFilter(is_active: boolean | undefined) {
+		updateFilters({ is_active, page: 1 });
+	}
 
-  function getUsersByRole(role: User['role']) {
-    return users.filter((user: User) => user.role === role);
-  }
+	function setVerifiedFilter(is_verified: boolean | undefined) {
+		updateFilters({ is_verified, page: 1 });
+	}
 
-  function getRecentlyActiveUsers(hours: number = 24) {
-    const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
-    return users.filter((user: User) => 
-      user.last_login_at && new Date(user.last_login_at) > cutoff
-    );
-  }
+	function setCreatedDateRange(created_from?: string, created_to?: string) {
+		updateFilters({ created_from, created_to, page: 1 });
+	}
 
-  function getNewUsers(days: number = 30) {
-    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
-    return users.filter((user: User) => 
-      new Date(user.created_at) > cutoff
-    );
-  }
+	function setLastLoginRange(last_login_from?: string, last_login_to?: string) {
+		updateFilters({ last_login_from, last_login_to, page: 1 });
+	}
 
-  return {
-    // Queries and their states
-    usersQuery,
-    statsQuery,
-    
-    // Reactive data
-    users,
-    pagination,
-    stats,
-    
-    // Filtered data
-    activeUsers,
-    inactiveUsers,
-    verifiedUsers,
-    unverifiedUsers,
-    adminUsers,
-    managerUsers,
-    cashierUsers,
-    customerUsers,
-    
-    // Current filters
-    filters: $derived(filters),
-    
-    // Mutations
-    createUser,
-    createUserStatus: $derived(createUserMutation.status),
-    
-    updateUser,
-    updateUserStatus: $derived(updateUserMutation.status),
-    
-    changePassword,
-    changePasswordStatus: $derived(changePasswordMutation.status),
-    
-    // Filter helpers
-    updateFilters,
-    resetFilters,
-    goToPage,
-    setSearch,
-    setRoleFilter,
-    setActiveFilter,
-    setVerifiedFilter,
-    setCreatedDateRange,
-    setLastLoginRange,
-    setSorting,
-    
-    // Single user and activity helpers
-    useUser,
-    useUserActivity,
-    
-    // Role-based helpers
-    canUserPerformAction,
-    getUsersByRole,
-    getRecentlyActiveUsers,
-    getNewUsers,
-    
-    // Loading states
-    isLoading: $derived(usersQuery.isPending),
-    isError: $derived(usersQuery.isError),
-    error: $derived(usersQuery.error),
-    
-    // Stats loading
-    isStatsLoading: $derived(statsQuery.isPending),
-    statsError: $derived(statsQuery.error)
-  };
+	function setSorting(sort_by: UserFilters['sort_by'], sort_order: UserFilters['sort_order']) {
+		updateFilters({ sort_by, sort_order, page: 1 });
+	}
+
+	// User operations
+	function createUser(userData: UserInput) {
+		return createUserMutation.mutateAsync(userData);
+	}
+
+	function updateUser(id: string, userData: UserInput) {
+		return updateUserMutation.mutateAsync({ id, data: userData });
+	}
+
+	function changePassword(passwordData: ChangePassword) {
+		return changePasswordMutation.mutateAsync(passwordData);
+	}
+
+	// Single user query helper
+	function useUser(userId: string) {
+		return createQuery<User>({
+			queryKey: ['user', userId],
+			queryFn: () => onGetUser(userId),
+			enabled: !!userId
+		});
+	}
+
+	// User activity query helper
+	function useUserActivity(userId?: string, limit: number = 50) {
+		return createQuery<UserActivity[]>({
+			queryKey: [...userActivityQueryKey, userId, limit],
+			queryFn: () => onGetUserActivity(userId, limit)
+		});
+	}
+
+	// Role-based helpers
+	function canUserPerformAction(user: User, action: string): boolean {
+		const rolePermissions = {
+			admin: ['*'], // Admin can do everything
+			manager: [
+				'view_users',
+				'create_user',
+				'update_user',
+				'view_stats',
+				'manage_inventory',
+				'manage_products',
+				'process_transactions'
+			],
+			cashier: ['process_transactions', 'view_products', 'view_inventory'],
+			customer: ['view_profile', 'update_profile']
+		};
+
+		const permissions = rolePermissions[user.role] || [];
+		return (
+			permissions.includes('*') || permissions.includes(action) || user.permissions.includes(action)
+		);
+	}
+
+	function getUsersByRole(role: User['role']) {
+		return users.filter((user: User) => user.role === role);
+	}
+
+	function getRecentlyActiveUsers(hours: number = 24) {
+		const cutoff = new Date(Date.now() - hours * 60 * 60 * 1000);
+		return users.filter(
+			(user: User) => user.last_login_at && new Date(user.last_login_at) > cutoff
+		);
+	}
+
+	function getNewUsers(days: number = 30) {
+		const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+		return users.filter((user: User) => new Date(user.created_at) > cutoff);
+	}
+
+	return {
+		// Queries and their states
+		usersQuery,
+		statsQuery,
+
+		// Reactive data
+		users,
+		pagination,
+		stats,
+
+		// Filtered data
+		activeUsers,
+		inactiveUsers,
+		verifiedUsers,
+		unverifiedUsers,
+		adminUsers,
+		managerUsers,
+		cashierUsers,
+		customerUsers,
+
+		// Current filters
+		filters: $derived(filters),
+
+		// Mutations
+		createUser,
+		createUserStatus: $derived(createUserMutation.status),
+
+		updateUser,
+		updateUserStatus: $derived(updateUserMutation.status),
+
+		changePassword,
+		changePasswordStatus: $derived(changePasswordMutation.status),
+
+		// Filter helpers
+		updateFilters,
+		resetFilters,
+		goToPage,
+		setSearch,
+		setRoleFilter,
+		setActiveFilter,
+		setVerifiedFilter,
+		setCreatedDateRange,
+		setLastLoginRange,
+		setSorting,
+
+		// Single user and activity helpers
+		useUser,
+		useUserActivity,
+
+		// Role-based helpers
+		canUserPerformAction,
+		getUsersByRole,
+		getRecentlyActiveUsers,
+		getNewUsers,
+
+		// Loading states
+		isLoading: $derived(usersQuery.isPending),
+		isError: $derived(usersQuery.isError),
+		error: $derived(usersQuery.error),
+
+		// Stats loading
+		isStatsLoading: $derived(statsQuery.isPending),
+		statsError: $derived(statsQuery.error)
+	};
 }

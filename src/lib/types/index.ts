@@ -1,4 +1,5 @@
 export * from './schemas';
+export * from './supplier-performance.schema';
 
 export interface Product {
 	id: string;
@@ -68,5 +69,3 @@ export interface User {
 	role: 'admin' | 'manager' | 'cashier';
 	pin: string; // Hashed pin
 }
-
-

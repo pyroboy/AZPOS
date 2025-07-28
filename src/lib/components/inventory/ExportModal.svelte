@@ -4,7 +4,13 @@
 	import { useInventory } from '$lib/data/inventory';
 	import type { Product } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
-	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import {
+		Card,
+		CardContent,
+		CardDescription,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Download, FileText, Package, Calendar } from 'lucide-svelte';
 	import Papa from 'papaparse';
@@ -16,7 +22,7 @@
 	// Use data hooks instead of stores
 	const { activeProducts } = useProducts();
 	const { inventoryItems } = useInventory();
-	
+
 	const allProducts = $derived(activeProducts.filter((p: Product) => !p.is_archived));
 	const allBatches = $derived(inventoryItems); // Using inventory items as batch equivalents
 
@@ -31,8 +37,13 @@
 		// Create sample data with current products
 		const templateData = allProducts.slice(0, 5).map((product: Product) => {
 			// Calculate current stock from inventory items
-			const productInventoryItems = allBatches.filter((b: { product_id: string }) => b.product_id === product.id);
-			const currentStock = productInventoryItems.reduce((sum: number, item: { quantity_available: number }) => sum + item.quantity_available, 0);
+			const productInventoryItems = allBatches.filter(
+				(b: { product_id: string }) => b.product_id === product.id
+			);
+			const currentStock = productInventoryItems.reduce(
+				(sum: number, item: { quantity_available: number }) => sum + item.quantity_available,
+				0
+			);
 
 			return {
 				product_id: product.id,
@@ -74,11 +85,20 @@
 	function downloadCurrentInventory() {
 		// Export current inventory levels
 		const inventoryData = allProducts.map((product: Product) => {
-			const productInventoryItems = allBatches.filter((b: { product_id: string }) => b.product_id === product.id);
-			const totalStock = productInventoryItems.reduce((sum: number, item: { quantity_available: number }) => sum + item.quantity_available, 0);
-			const avgCost = productInventoryItems.length > 0 
-				? productInventoryItems.reduce((sum: number, item: { cost_per_unit?: number }) => sum + (item.cost_per_unit || 0), 0) / productInventoryItems.length
-				: 0;
+			const productInventoryItems = allBatches.filter(
+				(b: { product_id: string }) => b.product_id === product.id
+			);
+			const totalStock = productInventoryItems.reduce(
+				(sum: number, item: { quantity_available: number }) => sum + item.quantity_available,
+				0
+			);
+			const avgCost =
+				productInventoryItems.length > 0
+					? productInventoryItems.reduce(
+							(sum: number, item: { cost_per_unit?: number }) => sum + (item.cost_per_unit || 0),
+							0
+						) / productInventoryItems.length
+					: 0;
 
 			return {
 				product_id: product.id,
@@ -105,22 +125,33 @@
 
 	function downloadBatchReport() {
 		// Export detailed inventory item information
-		const batchData = allBatches.map((item: { id: string; batch_number?: string; product_id: string; quantity_on_hand: number; quantity_available: number; cost_per_unit?: number; expiry_date?: string; created_at: string }) => {
-			const product = allProducts.find((p: Product) => p.id === item.product_id);
-			return {
-				item_id: item.id,
-				batch_number: item.batch_number || 'N/A',
-				product_id: item.product_id,
-				sku: product?.sku || 'Unknown',
-				product_name: product?.name || 'Unknown Product',
-				quantity_on_hand: item.quantity_on_hand,
-				quantity_available: item.quantity_available,
-				cost_per_unit: item.cost_per_unit || 0,
-				expiry_date: item.expiry_date || '',
-				created_at: item.created_at,
-				base_unit: product?.base_unit || 'piece'
-			};
-		});
+		const batchData = allBatches.map(
+			(item: {
+				id: string;
+				batch_number?: string;
+				product_id: string;
+				quantity_on_hand: number;
+				quantity_available: number;
+				cost_per_unit?: number;
+				expiry_date?: string;
+				created_at: string;
+			}) => {
+				const product = allProducts.find((p: Product) => p.id === item.product_id);
+				return {
+					item_id: item.id,
+					batch_number: item.batch_number || 'N/A',
+					product_id: item.product_id,
+					sku: product?.sku || 'Unknown',
+					product_name: product?.name || 'Unknown Product',
+					quantity_on_hand: item.quantity_on_hand,
+					quantity_available: item.quantity_available,
+					cost_per_unit: item.cost_per_unit || 0,
+					expiry_date: item.expiry_date || '',
+					created_at: item.created_at,
+					base_unit: product?.base_unit || 'piece'
+				};
+			}
+		);
 
 		const csv = Papa.unparse(batchData, {
 			header: true
@@ -150,12 +181,7 @@
 					<Download class="h-6 w-6" />
 					Export Inventory Data
 				</h2>
-				<button 
-					onclick={closeModal}
-					class="text-gray-500 hover:text-gray-700"
-				>
-					✕
-				</button>
+				<button onclick={closeModal} class="text-gray-500 hover:text-gray-700"> ✕ </button>
 			</div>
 
 			<div class="space-y-4">
@@ -167,7 +193,8 @@
 							Inventory Adjustment Template
 						</CardTitle>
 						<CardDescription>
-							Download a CSV template for bulk inventory adjustments. Fill in the adjustment quantities and upload to apply changes.
+							Download a CSV template for bulk inventory adjustments. Fill in the adjustment
+							quantities and upload to apply changes.
 						</CardDescription>
 					</CardHeader>
 					<CardContent>
@@ -205,7 +232,11 @@
 									Includes stock levels, pricing, and supplier info
 								</p>
 							</div>
-							<Button onclick={downloadCurrentInventory} variant="outline" class="flex items-center gap-2">
+							<Button
+								onclick={downloadCurrentInventory}
+								variant="outline"
+								class="flex items-center gap-2"
+							>
 								<Download class="h-4 w-4" />
 								Download Report
 							</Button>
@@ -232,7 +263,11 @@
 									Includes batch numbers, expiration dates, and costs
 								</p>
 							</div>
-							<Button onclick={downloadBatchReport} variant="outline" class="flex items-center gap-2">
+							<Button
+								onclick={downloadBatchReport}
+								variant="outline"
+								class="flex items-center gap-2"
+							>
 								<Download class="h-4 w-4" />
 								Download Report
 							</Button>
@@ -242,9 +277,7 @@
 			</div>
 
 			<div class="flex justify-end mt-6">
-				<Button variant="outline" onclick={closeModal}>
-					Close
-				</Button>
+				<Button variant="outline" onclick={closeModal}>Close</Button>
 			</div>
 		</div>
 	</div>

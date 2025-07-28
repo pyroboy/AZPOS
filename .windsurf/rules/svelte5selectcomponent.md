@@ -4,9 +4,11 @@ trigger: manual
 
 FOR SELECT COMPONENT ERROR FIX!
 !!!!DO NOT USE ```
+
 ```
 <SelectValue>
 ```
+
 ---
 
 ### ## 1. Single Selection (`type="single"`)
@@ -16,19 +18,13 @@ This is the default and most common way to use the Select component. It allows a
 **Key Steps:**
 
 1. **Import** the `Select`, `SelectTrigger`, `SelectContent`, and `SelectItem` components.
-    
 2. **Define** an array of objects for the options. Each object needs a `value` and `label`.
-    
 3. **Manage State** using Svelte 5 runes.
-    
-    - Use `$state` to hold the selected option's `value` (a `string`).
-        
-    - Use `$derived` to compute the display `label` for the trigger.
-        
+   - Use `$state` to hold the selected option's `value` (a `string`).
+   - Use `$derived` to compute the display `label` for the trigger.
+
 4. **Bind Value** using `bind:value` on the main `<Select>` component.
-    
 5. **Render Items** by iterating over your options array with an `{#each}` block.
-    
 
 **Example:**
 
@@ -87,11 +83,8 @@ To allow selecting multiple items, set the `type` prop to `"multiple"`. This req
 **Key Changes:**
 
 1. **`type` Prop**: Add `type="multiple"` to the `<Select>` component.
-    
 2. **State**: The bound `value` must be an array of strings: `$state<string[]>([])`.
-    
 3. **Display Logic**: The `$derived` label must be updated to handle multiple selections, for example, by joining the labels into a comma-separated list.
-    
 
 **Example:**
 
@@ -150,21 +143,14 @@ Svelte
 Since `shadcn-svelte`'s `<Select>` wraps `bits-ui`'s `Select.Root`, you can pass its props directly to the component for more control.
 
 - **`disabled={boolean}`**: Disables the entire select control.
-    
-    Svelte
-    
-    ```
-    <Select disabled={true}>...</Select>
-    ```
-    
+  Svelte
+  ```
+  <Select disabled={true}>...</Select>
+  ```
 - **`open={boolean}`**: Programmatically control the dropdown's visibility. This can be two-way bound with `bind:open`.
-    
-    Svelte
-    
-    ```
-    <Select bind:open={isOpen}>...</Select>
-    ```
-    
+  Svelte
+  ```
+  <Select bind:open={isOpen}>...</Select>
+  ```
 - **`required={boolean}`**: Marks the select as required for HTML form validation.
-    
 - **`name="string"`**: Sets the `name` attribute for a hidden input, allowing the select's value to be included in a form submission.

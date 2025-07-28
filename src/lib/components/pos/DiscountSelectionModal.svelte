@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { discounts , addDiscount, updateDiscount, toggleActivation, deleteDiscount} from '$lib/stores/discountStore.svelte';
+	import {
+		discounts,
+		addDiscount,
+		updateDiscount,
+		toggleActivation,
+		deleteDiscount
+	} from '$lib/stores/discountStore.svelte';
 	import type { Discount } from '$lib/schemas/models';
 	import {
 		Dialog,

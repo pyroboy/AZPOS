@@ -27,7 +27,7 @@ export function setPaymentDetails(details: {
 	gcashReference?: string;
 }) {
 	const change = details.cashTendered ? details.cashTendered - details.total : 0;
-	
+
 	paymentState.method = details.paymentMethod;
 	paymentState.amount = details.total;
 	paymentState.cashTendered = details.cashTendered;

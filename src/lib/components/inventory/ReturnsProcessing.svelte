@@ -91,12 +91,17 @@
 							<Table.Cell class="font-medium">{ret.id}</Table.Cell>
 							<Table.Cell>{ret.order_id}</Table.Cell>
 							<Table.Cell>{ret.customer_name}</Table.Cell>
-							<Table.Cell>{ret.items.reduce((sum: number, i: any) => sum + i.quantity, 0)}</Table.Cell>
+							<Table.Cell
+								>{ret.items.reduce((sum: number, i: any) => sum + i.quantity, 0)}</Table.Cell
+							>
 							<Table.Cell>{formatDate(ret.return_date)}</Table.Cell>
 							<Table.Cell>
 								<Badge
 									variant={(() => {
-										const statusMap: Record<string, 'secondary' | 'success' | 'destructive' | 'default'> = {
+										const statusMap: Record<
+											string,
+											'secondary' | 'success' | 'destructive' | 'default'
+										> = {
 											pending: 'secondary',
 											approved: 'success',
 											rejected: 'destructive',

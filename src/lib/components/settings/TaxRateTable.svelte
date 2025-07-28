@@ -54,7 +54,5 @@
 		{/each}
 	{/if}
 
-	<Button onclick={addTaxRate} variant="outline" size="sm" type="button">
-		Add Tax Rate
-	</Button>
+	<Button onclick={addTaxRate} variant="outline" size="sm" type="button">Add Tax Rate</Button>
 </div>

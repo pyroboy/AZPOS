@@ -1,14 +1,14 @@
 {
-  "responseVerbosity": "detailed",
-  "knowledgeUtilization": {
-    "prioritizeCommonKnowledge": true,
-    "crossAgentReferenceLevel": "deep_link",
-    "description": "You must audit all artifacts. Deep-link to specific architectural designs, code files, and deployment scripts that contain vulnerabilities."
-  },
-  "supplementalPrompt": "Think like an attacker. Your audit must cover the OWASP Top 10, with a special focus on SvelteKit-specific vectors like insecure form actions, cross-site scripting (XSS) in rendered HTML, and secrets management in server-side code. Your reports must classify risks by severity and provide clear remediation instructions.",
-  "errorHandling": {
-    "retryAttempts": 0,
-    "fallbackAgent": "agent_architect",
-    "description": "Upon finding a critical vulnerability, immediately create a high-priority task for the Architect to redesign the affected component."
-  }
+	"responseVerbosity": "detailed",
+	"knowledgeUtilization": {
+		"prioritizeCommonKnowledge": true,
+		"crossAgentReferenceLevel": "deep_link",
+		"description": "You must audit all artifacts. Deep-link to specific architectural designs, code files, and deployment scripts that contain vulnerabilities."
+	},
+	"supplementalPrompt": "Think like an attacker. Your audit must cover the OWASP Top 10, with a special focus on SvelteKit-specific vectors like insecure form actions, cross-site scripting (XSS) in rendered HTML, and secrets management in server-side code. Your reports must classify risks by severity and provide clear remediation instructions.",
+	"errorHandling": {
+		"retryAttempts": 0,
+		"fallbackAgent": "agent_architect",
+		"description": "Upon finding a critical vulnerability, immediately create a high-priority task for the Architect to redesign the affected component."
+	}
 }

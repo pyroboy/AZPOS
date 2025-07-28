@@ -12,18 +12,15 @@
 	let selectedPO: PurchaseOrder | null = $state(null);
 
 	// Get data and actions from the hook
-	const {
-		purchaseOrdersQuery,
-		purchaseOrders,
-		isLoading,
-		error
-	} = usePurchaseOrders({ status: 'approved' }); // Note: May need to adjust filter logic based on actual hook implementation
+	const { purchaseOrdersQuery, purchaseOrders, isLoading, error } = usePurchaseOrders({
+		status: 'approved'
+	}); // Note: May need to adjust filter logic based on actual hook implementation
 
 	const filteredPOs = $derived(
 		purchaseOrders.filter((po: PurchaseOrder) => {
 			const search = searchTerm.toLowerCase();
 			return (
-				po.id.toLowerCase().includes(search) || 
+				po.id.toLowerCase().includes(search) ||
 				(po.supplier_id && po.supplier_id.toLowerCase().includes(search))
 			);
 		})
@@ -86,15 +83,17 @@
 			<Table.Body>
 				{#if $purchaseOrdersQuery.isPending}
 					<Table.Row>
-						<Table.Cell colspan={6} class="h-24 text-center"> Loading purchase orders... </Table.Cell>
+						<Table.Cell colspan={6} class="h-24 text-center">Loading purchase orders...</Table.Cell>
 					</Table.Row>
 				{:else if $purchaseOrdersQuery.isError}
 					<Table.Row>
-						<Table.Cell colspan={6} class="h-24 text-center text-destructive"> Error: {$purchaseOrdersQuery.error?.message || 'Failed to load purchase orders'} </Table.Cell>
+						<Table.Cell colspan={6} class="h-24 text-center text-destructive">
+							Error: {$purchaseOrdersQuery.error?.message || 'Failed to load purchase orders'}
+						</Table.Cell>
 					</Table.Row>
 				{:else if filteredPOs.length === 0}
 					<Table.Row>
-						<Table.Cell colspan={6} class="h-24 text-center"> No purchase orders found. </Table.Cell>
+						<Table.Cell colspan={6} class="h-24 text-center">No purchase orders found.</Table.Cell>
 					</Table.Row>
 				{:else}
 					{#each filteredPOs as po (po.id)}
@@ -102,7 +101,11 @@
 							<Table.Cell class="font-medium">{po.id}</Table.Cell>
 							<Table.Cell>{po.supplier_id || 'Unknown Supplier'}</Table.Cell>
 							<Table.Cell>{new Date(po.order_date).toLocaleDateString()}</Table.Cell>
-							<Table.Cell>{po.expected_delivery_date ? new Date(po.expected_delivery_date).toLocaleDateString() : 'N/A'}</Table.Cell>
+							<Table.Cell
+								>{po.expected_delivery_date
+									? new Date(po.expected_delivery_date).toLocaleDateString()
+									: 'N/A'}</Table.Cell
+							>
 							<Table.Cell>
 								<Badge variant={getStatusVariant(po.status)}>{po.status.replace('_', ' ')}</Badge>
 							</Table.Cell>

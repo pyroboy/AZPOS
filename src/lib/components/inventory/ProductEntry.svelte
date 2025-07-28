@@ -26,21 +26,11 @@
 	let skuStatus: 'idle' | 'checking' | 'taken' | 'available' = $state('idle');
 
 	// Get data and actions from the hooks
-	const {
-		products,
-		createProduct,
-		isCreating
-	} = useProducts();
+	const { products, createProduct, isCreating } = useProducts();
 
-	const {
-		suppliers,
-		isLoading: isSuppliersLoading
-	} = useSuppliers();
+	const { suppliers, isLoading: isSuppliersLoading } = useSuppliers();
 
-	const {
-		categories,
-		isLoading: isCategoriesLoading
-	} = useCategories();
+	const { categories, isLoading: isCategoriesLoading } = useCategories();
 
 	// Variant state
 	let enableVariants = $state(false);
@@ -69,7 +59,6 @@
 				.slice(0, 10); // Limit results for performance
 		})()
 	);
-
 
 	const addBundleComponent = (product: Product) => {
 		selectedComponents = [...selectedComponents, { ...product, quantity: 1 }];
@@ -109,7 +98,9 @@
 			}
 
 			const cartesian = (...a: string[][]) =>
-				a.reduce((acc, val) => acc.flatMap((d) => val.map((e) => [d, e].flat())), [[]] as string[][]);
+				a.reduce((acc, val) => acc.flatMap((d) => val.map((e) => [d, e].flat())), [
+					[]
+				] as string[][]);
 
 			const valueSets = options.map((o) => o.values);
 			const combinations = cartesian(...valueSets);
@@ -131,7 +122,8 @@
 		}
 		skuStatus = 'checking';
 		const isTaken = products.some((p: Product) => p.sku.toLowerCase() === sku.toLowerCase());
-		setTimeout(() => { // Simulate network latency
+		setTimeout(() => {
+			// Simulate network latency
 			skuStatus = isTaken ? 'taken' : 'available';
 		}, 500);
 	};
@@ -207,7 +199,9 @@
 	// DERIVED STATE & EFFECTS HOOKED TO FORM DATA
 	// These must be declared *after* `formData` is initialized by `superForm`.
 
-	const selectedSupplier = $derived(suppliers.find((s: Supplier) => s.id === $formData.supplier_id));
+	const selectedSupplier = $derived(
+		suppliers.find((s: Supplier) => s.id === $formData.supplier_id)
+	);
 	const selectedSupplierLabel = $derived(selectedSupplier?.name ?? 'Select a supplier');
 	const selectedCategory = $derived(categories.find((c: any) => c.id === $formData.category_id));
 	const selectedCategoryLabel = $derived(selectedCategory?.name ?? 'Select a category');
@@ -256,13 +250,13 @@
 	<RecentProductsTable />
 </div>
 <Dialog.Root bind:open>
-    <Dialog.Content class="sm:max-w-[800px]">
-        <Dialog.Header>
-            <Dialog.Title>Add New Product</Dialog.Title>
-            <Dialog.Description>
-                Fill out the details for the new product across all relevant tabs.
-            </Dialog.Description>
-        </Dialog.Header>
+	<Dialog.Content class="sm:max-w-[800px]">
+		<Dialog.Header>
+			<Dialog.Title>Add New Product</Dialog.Title>
+			<Dialog.Description>
+				Fill out the details for the new product across all relevant tabs.
+			</Dialog.Description>
+		</Dialog.Header>
 
 		<form method="POST" use:enhance>
 			<Tabs.Root value="basic" class="mt-4">
@@ -280,13 +274,16 @@
 								<div class="grid gap-2">
 									<Label for="name">Product Name</Label>
 									<Input id="name" name="name" bind:value={$formData.name} />
-									{#if $errors.name}<span class="text-sm text-destructive">{$errors.name[0]}</span>{/if}
+									{#if $errors.name}<span class="text-sm text-destructive">{$errors.name[0]}</span
+										>{/if}
 								</div>
 								<div class="grid gap-2">
 									<Label for="sku">SKU</Label>
 									<div class="relative">
 										<Input id="sku" name="sku" bind:value={$formData.sku} />
-										<div class="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground">
+										<div
+											class="absolute inset-y-0 right-0 flex items-center pr-3 text-sm text-muted-foreground"
+										>
 											{#if skuStatus === 'checking'}
 												Checking...
 											{:else if skuStatus === 'taken'}
@@ -296,7 +293,8 @@
 											{/if}
 										</div>
 									</div>
-									{#if $errors.sku}<span class="text-sm text-destructive">{$errors.sku[0]}</span>{/if}
+									{#if $errors.sku}<span class="text-sm text-destructive">{$errors.sku[0]}</span
+										>{/if}
 								</div>
 							</div>
 							<div class="grid gap-2">
@@ -312,11 +310,15 @@
 										</Select.Trigger>
 										<Select.Content>
 											{#each categories as category}
-												<Select.Item value={category.id} label={category.name}>{category.name}</Select.Item>
+												<Select.Item value={category.id} label={category.name}
+													>{category.name}</Select.Item
+												>
 											{/each}
 										</Select.Content>
 									</Select.Root>
-									{#if $errors.category_id}<span class="text-sm text-destructive">{$errors.category_id[0]}</span>{/if}
+									{#if $errors.category_id}<span class="text-sm text-destructive"
+											>{$errors.category_id[0]}</span
+										>{/if}
 								</div>
 								<div class="grid gap-2">
 									<Label for="supplier_id">Supplier</Label>
@@ -326,18 +328,30 @@
 										</Select.Trigger>
 										<Select.Content>
 											{#each suppliers as supplier}
-												<Select.Item value={supplier.id} label={supplier.name}>{supplier.name}</Select.Item>
+												<Select.Item value={supplier.id} label={supplier.name}
+													>{supplier.name}</Select.Item
+												>
 											{/each}
 										</Select.Content>
 									</Select.Root>
-								
-									{#if $errors.supplier_id}<span class="text-sm text-destructive">{$errors.supplier_id[0]}</span>{/if}
+
+									{#if $errors.supplier_id}<span class="text-sm text-destructive"
+											>{$errors.supplier_id[0]}</span
+										>{/if}
 								</div>
 								<div class="grid grid-cols-2 gap-4">
 									<div class="grid gap-2">
 										<Label for="price">Price</Label>
-										<Input id="price" name="price" type="number" step="0.01" bind:value={$formData.price} />
-										{#if $errors.price}<span class="text-sm text-destructive">{$errors.price[0]}</span>{/if}
+										<Input
+											id="price"
+											name="price"
+											type="number"
+											step="0.01"
+											bind:value={$formData.price}
+										/>
+										{#if $errors.price}<span class="text-sm text-destructive"
+												>{$errors.price[0]}</span
+											>{/if}
 									</div>
 								</div>
 							</div>
@@ -345,14 +359,22 @@
 						<div class="col-span-1 space-y-2">
 							<Label for="image_url">Image URL & Preview</Label>
 							<Input id="image_url" name="image_url" bind:value={$formData.image_url} />
-							<div class="aspect-square w-full bg-muted rounded-lg flex items-center justify-center">
+							<div
+								class="aspect-square w-full bg-muted rounded-lg flex items-center justify-center"
+							>
 								{#if imageUrlPreview}
-									<img src={imageUrlPreview} alt="Product preview" class="object-cover h-full w-full rounded-lg" />
+									<img
+										src={imageUrlPreview}
+										alt="Product preview"
+										class="object-cover h-full w-full rounded-lg"
+									/>
 								{:else}
 									<span class="text-sm text-muted-foreground">Image preview</span>
 								{/if}
 							</div>
-							{#if $errors.image_url}<span class="text-sm text-destructive">{$errors.image_url[0]}</span>{/if}
+							{#if $errors.image_url}<span class="text-sm text-destructive"
+									>{$errors.image_url[0]}</span
+								>{/if}
 						</div>
 					</div>
 				</Tabs.Content>
@@ -362,18 +384,30 @@
 						<div class="grid md:grid-cols-3 gap-6">
 							<div class="grid gap-2">
 								<Label for="reorder_point">Reorder Point</Label>
-								<Input id="reorder_point" name="reorder_point" type="number" bind:value={$formData.reorder_point} />
-								{#if $errors.reorder_point}<span class="text-sm text-destructive">{$errors.reorder_point[0]}</span>{/if}
+								<Input
+									id="reorder_point"
+									name="reorder_point"
+									type="number"
+									bind:value={$formData.reorder_point}
+								/>
+								{#if $errors.reorder_point}<span class="text-sm text-destructive"
+										>{$errors.reorder_point[0]}</span
+									>{/if}
 							</div>
 						</div>
 
 						<div class="border-t pt-6">
 							<div class="flex items-center space-x-2">
-								<Switch.Root id="requires-batch-tracking" name="requires_batch_tracking" bind:checked={$formData.requires_batch_tracking} />
+								<Switch.Root
+									id="requires-batch-tracking"
+									name="requires_batch_tracking"
+									bind:checked={$formData.requires_batch_tracking}
+								/>
 								<Label for="requires-batch-tracking">Enforce Batch & Expiry Tracking</Label>
 							</div>
 							<p class="text-sm text-muted-foreground mt-2">
-								If enabled, a batch number must be assigned when receiving stock and selected when selling.
+								If enabled, a batch number must be assigned when receiving stock and selected when
+								selling.
 							</p>
 						</div>
 					</div>
@@ -386,43 +420,68 @@
 					</div>
 
 					{#if enableVariants}
-					<div class="p-4 border rounded-lg space-y-4 bg-muted/50">
-						<p class="text-sm text-muted-foreground">
-							Define variant options and their values. For example, Option: "Size", Values: "S, M, L".
-						</p>
-						{#each variantOptions as option, i}
-							<div class="grid grid-cols-10 gap-2 items-end">
-								<div class="grid gap-1.5 col-span-3">
-									<Label for={`option-name-${i}`}>Option</Label>
-									<Input id={`option-name-${i}`} bind:value={option.name} placeholder="e.g. Color" />
-								</div>
-								<div class="grid gap-1.5 col-span-6">
-									<Label for={`option-values-${i}`}>Values (comma-separated)</Label>
-									<Input id={`option-values-${i}`} bind:value={option.values} placeholder="e.g. Red, Green, Blue" />
-								</div>
-								<div class="col-span-1">
-									<Button variant="outline" size="icon" onclick={() => removeVariantOption(i)} disabled={variantOptions.length <= 1}>
-										<Trash2 class="h-4 w-4" />
-									</Button>
-								</div>
-							</div>
-						{/each}
-						<Button variant="outline" size="sm" onclick={addVariantOption}>+ Add another option</Button>
-						
-						{#if generatedVariants.length > 0}
-						<div class="pt-4 mt-4 border-t">
-							<h4 class="font-semibold">Generated Variants ({generatedVariants.length})</h4>
-							<div class="text-sm text-muted-foreground p-2 bg-background rounded-md mt-2">
-								{#each generatedVariants as variant, i}
-									<div class="flex items-center justify-between p-1 {i < generatedVariants.length - 1 ? 'border-b' : ''}">
-										<span>{$formData.name} - {Object.values(variant).join(' / ')}</span>
-										<span class="font-mono text-xs bg-muted py-0.5 px-1 rounded">SKU: {$formData.sku}-{Object.values(variant).join('-').toUpperCase()}</span>
+						<div class="p-4 border rounded-lg space-y-4 bg-muted/50">
+							<p class="text-sm text-muted-foreground">
+								Define variant options and their values. For example, Option: "Size", Values: "S, M,
+								L".
+							</p>
+							{#each variantOptions as option, i}
+								<div class="grid grid-cols-10 gap-2 items-end">
+									<div class="grid gap-1.5 col-span-3">
+										<Label for={`option-name-${i}`}>Option</Label>
+										<Input
+											id={`option-name-${i}`}
+											bind:value={option.name}
+											placeholder="e.g. Color"
+										/>
 									</div>
-								{/each}
-							</div>
+									<div class="grid gap-1.5 col-span-6">
+										<Label for={`option-values-${i}`}>Values (comma-separated)</Label>
+										<Input
+											id={`option-values-${i}`}
+											bind:value={option.values}
+											placeholder="e.g. Red, Green, Blue"
+										/>
+									</div>
+									<div class="col-span-1">
+										<Button
+											variant="outline"
+											size="icon"
+											onclick={() => removeVariantOption(i)}
+											disabled={variantOptions.length <= 1}
+										>
+											<Trash2 class="h-4 w-4" />
+										</Button>
+									</div>
+								</div>
+							{/each}
+							<Button variant="outline" size="sm" onclick={addVariantOption}
+								>+ Add another option</Button
+							>
+
+							{#if generatedVariants.length > 0}
+								<div class="pt-4 mt-4 border-t">
+									<h4 class="font-semibold">Generated Variants ({generatedVariants.length})</h4>
+									<div class="text-sm text-muted-foreground p-2 bg-background rounded-md mt-2">
+										{#each generatedVariants as variant, i}
+											<div
+												class="flex items-center justify-between p-1 {i <
+												generatedVariants.length - 1
+													? 'border-b'
+													: ''}"
+											>
+												<span>{$formData.name} - {Object.values(variant).join(' / ')}</span>
+												<span class="font-mono text-xs bg-muted py-0.5 px-1 rounded"
+													>SKU: {$formData.sku}-{Object.values(variant)
+														.join('-')
+														.toUpperCase()}</span
+												>
+											</div>
+										{/each}
+									</div>
+								</div>
+							{/if}
 						</div>
-						{/if}
-					</div>
 					{/if}
 				</Tabs.Content>
 
@@ -433,55 +492,84 @@
 					</div>
 
 					{#if enableBundle}
-					<div class="p-4 border rounded-lg space-y-4 bg-muted/50">
-						<p class="text-sm text-muted-foreground">
-							Search for products to add as components to this bundle.
-						</p>
-						<div class="relative">
-							<Input placeholder="Search for products to add..." bind:value={bundleSearchTerm} />
-							{#if bundleSearchResults.length > 0 && bundleSearchTerm}
-							<div class="absolute z-10 w-full bg-background border rounded-md mt-1 max-h-60 overflow-y-auto">
-								{#each bundleSearchResults as product}
-									<button type="button" onclick={() => addBundleComponent(product)} class="w-full text-left p-2 hover:bg-muted text-sm">
-										{product.name} <span class="text-xs text-muted-foreground">({product.sku})</span>
-									</button>
-								{/each}
-							</div>
-							{/if}
-						</div>
-
-						{#if selectedComponents.length > 0}
-						<div class="pt-4 mt-4 border-t">
-							<h4 class="font-semibold">Bundle Components</h4>
-							<div class="mt-2 space-y-2">
-								{#each selectedComponents as component, i}
-								<div class="flex items-center justify-between p-2 bg-background rounded-md border">
-									<div class="text-sm">
-										<p class="font-medium">{component.name}</p>
-										<p class="text-xs text-muted-foreground">SKU: {component.sku}</p>
+						<div class="p-4 border rounded-lg space-y-4 bg-muted/50">
+							<p class="text-sm text-muted-foreground">
+								Search for products to add as components to this bundle.
+							</p>
+							<div class="relative">
+								<Input placeholder="Search for products to add..." bind:value={bundleSearchTerm} />
+								{#if bundleSearchResults.length > 0 && bundleSearchTerm}
+									<div
+										class="absolute z-10 w-full bg-background border rounded-md mt-1 max-h-60 overflow-y-auto"
+									>
+										{#each bundleSearchResults as product}
+											<button
+												type="button"
+												onclick={() => addBundleComponent(product)}
+												class="w-full text-left p-2 hover:bg-muted text-sm"
+											>
+												{product.name}
+												<span class="text-xs text-muted-foreground">({product.sku})</span>
+											</button>
+										{/each}
 									</div>
-									<div class="flex items-center gap-2">
-										<Label for={`component-qty-${i}`} class="text-xs">Qty:</Label>
-										<Input type="number" id={`component-qty-${i}`} bind:value={component.quantity} class="w-20 h-8" min="1" />
-										<Button variant="outline" size="icon" onclick={() => removeBundleComponent(component.id)} class="h-8 w-8">
-											<Trash2 class="h-4 w-4" />
-										</Button>
+								{/if}
+							</div>
+
+							{#if selectedComponents.length > 0}
+								<div class="pt-4 mt-4 border-t">
+									<h4 class="font-semibold">Bundle Components</h4>
+									<div class="mt-2 space-y-2">
+										{#each selectedComponents as component, i}
+											<div
+												class="flex items-center justify-between p-2 bg-background rounded-md border"
+											>
+												<div class="text-sm">
+													<p class="font-medium">{component.name}</p>
+													<p class="text-xs text-muted-foreground">SKU: {component.sku}</p>
+												</div>
+												<div class="flex items-center gap-2">
+													<Label for={`component-qty-${i}`} class="text-xs">Qty:</Label>
+													<Input
+														type="number"
+														id={`component-qty-${i}`}
+														bind:value={component.quantity}
+														class="w-20 h-8"
+														min="1"
+													/>
+													<Button
+														variant="outline"
+														size="icon"
+														onclick={() => removeBundleComponent(component.id)}
+														class="h-8 w-8"
+													>
+														<Trash2 class="h-4 w-4" />
+													</Button>
+												</div>
+											</div>
+										{/each}
 									</div>
 								</div>
-								{/each}
-							</div>
+							{/if}
 						</div>
-						{/if}
-					</div>
 					{/if}
 				</Tabs.Content>
-
 			</Tabs.Root>
 
 			<Dialog.Footer class="mt-6 pt-4 border-t">
-				<Button type="submit" onclick={() => closeOnSave = false} disabled={$allErrors.length > 0 || skuStatus === 'taken' || skuStatus === 'checking'}>Save & Add Another</Button>
-				<Button type="submit" onclick={() => closeOnSave = true} disabled={$allErrors.length > 0 || skuStatus === 'taken' || skuStatus === 'checking'}>Save & Close</Button>
+				<Button
+					type="submit"
+					onclick={() => (closeOnSave = false)}
+					disabled={$allErrors.length > 0 || skuStatus === 'taken' || skuStatus === 'checking'}
+					>Save & Add Another</Button
+				>
+				<Button
+					type="submit"
+					onclick={() => (closeOnSave = true)}
+					disabled={$allErrors.length > 0 || skuStatus === 'taken' || skuStatus === 'checking'}
+					>Save & Close</Button
+				>
 			</Dialog.Footer>
 		</form>
-    </Dialog.Content>
+	</Dialog.Content>
 </Dialog.Root>

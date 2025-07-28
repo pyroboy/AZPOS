@@ -30,9 +30,9 @@ export const load: PageServerLoad = async ({ parent }) => {
 
 		// Transform stock transactions into detailed adjustments
 		const detailedAdjustments: DetailedAdjustment[] = stockTransactions.transactions
-			.map(transaction => {
-				const product = products.products?.find(p => p.id === transaction.product_id);
-				const processedByUser = users.users?.find(u => u.id === transaction.processed_by);
+			.map((transaction) => {
+				const product = products.products?.find((p) => p.id === transaction.product_id);
+				const processedByUser = users.users?.find((u) => u.id === transaction.created_by);
 				return {
 					...transaction,
 					productName: product?.name ?? 'Unknown Product',

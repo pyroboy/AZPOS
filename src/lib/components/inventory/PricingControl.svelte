@@ -10,13 +10,33 @@
 
 	// Dummy data for wireframe
 	const products = [
-		{ id: 'PROD-001', name: 'Product A', category: 'Category 1', supplier: 'Supplier X', currentPrice: 10.00, newPrice: 10.00 },
-		{ id: 'PROD-002', name: 'Product B', category: 'Category 2', supplier: 'Supplier Y', currentPrice: 25.50, newPrice: 25.50 },
-		{ id: 'PROD-003', name: 'Product C', category: 'Category 1', supplier: 'Supplier X', currentPrice: 5.75, newPrice: 5.75 },
+		{
+			id: 'PROD-001',
+			name: 'Product A',
+			category: 'Category 1',
+			supplier: 'Supplier X',
+			currentPrice: 10.0,
+			newPrice: 10.0
+		},
+		{
+			id: 'PROD-002',
+			name: 'Product B',
+			category: 'Category 2',
+			supplier: 'Supplier Y',
+			currentPrice: 25.5,
+			newPrice: 25.5
+		},
+		{
+			id: 'PROD-003',
+			name: 'Product C',
+			category: 'Category 1',
+			supplier: 'Supplier X',
+			currentPrice: 5.75,
+			newPrice: 5.75
+		}
 	];
 
 	let scheduleEnabled = false;
-
 </script>
 
 <div class="space-y-6 p-4">
@@ -24,7 +44,9 @@
 	<Card.Root>
 		<Card.Header>
 			<Card.Title>Bulk Price Change</Card.Title>
-			<Card.Description>Apply system-wide price adjustments, either immediately or scheduled for a future date.</Card.Description>
+			<Card.Description
+				>Apply system-wide price adjustments, either immediately or scheduled for a future date.</Card.Description
+			>
 		</Card.Header>
 	</Card.Root>
 
@@ -35,9 +57,7 @@
 			<div class="grid grid-cols-1 md:grid-cols-4 gap-4 pt-4">
 				<!-- Filter by Category -->
 				<Select.Root type="single">
-					<Select.Trigger class="w-full">
-						Select a category
-					</Select.Trigger>
+					<Select.Trigger class="w-full">Select a category</Select.Trigger>
 					<Select.Content>
 						<Select.Item value="category1">Category 1</Select.Item>
 						<Select.Item value="category2">Category 2</Select.Item>
@@ -45,9 +65,7 @@
 				</Select.Root>
 				<!-- Filter by Supplier -->
 				<Select.Root type="single">
-					<Select.Trigger class="w-full md:w-[180px]">
-						Filter by Supplier
-					</Select.Trigger>
+					<Select.Trigger class="w-full md:w-[180px]">Filter by Supplier</Select.Trigger>
 					<Select.Content>
 						<Select.Item value="supplierX">Supplier X</Select.Item>
 						<Select.Item value="supplierY">Supplier Y</Select.Item>

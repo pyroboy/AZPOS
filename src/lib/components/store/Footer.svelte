@@ -5,10 +5,8 @@
 
 <footer class="border-t bg-background py-6">
 	<div class="container mx-auto text-center">
-		<p class="mb-4 text-sm">
-			&copy; 2025 AZ Grocery. All rights reserved.
-		</p>
-		
+		<p class="mb-4 text-sm">&copy; 2025 AZ Grocery. All rights reserved.</p>
+
 		<div class="flex items-center justify-center space-x-4">
 			<Button variant="ghost" size="sm">
 				<Facebook class="h-5 w-5" />

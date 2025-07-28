@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { getInitialsSvg, sanitizeImageUrl } from '$lib/utils/image';
-	import { cn } from "$lib/utils";
+	import { cn } from '$lib/utils';
 
 	type $$Props = {
 		src: string | undefined | null;
@@ -11,7 +11,14 @@
 		class?: string;
 	};
 
-	let { src, fallbackSrc, alt = 'Product image', product, size = 'md', class: className = '' }: $$Props = $props();
+	let {
+		src,
+		fallbackSrc,
+		alt = 'Product image',
+		product,
+		size = 'md',
+		class: className = ''
+	}: $$Props = $props();
 
 	let loading = $state(true);
 	let error = $state(false);
@@ -33,7 +40,7 @@
 		error = false;
 		const sanitizedSrc = sanitizeImageUrl(src);
 		const sanitizedFallback = sanitizeImageUrl(fallbackSrc);
-console.log(sanitizedSrc, sanitizedFallback);
+		console.log(sanitizedSrc, sanitizedFallback);
 		if (attemptCount === 0 && sanitizedSrc) {
 			currentSrc = sanitizedSrc;
 		} else if (attemptCount === 1 && sanitizedSrc) {
@@ -76,8 +83,9 @@ console.log(sanitizedSrc, sanitizedFallback);
 		{alt}
 		onerror={handleError}
 		onload={handleLoad}
-		class={cn('h-full w-full object-cover transition-opacity',
-      loading ? 'opacity-0' : 'opacity-100'
-    )}
+		class={cn(
+			'h-full w-full object-cover transition-opacity',
+			loading ? 'opacity-0' : 'opacity-100'
+		)}
 	/>
 </div>

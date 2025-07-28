@@ -20,7 +20,7 @@ Superforms: Creates powerful, type-safe forms with client and server validation.
 Supabase: The backend, providing database, authentication, and Role-Based Access Control (RBAC) via Row Level Security (RLS).
 
 1. Core Principles
-This architecture is built on a few key ideas:
+   This architecture is built on a few key ideas:
 
 Server is the Single Source of Truth: Your Supabase database holds the real state. The client is just a view into that state.
 
@@ -39,43 +39,43 @@ Declarative Data Fetching: Instead of manually calling fetch and managing loadin
 Secure by Default: All sensitive logic and data access rules (RBAC) live on the server, inaccessible from the client's browser.
 
 2. The New Folder Structure
-This structure organizes your application for clarity and scalability.
+   This structure organizes your application for clarity and scalability.
 
 src/
 ├── lib/
-│   ├── components/       # Dumb UI components
-│   │
-│   ├── data/             # (Replaces /stores) CLIENT: TanStack Query hooks
-│   │   ├── auth.ts
-│   │   ├── product.ts
-│   │   └── returns.ts
-│   │
-│   ├── server/           # SERVER-ONLY CODE
-│   │   ├── db.ts         # Supabase client instance
-│   │   └── telefuncs/    # SERVER: Business logic & DB operations
-│   │       ├── auth.telefunc.ts
-│   │       ├── product.telefunc.ts
-│   │       └── returns.telefunc.ts
-│   │
-│   └── types/            # SHARED: Single source of truth for types
-│       ├── auth.schema.ts
-│       ├── product.schema.ts
-│       └── returns.schema.ts
+│ ├── components/ # Dumb UI components
+│ │
+│ ├── data/ # (Replaces /stores) CLIENT: TanStack Query hooks
+│ │ ├── auth.ts
+│ │ ├── product.ts
+│ │ └── returns.ts
+│ │
+│ ├── server/ # SERVER-ONLY CODE
+│ │ ├── db.ts # Supabase client instance
+│ │ └── telefuncs/ # SERVER: Business logic & DB operations
+│ │ ├── auth.telefunc.ts
+│ │ ├── product.telefunc.ts
+│ │ └── returns.telefunc.ts
+│ │
+│ └── types/ # SHARED: Single source of truth for types
+│ ├── auth.schema.ts
+│ ├── product.schema.ts
+│ └── returns.schema.ts
 │
 ├── routes/
-│   ├── (protected)/      # Routes requiring authentication
-│   │   ├── returns/
-│   │   │   ├── +page.svelte    # Consumes `useReturns()` from /data/returns.ts
-│   │   │   └── +page.server.ts # For loading Superforms
-│   │   └── ...
-│   │
-│   ├── login/
-│   └── +layout.svelte    # Provides the TanStack QueryClient
+│ ├── (protected)/ # Routes requiring authentication
+│ │ ├── returns/
+│ │ │ ├── +page.svelte # Consumes `useReturns()` from /data/returns.ts
+│ │ │ └── +page.server.ts # For loading Superforms
+│ │ └── ...
+│ │
+│ ├── login/
+│ └── +layout.svelte # Provides the TanStack QueryClient
 │
 └── app.d.ts
 
 3. The Migration Playbook: Converting a RuneStore
-Let's convert your returnsStore.svelte.ts into this new pattern, step-by-step.
+   Let's convert your returnsStore.svelte.ts into this new pattern, step-by-step.
 
 Original RuneStore Pattern:
 State: const returns = $state([...])
@@ -98,17 +98,17 @@ import { z } from 'zod';
 
 // Schema for creating a return (used in forms)
 export const newReturnSchema = z.object({
-  order_id: z.string().min(1),
-  customer_name: z.string().min(1),
-  // ... other fields
+order_id: z.string().min(1),
+customer_name: z.string().min(1),
+// ... other fields
 });
 
 // Full schema matching your database table
 export const enhancedReturnSchema = newReturnSchema.extend({
-  id: z.string().uuid(),
-  return_date: z.string().datetime(),
-  status: z.enum(['pending', 'approved', 'rejected']),
-  user_id: z.string().uuid() // For RBAC
+id: z.string().uuid(),
+return_date: z.string().datetime(),
+status: z.enum(['pending', 'approved', 'rejected']),
+user_id: z.string().uuid() // For RBAC
 });
 
 // Export the inferred types
@@ -130,31 +130,31 @@ import { createSupabaseClient } from '$lib/server/db'; // Your Supabase client
 
 // Telefunc to get all returns
 export async function onGetReturns(): Promise<EnhancedReturnRecord[]> {
-  const { user } = getContext(); // Get authenticated user
-  if (!user) throw new Error('Not authenticated');
+const { user } = getContext(); // Get authenticated user
+if (!user) throw new Error('Not authenticated');
 
-  const supabase = createSupabaseClient();
-  const { data, error } = await supabase.from('returns').select();
-  if (error) throw error;
-  return data; // Supabase RLS already filtered this data for the user
+const supabase = createSupabaseClient();
+const { data, error } = await supabase.from('returns').select();
+if (error) throw error;
+return data; // Supabase RLS already filtered this data for the user
 }
 
 // Telefunc to add a return
 export async function onAddReturn(returnData: unknown): Promise<EnhancedReturnRecord> {
-  const { user } = getContext();
-  if (!user || user.role !== 'admin') throw new Error('Not authorized'); // RBAC check
+const { user } = getContext();
+if (!user || user.role !== 'admin') throw new Error('Not authorized'); // RBAC check
 
-  const validatedData = newReturnSchema.parse(returnData); // Server-side validation
-  const supabase = createSupabaseClient();
+const validatedData = newReturnSchema.parse(returnData); // Server-side validation
+const supabase = createSupabaseClient();
 
-  const { data, error } = await supabase
-    .from('returns')
-    .insert({ ...validatedData, user_id: user.id })
-    .select()
-    .single();
+const { data, error } = await supabase
+.from('returns')
+.insert({ ...validatedData, user_id: user.id })
+.select()
+.single();
 
-  if (error) throw error;
-  return data;
+if (error) throw error;
+return data;
 }
 
 Step 3: Create the Data Access Layer (The "Where")
@@ -173,37 +173,37 @@ import type { EnhancedReturnRecord, NewReturnInput } from '$lib/types/returns.sc
 const returnsQueryKey = ['returns'];
 
 export function useReturns() {
-  const queryClient = useQueryClient();
+const queryClient = useQueryClient();
 
-  // The QUERY to fetch data
-  const returnsQuery = createQuery<EnhancedReturnRecord[]>({
-    queryKey: returnsQueryKey,
-    queryFn: onGetReturns,
-  });
+// The QUERY to fetch data
+const returnsQuery = createQuery<EnhancedReturnRecord[]>({
+queryKey: returnsQueryKey,
+queryFn: onGetReturns,
+});
 
-  // The MUTATION to add a return
-  const addReturnMutation = createMutation({
-    mutationFn: (newReturn: NewReturnInput) => onAddReturn(newReturn),
-    onSuccess: () => {
-      // When successful, automatically refetch the list
-      queryClient.invalidateQueries({ queryKey: returnsQueryKey });
-    },
-  });
+// The MUTATION to add a return
+const addReturnMutation = createMutation({
+mutationFn: (newReturn: NewReturnInput) => onAddReturn(newReturn),
+onSuccess: () => {
+// When successful, automatically refetch the list
+queryClient.invalidateQueries({ queryKey: returnsQueryKey });
+},
+});
 
-  // Re-create derived state using Svelte 5 runes on the query's data
-  const returns = $derived(returnsQuery.data ?? []);
-  const pendingReturns = $derived(returns.filter(r => r.status === 'pending'));
+// Re-create derived state using Svelte 5 runes on the query's data
+const returns = $derived(returnsQuery.data ?? []);
+const pendingReturns = $derived(returns.filter(r => r.status === 'pending'));
 
-  return {
-    // Queries and their states (isLoading, isError, etc.)
-    returnsQuery,
-    // Derived state (still works beautifully!)
-    returns,
-    pendingReturns,
-    // Mutations to change data
-    addReturn: addReturnMutation.mutate,
-    addReturnStatus: addReturnMutation.status, // 'pending', 'success', 'error'
-  };
+return {
+// Queries and their states (isLoading, isError, etc.)
+returnsQuery,
+// Derived state (still works beautifully!)
+returns,
+pendingReturns,
+// Mutations to change data
+addReturn: addReturnMutation.mutate,
+addReturnStatus: addReturnMutation.status, // 'pending', 'success', 'error'
+};
 }
 
 Step 4: Use in Components and Forms
@@ -219,8 +219,8 @@ import { superValidate } from 'sveltekit-superforms/server';
 import { newReturnSchema } from '$lib/types/returns.schema';
 
 export const load = async () => {
-  const form = await superValidate(newReturnSchema);
-  return { form };
+const form = await superValidate(newReturnSchema);
+return { form };
 };
 
 File: src/routes/(protected)/returns/+page.svelte
@@ -247,6 +247,7 @@ Action: Consume the data hook and bind the form.
 <h1>Returns</h1>
 
 {#if $returnsQuery.isPending}
+
   <p>Loading...</p>
 {:else}
   <p>Pending Returns: {pendingReturns.length}</p>

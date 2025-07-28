@@ -4,7 +4,13 @@
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
 	import { Checkbox } from '$lib/components/ui/checkbox';
-	import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '$lib/components/ui/card';
+	import {
+		Card,
+		CardContent,
+		CardDescription,
+		CardHeader,
+		CardTitle
+	} from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Calendar, DollarSign, Package, Percent } from 'lucide-svelte';
 	import { currency } from '$lib/utils/currency';
@@ -28,7 +34,9 @@
 		})
 	);
 
-	const categories = $derived([...new Set(products.map((p) => p.category_id).filter(Boolean))].sort());
+	const categories = $derived(
+		[...new Set(products.map((p) => p.category_id).filter(Boolean))].sort()
+	);
 
 	const selectedProducts = $derived(products.filter((p) => selectedProductIds.has(p.id!)));
 
@@ -89,13 +97,17 @@
 				<DollarSign class="h-5 w-5" />
 				Bulk Price Change
 			</CardTitle>
-			<CardDescription> Apply price adjustments to multiple products at once. </CardDescription>
+			<CardDescription>Apply price adjustments to multiple products at once.</CardDescription>
 		</CardHeader>
 		<CardContent class="space-y-4">
 			<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 				<div class="space-y-2">
 					<Label for="change-type">Change Type</Label>
-					<select id="change-type" bind:value={priceChangeType} class="w-full p-2 border rounded-md">
+					<select
+						id="change-type"
+						bind:value={priceChangeType}
+						class="w-full p-2 border rounded-md"
+					>
 						<option value="percentage">Percentage</option>
 						<option value="fixed">Fixed Amount</option>
 					</select>
@@ -127,7 +139,7 @@
 				<Package class="h-5 w-5" />
 				Product Selection
 			</CardTitle>
-			<CardDescription> Filter and select products for price changes </CardDescription>
+			<CardDescription>Filter and select products for price changes</CardDescription>
 		</CardHeader>
 		<CardContent class="space-y-4">
 			<!-- Filters -->
@@ -153,8 +165,8 @@
 				<Button variant="outline" size="sm" onclick={selectAllVisible}>
 					Select All Visible ({filteredProducts.length})
 				</Button>
-				<Button variant="outline" size="sm" onclick={clearSelection}> Clear Selection </Button>
-				<Badge variant="secondary"> {selectedProductIds.size} selected </Badge>
+				<Button variant="outline" size="sm" onclick={clearSelection}>Clear Selection</Button>
+				<Badge variant="secondary">{selectedProductIds.size} selected</Badge>
 			</div>
 
 			<!-- Product List -->
@@ -198,15 +210,14 @@
 					<Percent class="h-5 w-5" />
 					Price Change Preview
 				</CardTitle>
-				<CardDescription> Review the price changes before applying </CardDescription>
+				<CardDescription>Review the price changes before applying</CardDescription>
 			</CardHeader>
 			<CardContent>
 				<div class="space-y-2">
 					<div class="flex justify-between text-sm font-medium">
 						<span>Current Total Value: {currency(totalSelectedValue)}</span>
 						<span
-							>New Total Value: {
-							currency(previewPrices.reduce((sum, p) => sum + p.newPrice, 0))}
+							>New Total Value: {currency(previewPrices.reduce((sum, p) => sum + p.newPrice, 0))}
 						</span>
 					</div>
 

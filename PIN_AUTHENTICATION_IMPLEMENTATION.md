@@ -13,6 +13,7 @@ The PIN authentication system provides a server-centric approach to staff authen
 Authenticates staff users using their PIN instead of email/password.
 
 **Features:**
+
 - Validates PIN format (4-8 digits)
 - Hashes PIN using SHA-256 for secure comparison
 - Searches through all active staff users with PINs
@@ -21,10 +22,11 @@ Authenticates staff users using their PIN instead of email/password.
 - Updates user's last activity timestamp
 
 **Usage:**
+
 ```typescript
 import { onLoginWithPin } from '$lib/server/telefuncs/auth.telefunc';
 
-const session = await onLoginWithPin({ pin: "1234" });
+const session = await onLoginWithPin({ pin: '1234' });
 ```
 
 ### 2. `onToggleStaffMode(): Promise<{ isStaffMode: boolean; user: AuthUser }>`
@@ -32,12 +34,14 @@ const session = await onLoginWithPin({ pin: "1234" });
 Toggles between staff and customer mode for authenticated users.
 
 **Features:**
+
 - Validates user is authenticated
 - Ensures only staff members can toggle staff mode
 - Logs staff mode toggle activity
 - Returns updated user data
 
 **Usage:**
+
 ```typescript
 import { onToggleStaffMode } from '$lib/server/telefuncs/auth.telefunc';
 
@@ -62,6 +66,7 @@ CREATE TABLE users (
 ```
 
 ### Key Fields:
+
 - `pin_hash`: Stores SHA-256 hashed PIN for staff authentication
 - `username`: Used to create synthetic email addresses for compatibility
 - `role`: Staff role that determines permissions
@@ -79,14 +84,17 @@ CREATE TABLE users (
 Added the following schemas to `auth.schema.ts`:
 
 ### PIN Login Schema
+
 ```typescript
 export const pinLoginSchema = z.object({
-  pin: z.string().min(4).max(8).regex(/^\d+$/, "PIN must contain only numbers")
+	pin: z.string().min(4).max(8).regex(/^\d+$/, 'PIN must contain only numbers')
 });
 ```
 
 ### Activity Log Extensions
+
 Extended the auth activity log to include:
+
 - `pin_login`: Successful PIN authentication
 - `failed_pin_login`: Failed PIN authentication attempt
 - `staff_mode_toggle`: Staff mode toggle action
@@ -105,20 +113,20 @@ The implementation maintains compatibility with the existing authStore patterns:
 ```typescript
 // PIN Authentication
 try {
-  const session = await onLoginWithPin({ pin: "1234" });
-  console.log(`Authenticated user: ${session.user.full_name}`);
-  console.log(`Role: ${session.user.role}`);
+	const session = await onLoginWithPin({ pin: '1234' });
+	console.log(`Authenticated user: ${session.user.full_name}`);
+	console.log(`Role: ${session.user.role}`);
 } catch (error) {
-  console.error('PIN authentication failed:', error.message);
+	console.error('PIN authentication failed:', error.message);
 }
 
 // Staff Mode Toggle
 try {
-  const result = await onToggleStaffMode();
-  console.log(`Staff mode: ${result.isStaffMode}`);
-  console.log(`User: ${result.user.full_name}`);
+	const result = await onToggleStaffMode();
+	console.log(`Staff mode: ${result.isStaffMode}`);
+	console.log(`User: ${result.user.full_name}`);
 } catch (error) {
-  console.error('Staff mode toggle failed:', error.message);
+	console.error('Staff mode toggle failed:', error.message);
 }
 ```
 
@@ -128,7 +136,7 @@ To add PIN support to existing users, you would run:
 
 ```sql
 -- Add PIN hash for a staff member (example with hashed PIN "1234")
-UPDATE users 
+UPDATE users
 SET pin_hash = 'a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3'
 WHERE username = 'staff_member';
 ```

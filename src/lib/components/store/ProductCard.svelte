@@ -4,20 +4,17 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardFooter } from '$lib/components/ui/card';
 	import { ShoppingCart, Eye } from 'lucide-svelte';
-	
+
 	// Props - CustomerProduct from schema
-	let { 
-		product,
-		onAddToCart = () => {}
-	} = $props();
-	
+	let { product, onAddToCart = () => {} } = $props();
+
 	// Reactive state
 	let isLoading = $state(false);
-	
+
 	// Handle add to cart with loading state
 	async function handleAddToCart() {
 		if (isLoading || !product.in_stock) return;
-		
+
 		try {
 			isLoading = true;
 			await onAddToCart(product, 1, [], '');
@@ -37,14 +34,21 @@
 	}
 
 	// Get stock level variant for badge styling
-	function getStockLevelVariant(level: string): "default" | "secondary" | "destructive" | "outline" {
+	function getStockLevelVariant(
+		level: string
+	): 'default' | 'secondary' | 'destructive' | 'outline' {
 		switch (level.toLowerCase()) {
-			case 'high': return 'default';
-			case 'medium': return 'secondary'; 
-			case 'low': return 'destructive';
-			case 'out_of_stock': 
-			case 'out': return 'outline';
-			default: return 'secondary';
+			case 'high':
+				return 'default';
+			case 'medium':
+				return 'secondary';
+			case 'low':
+				return 'destructive';
+			case 'out_of_stock':
+			case 'out':
+				return 'outline';
+			default:
+				return 'secondary';
 		}
 	}
 
@@ -52,15 +56,20 @@
 	function handleViewProduct(): void {
 		window.location.href = `/store/product/${product.id}`;
 	}
-	
+
 	// Get stock level styling
 	function getStockLevelColor(level: string): string {
 		switch (level) {
-			case 'high': return 'default';
-			case 'medium': return 'secondary';
-			case 'low': return 'destructive';
-			case 'out_of_stock': return 'outline';
-			default: return 'secondary';
+			case 'high':
+				return 'default';
+			case 'medium':
+				return 'secondary';
+			case 'low':
+				return 'destructive';
+			case 'out_of_stock':
+				return 'outline';
+			default:
+				return 'secondary';
 		}
 	}
 </script>
@@ -69,8 +78,8 @@
 	<!-- Product Image -->
 	<div class="relative aspect-square overflow-hidden bg-muted">
 		{#if product.image_url}
-			<img 
-				src={product.image_url} 
+			<img
+				src={product.image_url}
 				alt={product.name}
 				class="h-full w-full object-cover transition-transform group-hover:scale-105"
 				loading="lazy"
@@ -83,51 +92,53 @@
 				</div>
 			</div>
 		{/if}
-		
+
 		<!-- Stock Level Badge -->
 		<div class="absolute top-2 right-2">
 			<Badge variant={getStockLevelVariant(product.stock_level)} class="text-xs">
 				{product.stock_level.replace('_', ' ').toUpperCase()}
 			</Badge>
 		</div>
-		
+
 		<!-- Quick View Button (overlay on hover) -->
-		<div class="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center">
-			<Button 
-				variant="secondary" 
+		<div
+			class="absolute inset-0 bg-black/20 opacity-0 transition-opacity group-hover:opacity-100 flex items-center justify-center"
+		>
+			<Button
+				variant="secondary"
 				size="sm"
 				class="gap-2"
-				onclick={() => window.location.href = `/store/product/${product.id}`}
+				onclick={() => (window.location.href = `/store/product/${product.id}`)}
 			>
 				<Eye class="h-4 w-4" />
 				Quick View
 			</Button>
 		</div>
 	</div>
-	
+
 	<CardContent class="p-4">
 		<!-- Product Category -->
 		<div class="text-xs text-muted-foreground mb-1">
 			{product.category_name}
 		</div>
-		
+
 		<!-- Product Name -->
 		<h3 class="font-semibold text-sm mb-2 line-clamp-2 min-h-[2.5rem]">
 			{product.name}
 		</h3>
-		
+
 		<!-- Product Description -->
 		{#if product.description}
 			<p class="text-xs text-muted-foreground line-clamp-2 mb-3">
 				{product.description}
 			</p>
 		{/if}
-		
+
 		<!-- SKU -->
 		<div class="text-xs text-muted-foreground mb-2">
 			SKU: {product.sku}
 		</div>
-		
+
 		<!-- Price and Unit -->
 		<div class="flex items-center justify-between mb-3">
 			<div class="font-bold text-lg">
@@ -137,7 +148,7 @@
 				per {product.base_unit}
 			</div>
 		</div>
-		
+
 		<!-- Bundle Components (if applicable) -->
 		{#if product.product_type === 'bundle' && product.bundle_components}
 			<div class="mb-3">
@@ -148,12 +159,12 @@
 			</div>
 		{/if}
 	</CardContent>
-	
+
 	<CardFooter class="p-4 pt-0">
 		<div class="flex w-full gap-2">
 			<!-- Add to Cart Button -->
-			<Button 
-				class="flex-1 gap-2" 
+			<Button
+				class="flex-1 gap-2"
 				onclick={handleAddToCart}
 				disabled={!product.in_stock || isLoading}
 			>
@@ -166,12 +177,12 @@
 					Add to Cart
 				{/if}
 			</Button>
-			
+
 			<!-- View Details Button -->
-			<Button 
-				variant="outline" 
+			<Button
+				variant="outline"
 				size="icon"
-				onclick={() => window.location.href = `/store/product/${product.id}`}
+				onclick={() => (window.location.href = `/store/product/${product.id}`)}
 			>
 				<Eye class="h-4 w-4" />
 			</Button>

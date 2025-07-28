@@ -1,44 +1,56 @@
 <script lang="ts">
-import { useSuppliers } from '$lib/data/supplier';
+	import { useSuppliers } from '$lib/data/supplier';
 	import type { Supplier } from '$lib/types/supplier.schema';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
-	import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '$lib/components/ui/table';
-	import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '$lib/components/ui/dropdown-menu';
+	import {
+		Table,
+		TableBody,
+		TableCell,
+		TableHead,
+		TableHeader,
+		TableRow
+	} from '$lib/components/ui/table';
+	import {
+		DropdownMenu,
+		DropdownMenuTrigger,
+		DropdownMenuContent,
+		DropdownMenuItem,
+		DropdownMenuLabel,
+		DropdownMenuSeparator
+	} from '$lib/components/ui/dropdown-menu';
 	import { MoreHorizontal, Pencil, ToggleLeft, ToggleRight } from 'lucide-svelte';
 
-const { 
-	suppliersQuery, 
-	suppliers, 
-	activeSuppliers, 
-	updateSupplier, 
-	isLoading, 
-	isError, 
-	error, 
-	isUpdating, 
-	updateError 
-} = useSuppliers();
+	const {
+		suppliersQuery,
+		suppliers,
+		activeSuppliers,
+		updateSupplier,
+		isLoading,
+		isError,
+		error,
+		isUpdating,
+		updateError
+	} = useSuppliers();
 
-// Props for handling edit action
-let { onEditSupplier }: { onEditSupplier?: (supplier: Supplier) => void } = $props();
+	// Props for handling edit action
+	let { onEditSupplier }: { onEditSupplier?: (supplier: Supplier) => void } = $props();
 
-
-
-function handleToggleStatus(supplierId: string) {
-	const supplier = suppliers.find((s: Supplier) => s.id === supplierId);
-	if (supplier) {
-		updateSupplier({ 
-			supplierId, 
-			supplierData: { is_active: !supplier.is_active } 
-		});
+	function handleToggleStatus(supplierId: string) {
+		const supplier = suppliers.find((s: Supplier) => s.id === supplierId);
+		if (supplier) {
+			updateSupplier({
+				supplierId,
+				supplierData: { is_active: !supplier.is_active }
+			});
+		}
 	}
-}
 
-function handleEditSupplier(supplier: Supplier) {
-	if (onEditSupplier) {
-		onEditSupplier(supplier);
+	function handleEditSupplier(supplier: Supplier) {
+		if (onEditSupplier) {
+			onEditSupplier(supplier);
+		}
 	}
-}
 </script>
 
 <div class="border rounded-lg">
@@ -78,7 +90,7 @@ function handleEditSupplier(supplier: Supplier) {
 								{supplier.is_active ? 'Active' : 'Inactive'}
 							</Badge>
 						</TableCell>
-					<TableCell>{supplier.contacts?.[0]?.name ?? 'N/A'}</TableCell>
+						<TableCell>{supplier.contacts?.[0]?.name ?? 'N/A'}</TableCell>
 						<TableCell>{supplier.email ?? 'N/A'}</TableCell>
 						<TableCell>{supplier.phone ?? 'N/A'}</TableCell>
 						<TableCell class="text-right">
@@ -97,7 +109,10 @@ function handleEditSupplier(supplier: Supplier) {
 										<span>Edit</span>
 									</DropdownMenuItem>
 									<DropdownMenuSeparator />
-									<DropdownMenuItem onclick={() => handleToggleStatus(supplier.id)} disabled={isUpdating}>
+									<DropdownMenuItem
+										onclick={() => handleToggleStatus(supplier.id)}
+										disabled={isUpdating}
+									>
 										{#if supplier.is_active}
 											<ToggleLeft class="mr-2 h-4 w-4" />
 											<span>{isUpdating ? 'Deactivating...' : 'Deactivate'}</span>
@@ -113,9 +128,7 @@ function handleEditSupplier(supplier: Supplier) {
 				{/each}
 			{:else}
 				<TableRow>
-					<TableCell colspan={6} class="h-24 text-center">
-						No suppliers found.
-					</TableCell>
+					<TableCell colspan={6} class="h-24 text-center">No suppliers found.</TableCell>
 				</TableRow>
 			{/if}
 		</TableBody>

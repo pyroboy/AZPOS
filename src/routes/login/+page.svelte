@@ -11,10 +11,9 @@
 	const users = data.users ?? [];
 	let selectedUsername = $state<string | undefined>(undefined);
 
-	const selectedUser = $derived(users.find((u) => u.username === selectedUsername));
+	const selectedUser = $derived(users.find((u) => (u as any).username === selectedUsername));
 	const selectedLabel = $derived(selectedUser?.full_name ?? 'Select a user');
 	const selectedRole = $derived(selectedUser?.role);
-
 </script>
 
 <div class="min-h-screen bg-muted/40 flex items-center justify-center p-4">
@@ -31,7 +30,7 @@
 						<Trigger class="w-full">{selectedLabel}</Trigger>
 						<Content>
 							{#each users as user (user.id)}
-								<Item value={user.username} label={user.full_name}>
+								<Item value={(user as any).username} label={user.full_name}>
 									<div class="flex items-center justify-between w-full">
 										<span>{user.full_name}</span>
 										<Badge variant="secondary" class="capitalize">{user.role}</Badge>
@@ -51,9 +50,7 @@
 					<p class="text-sm font-medium text-destructive">{form.error}</p>
 				{/if}
 
-				<Button type="submit" class="w-full" disabled={!selectedUsername}>
-					Sign In →
-				</Button>
+				<Button type="submit" class="w-full" disabled={!selectedUsername}>Sign In →</Button>
 			</form>
 		</Card.Content>
 		<Card.Footer>

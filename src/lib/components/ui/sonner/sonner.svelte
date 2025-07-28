@@ -1,7 +1,7 @@
 <script lang="ts">
-	import { Toaster as Sonner, type ToasterProps as SonnerProps } from "svelte-sonner";
-// import { theme } from '$lib/stores/themeStore';
-const theme = { name: 'light' };
+	import { Toaster as Sonner, type ToasterProps as SonnerProps } from 'svelte-sonner';
+	// import { theme } from '$lib/stores/themeStore';
+	const theme = { name: 'light' };
 	import { derived } from 'svelte/store';
 	import { browser } from '$app/environment';
 

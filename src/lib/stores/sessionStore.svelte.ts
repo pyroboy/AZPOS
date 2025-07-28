@@ -1,7 +1,6 @@
 import type { User } from '$lib/schemas/models';
 import { goto } from '$app/navigation';
 
-
 // Use $state for session state
 export let currentUser = $state<User | null>(null);
 

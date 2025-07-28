@@ -34,9 +34,7 @@
 <div class="space-y-6">
 	<div>
 		<h3 class="text-lg font-medium">Store Settings</h3>
-		<p class="text-sm text-muted-foreground">
-			Manage your store's details and tax information.
-		</p>
+		<p class="text-sm text-muted-foreground">Manage your store's details and tax information.</p>
 	</div>
 	<Separator />
 
@@ -48,7 +46,12 @@
 		<Card.Content>
 			{#if data.totalProducts > 0}
 				<div class="text-sm text-muted-foreground">
-					<span class="font-bold text-foreground">{data.productsWithImages} / {data.totalProducts}</span> products have images ({Math.round(data.productsWithImages / data.totalProducts * 100)}%).
+					<span class="font-bold text-foreground"
+						>{data.productsWithImages} / {data.totalProducts}</span
+					>
+					products have images ({Math.round(
+						(data.productsWithImages / data.totalProducts) * 100
+					)}%).
 				</div>
 			{:else}
 				<div class="text-sm text-muted-foreground">Could not load product stats.</div>

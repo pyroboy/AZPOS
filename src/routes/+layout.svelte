@@ -5,9 +5,9 @@
 	import { Toaster } from '$lib/components/ui/sonner';
 	import '$lib/stores/themeStore';
 
-import { useSessions } from '$lib/data/session';
-import type { LayoutData } from './$types';
-import { page } from '$app/stores';
+	import { useSessions } from '$lib/data/session';
+	import type { LayoutData } from './$types';
+	import { page } from '$app/stores';
 
 	// TanStack Query for server-centric state management
 	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
@@ -63,19 +63,19 @@ import { page } from '$app/stores';
 <QueryClientProvider client={queryClient}>
 	<Toaster />
 
-{#if $page.data.user}
-	<Sidebar.Provider>
-		<div class="flex h-screen bg-background text-foreground w-full">
-			<AppSidebar />
-			<main class="flex-1 overflow-y-auto p-4 md:p-8 w-full">
-				<Sidebar.Trigger />
-				{@render children()}
-			</main>
-		</div>
-	</Sidebar.Provider>
-{:else}
-	<main class="flex-1 overflow-y-auto p-4 md:p-8">
-		{@render children()}
-	</main>
-{/if}
+	{#if $page.data.user}
+		<Sidebar.Provider>
+			<div class="flex h-screen bg-background text-foreground w-full">
+				<AppSidebar />
+				<main class="flex-1 overflow-y-auto p-4 md:p-8 w-full">
+					<Sidebar.Trigger />
+					{@render children()}
+				</main>
+			</div>
+		</Sidebar.Provider>
+	{:else}
+		<main class="flex-1 overflow-y-auto p-4 md:p-8">
+			{@render children()}
+		</main>
+	{/if}
 </QueryClientProvider>

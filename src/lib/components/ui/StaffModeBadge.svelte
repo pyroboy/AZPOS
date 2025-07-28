@@ -2,32 +2,38 @@
 <script lang="ts">
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
-	import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '$lib/components/ui/dialog';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle,
+		DialogTrigger
+	} from '$lib/components/ui/dialog';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-import { useAuth } from '$lib/data/auth';
+	import { useAuth } from '$lib/data/auth';
 	import { Shield, ShieldCheck, LogOut, Settings, User } from 'lucide-svelte';
-	
+
 	// Initialize auth composable
 	const auth = useAuth();
-	
+
 	// Login state
 	let showLoginDialog = $state(false);
 	let pin = $state('');
 	let loginError = $state('');
-	
+
 	// Handle staff login
 	async function handleLogin() {
 		if (!pin.trim()) {
 			loginError = 'Please enter your PIN';
 			return;
 		}
-		
+
 		loginError = '';
-		
+
 		try {
 			const result = await auth.loginWithPin(pin);
-			
+
 			if (result.success) {
 				showLoginDialog = false;
 				pin = '';
@@ -39,7 +45,7 @@ import { useAuth } from '$lib/data/auth';
 			loginError = 'Login failed. Please try again.';
 		}
 	}
-	
+
 	// Handle staff logout
 	function handleLogout() {
 		auth.logout();
@@ -47,19 +53,19 @@ import { useAuth } from '$lib/data/auth';
 		pin = '';
 		loginError = '';
 	}
-	
+
 	// Handle staff mode toggle
 	function toggleStaffMode() {
 		auth.toggleStaffMode();
 	}
-	
+
 	// Handle PIN input keypress
 	function handleKeyPress(event: KeyboardEvent): void {
 		if (event.key === 'Enter') {
 			handleLogin();
 		}
 	}
-	
+
 	// Get role display name
 	function getRoleDisplayName(role: string): string {
 		const roleNames: Record<string, string> = {
@@ -72,7 +78,7 @@ import { useAuth } from '$lib/data/auth';
 		};
 		return roleNames[role] || role;
 	}
-	
+
 	// Get role badge variant
 	function getRoleBadgeVariant(role: string): 'default' | 'secondary' | 'outline' {
 		switch (role) {
@@ -108,14 +114,14 @@ import { useAuth } from '$lib/data/auth';
 				<span>Customer Mode</span>
 			{/if}
 		</Button>
-		
+
 		<!-- User Info Badge -->
-		<Badge variant={getRoleBadgeVariant(auth.userRole)} class="flex items-center gap-1">
+		<Badge variant={getRoleBadgeVariant(auth.user?.role)} class="flex items-center gap-1">
 			<User class="h-3 w-3" />
 			<span>{auth.userName}</span>
-			<span class="text-xs opacity-75">({getRoleDisplayName(auth.userRole)})</span>
+			<span class="text-xs opacity-75">({getRoleDisplayName(auth.user?.role)})</span>
 		</Badge>
-		
+
 		<!-- Logout Button -->
 		<Button
 			variant="ghost"
@@ -142,7 +148,7 @@ import { useAuth } from '$lib/data/auth';
 						Staff Authentication
 					</DialogTitle>
 				</DialogHeader>
-				
+
 				<div class="space-y-4">
 					<div class="space-y-2">
 						<Label for="pin">Enter your PIN</Label>
@@ -160,11 +166,15 @@ import { useAuth } from '$lib/data/auth';
 							<p class="text-sm text-destructive">{loginError}</p>
 						{/if}
 					</div>
-					
+
 					<div class="flex justify-end gap-2">
 						<Button
 							variant="outline"
-							onclick={() => { showLoginDialog = false; pin = ''; loginError = ''; }}
+							onclick={() => {
+								showLoginDialog = false;
+								pin = '';
+								loginError = '';
+							}}
 							disabled={auth.loginWithPinStatus === 'pending'}
 						>
 							Cancel
@@ -181,7 +191,7 @@ import { useAuth } from '$lib/data/auth';
 							{/if}
 						</Button>
 					</div>
-					
+
 					<!-- Demo PINs for testing -->
 					<div class="text-xs text-muted-foreground space-y-1 pt-4 border-t">
 						<p class="font-medium">Demo PINs:</p>
@@ -196,7 +206,7 @@ import { useAuth } from '$lib/data/auth';
 				</div>
 			</DialogContent>
 		</Dialog>
-		
+
 		<!-- Guest Badge -->
 		<Badge variant="secondary" class="flex items-center gap-1">
 			<User class="h-3 w-3" />

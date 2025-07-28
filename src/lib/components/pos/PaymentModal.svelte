@@ -15,12 +15,7 @@
 	import CustomerInputModal from './CustomerInputModal.svelte';
 	import { Checkbox } from '$lib/components/ui/checkbox';
 
-	let {
-		open = $bindable(false),
-		totalAmount,
-		onConfirm,
-		onCancel
-	} = $props();
+	let { open = $bindable(false), totalAmount, onConfirm, onCancel } = $props();
 
 	let paymentMethod: 'cash' | 'gcash' = $state('cash');
 	let cashTendered: number | undefined = $state(undefined);
@@ -79,8 +74,6 @@
 			open = false;
 		}
 	}
-
-
 </script>
 
 <Dialog bind:open>

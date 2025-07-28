@@ -1,11 +1,13 @@
 # Enhanced Cart Store Implementation
 
 ## Entry: enhanced-cart-store
+
 **Timestamp:** 2025-07-28T10:06:27+08:00
 **Task ID:** enhanced-cart-store-implementation
 **Type:** Implementation Documentation
 
 ### Content
+
 ---
 
 # Enhanced Cart Store Implementation for AZPOS /store Route
@@ -46,6 +48,7 @@ export interface EnhancedCartItem {
 ```
 
 **Key Improvements:**
+
 - Aligned field names with CustomerCartItemSchema (cart_item_id vs cartItemId)
 - Added image_url support with optional typing
 - Included subtotal and final_price for reactive calculations
@@ -56,27 +59,28 @@ export interface EnhancedCartItem {
 
 ```typescript
 const totals = derived(store, ($store): CartTotals => {
-  const subtotal = $store.items.reduce((acc, item) => acc + item.subtotal, 0);
-  
-  let discountAmount = 0;
-  if ($store.discount) {
-    if ($store.discount.type === 'percentage') {
-      discountAmount = subtotal * ($store.discount.value / 100);
-    } else {
-      discountAmount = $store.discount.value;
-    }
-  }
-  
-  const taxableAmount = subtotal - discountAmount;
-  const tax = taxableAmount * 0.12; // 12% VAT
-  const total = taxableAmount + tax;
-  const itemCount = $store.items.reduce((acc, item) => acc + item.quantity, 0);
-  
-  return { subtotal, discountAmount, tax, total, itemCount };
+	const subtotal = $store.items.reduce((acc, item) => acc + item.subtotal, 0);
+
+	let discountAmount = 0;
+	if ($store.discount) {
+		if ($store.discount.type === 'percentage') {
+			discountAmount = subtotal * ($store.discount.value / 100);
+		} else {
+			discountAmount = $store.discount.value;
+		}
+	}
+
+	const taxableAmount = subtotal - discountAmount;
+	const tax = taxableAmount * 0.12; // 12% VAT
+	const total = taxableAmount + tax;
+	const itemCount = $store.items.reduce((acc, item) => acc + item.quantity, 0);
+
+	return { subtotal, discountAmount, tax, total, itemCount };
 });
 ```
 
 **Benefits:**
+
 - Real-time calculation updates when cart changes
 - Automatic recalculation on quantity/price changes
 - Exposed as `cart.totals` for reactive UI binding
@@ -85,6 +89,7 @@ const totals = derived(store, ($store): CartTotals => {
 ### 3. Enhanced Methods
 
 #### addItem Method
+
 - **Quantity Validation**: Enforces 1-999 limit per schema
 - **Notes Support**: Optional notes parameter with 500 char limit
 - **Modifier Handling**: Proper transformation to CustomerCartItemSchema format
@@ -92,16 +97,19 @@ const totals = derived(store, ($store): CartTotals => {
 - **Automatic Calculations**: Real-time subtotal and final_price updates
 
 #### clear() Method
+
 - **Primary Method**: `clear()` for modern usage
 - **Backward Compatibility**: `clearCart()` maintained for existing code
 - **Complete Reset**: Returns to initial empty state
 
 #### updateQuantity Method
+
 - **Validation**: 0-999 range with automatic removal at 0
 - **Recalculation**: Updates subtotal and final_price automatically
 - **Timestamp Updates**: Maintains updated_at field
 
 #### updateNotes Method
+
 - **New Feature**: Allows updating item notes post-addition
 - **Validation**: 500 character limit enforcement
 - **Timestamp Updates**: Maintains updated_at field
@@ -109,6 +117,7 @@ const totals = derived(store, ($store): CartTotals => {
 ### 4. Schema Compatibility
 
 **CustomerCartItemSchema Alignment:**
+
 - ✅ cart_item_id (UUID)
 - ✅ product_id, product_name, product_sku
 - ✅ base_price, quantity (1-999 validation)
@@ -122,6 +131,7 @@ const totals = derived(store, ($store): CartTotals => {
 ### 5. User Journey Compatibility
 
 **Supports All User Journey Requirements:**
+
 - ✅ Product browsing and adding to cart
 - ✅ Cart management (view, update, remove)
 - ✅ Real-time total calculations
@@ -134,45 +144,53 @@ const totals = derived(store, ($store): CartTotals => {
 
 ```typescript
 export interface CartStore extends Writable<CartState> {
-  addItem: (product: Product, batch: ProductBatch, quantity: number, modifiers?: Modifier[], notes?: string) => void;
-  removeItem: (cartItemId: string) => void;
-  updateQuantity: (cartItemId: string, quantity: number) => void;
-  updateItemPrice: (cartItemId: string, newPrice: number) => void;
-  updateNotes: (cartItemId: string, notes: string) => void;
-  clear: () => void; // Enhanced clear method
-  clearCart: () => void; // Backward compatibility
-  applyDiscount: (discount: { type: 'percentage' | 'fixed'; value: number } | null) => void;
-  finalizeCart: () => {
-    subtotal: number;
-    discountAmount: number;
-    tax: number;
-    total: number;
-    items: EnhancedCartItem[];
-  };
-  // Reactive totals
-  totals: Readable<CartTotals>;
+	addItem: (
+		product: Product,
+		batch: ProductBatch,
+		quantity: number,
+		modifiers?: Modifier[],
+		notes?: string
+	) => void;
+	removeItem: (cartItemId: string) => void;
+	updateQuantity: (cartItemId: string, quantity: number) => void;
+	updateItemPrice: (cartItemId: string, newPrice: number) => void;
+	updateNotes: (cartItemId: string, notes: string) => void;
+	clear: () => void; // Enhanced clear method
+	clearCart: () => void; // Backward compatibility
+	applyDiscount: (discount: { type: 'percentage' | 'fixed'; value: number } | null) => void;
+	finalizeCart: () => {
+		subtotal: number;
+		discountAmount: number;
+		tax: number;
+		total: number;
+		items: EnhancedCartItem[];
+	};
+	// Reactive totals
+	totals: Readable<CartTotals>;
 }
 ```
 
 ## Usage Examples
 
 ### Adding Items with Notes
+
 ```typescript
-cart.addItem(product, batch, 2, modifiers, "Extra packaging please");
+cart.addItem(product, batch, 2, modifiers, 'Extra packaging please');
 ```
 
 ### Reactive Totals in Components
+
 ```svelte
 <script>
-  import { cart } from '$lib/stores/cartStore';
-  $: totals = $cart.totals;
+	import { cart } from '$lib/stores/cartStore';
+	$: totals = $cart.totals;
 </script>
 
-<div>Total: ${totals.total.toFixed(2)}</div>
-<div>Items: {totals.itemCount}</div>
+<div>Total: ${totals.total.toFixed(2)}</div><div>Items: {totals.itemCount}</div>
 ```
 
 ### Clear Cart
+
 ```typescript
 cart.clear(); // Modern usage
 cart.clearCart(); // Backward compatibility
@@ -195,11 +213,13 @@ cart.clearCart(); // Backward compatibility
 ## Migration Notes
 
 **Breaking Changes:**
+
 - CartItem interface changed to EnhancedCartItem
 - Field names updated (cartItemId → cart_item_id)
 - New required fields (subtotal, final_price)
 
 **Backward Compatibility:**
+
 - clearCart() method maintained
 - Existing method signatures preserved where possible
 - Gradual migration path available

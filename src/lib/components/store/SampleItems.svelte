@@ -3,9 +3,9 @@
 	import { Card, CardContent, CardFooter, CardHeader } from '$lib/components/ui/card';
 	import { Badge } from '$lib/components/ui/badge';
 	import { Heart, ShoppingCart, Star } from 'lucide-svelte';
-	
+
 	let { searchQuery = '', selectedCategory = 'all' } = $props();
-	
+
 	const sampleItems = [
 		{
 			id: 1,
@@ -98,19 +98,21 @@
 			organic: true
 		}
 	];
-	
+
 	// Filter items based on search and category
-	let filteredItems = $derived(sampleItems.filter((item: any) => {
-		const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
-		const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
-		return matchesSearch && matchesCategory;
-	}));
-	
+	let filteredItems = $derived(
+		sampleItems.filter((item: any) => {
+			const matchesSearch = item.name.toLowerCase().includes(searchQuery.toLowerCase());
+			const matchesCategory = selectedCategory === 'all' || item.category === selectedCategory;
+			return matchesSearch && matchesCategory;
+		})
+	);
+
 	function addToCart(item: any) {
 		console.log('Added to cart:', item.name);
 		// Add cart logic here
 	}
-	
+
 	function toggleWishlist(item: any) {
 		console.log('Toggle wishlist:', item.name);
 		// Add wishlist logic here
@@ -122,7 +124,7 @@
 		<h2 class="text-2xl font-bold">
 			{filteredItems.length} Products Found
 		</h2>
-		
+
 		<div class="flex items-center gap-2">
 			<span class="text-sm text-muted-foreground">Sort by:</span>
 			<select class="rounded-md border border-input bg-background px-3 py-1 text-sm">
@@ -133,7 +135,7 @@
 			</select>
 		</div>
 	</div>
-	
+
 	{#if filteredItems.length === 0}
 		<div class="flex flex-col items-center justify-center py-12 text-center">
 			<div class="text-6xl mb-4">🔍</div>
@@ -145,10 +147,12 @@
 			{#each filteredItems as item (item.id)}
 				<Card class="group overflow-hidden transition-all duration-200 hover:shadow-lg">
 					<CardHeader class="relative p-0">
-						<div class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-6xl">
+						<div
+							class="aspect-square bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center text-6xl"
+						>
 							{item.image}
 						</div>
-						
+
 						<!-- Wishlist button -->
 						<Button
 							variant="ghost"
@@ -158,7 +162,7 @@
 						>
 							<Heart class="h-4 w-4" />
 						</Button>
-						
+
 						<!-- Badges -->
 						<div class="absolute left-2 top-2 flex flex-col gap-1">
 							{#if item.organic}
@@ -172,22 +176,24 @@
 							{/if}
 						</div>
 					</CardHeader>
-					
+
 					<CardContent class="p-4">
 						<div class="space-y-2">
 							<h3 class="font-semibold line-clamp-2">{item.name}</h3>
-							
+
 							<div class="flex items-center gap-1">
 								<div class="flex items-center">
 									{#each Array(5) as _, i}
-										<Star 
-											class="h-3 w-3 {i < Math.floor(item.rating) ? 'fill-yellow-400 text-yellow-400' : 'text-gray-300'}" 
+										<Star
+											class="h-3 w-3 {i < Math.floor(item.rating)
+												? 'fill-yellow-400 text-yellow-400'
+												: 'text-gray-300'}"
 										/>
 									{/each}
 								</div>
 								<span class="text-sm text-muted-foreground">({item.reviews})</span>
 							</div>
-							
+
 							<div class="flex items-center gap-2">
 								<span class="text-lg font-bold">${item.price}</span>
 								{#if item.originalPrice}
@@ -198,13 +204,9 @@
 							</div>
 						</div>
 					</CardContent>
-					
+
 					<CardFooter class="p-4 pt-0">
-						<Button 
-							class="w-full"
-							disabled={!item.inStock}
-							onclick={() => addToCart(item)}
-						>
+						<Button class="w-full" disabled={!item.inStock} onclick={() => addToCart(item)}>
 							<ShoppingCart class="mr-2 h-4 w-4" />
 							{item.inStock ? 'Add to Cart' : 'Out of Stock'}
 						</Button>

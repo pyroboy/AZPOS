@@ -7,6 +7,7 @@ Yes
 Based on your goal and the provided codebase, we will **extract and refactor only the specifications necessary** to build a **customer-facing online grocery store** at the `/store` route.
 
 We will:
+
 - **Keep** only what is needed for browsing, searching, cart, and checkout.
 - **Reuse** existing types, schemas, and stores where possible.
 - **Ignore** internal operations (inventory adjustments, POs, returns, admin settings) unless they directly impact the customer experience.
@@ -16,24 +17,25 @@ We will:
 
 ## 🛒 1. Core Customer Features (MVP Scope)
 
-| Feature | Source of Truth | Status |
-|-------|------------------|--------|
-| **Product Catalog** | `productSchema`, `products` store | ✅ Reuse |
-| **Search & Filter** | `$searchTerm`, `categories`, `filteredProducts` | ✅ Reuse |
-| **Product Detail View** | `ProductEntry.svelte`, `productSchema` | ✅ Reuse |
-| **Add to Cart** | `cartStore`, `CartItem`, `finalizedCart` | ✅ Reuse |
-| **Cart Management** | `cartStore.add()`, `update()`, `remove()` | ✅ Reuse |
-| **Checkout Flow** | `Transaction`, `paymentMethod`, `customerName` | ✅ Refactor |
-| **Order Confirmation** | `transactionId`, `timestamp` | ✅ Reuse |
-| **Guest Checkout** | No login required | ✅ Enforce |
-| **Stock Awareness** | `quantity_on_hand`, `stock` field | ✅ Reuse |
-| **Image Display** | `sanitizeImageUrl`, `ImageWithFallback` | ✅ Reuse |
+| Feature                 | Source of Truth                                 | Status      |
+| ----------------------- | ----------------------------------------------- | ----------- |
+| **Product Catalog**     | `productSchema`, `products` store               | ✅ Reuse    |
+| **Search & Filter**     | `$searchTerm`, `categories`, `filteredProducts` | ✅ Reuse    |
+| **Product Detail View** | `ProductEntry.svelte`, `productSchema`          | ✅ Reuse    |
+| **Add to Cart**         | `cartStore`, `CartItem`, `finalizedCart`        | ✅ Reuse    |
+| **Cart Management**     | `cartStore.add()`, `update()`, `remove()`       | ✅ Reuse    |
+| **Checkout Flow**       | `Transaction`, `paymentMethod`, `customerName`  | ✅ Refactor |
+| **Order Confirmation**  | `transactionId`, `timestamp`                    | ✅ Reuse    |
+| **Guest Checkout**      | No login required                               | ✅ Enforce  |
+| **Stock Awareness**     | `quantity_on_hand`, `stock` field               | ✅ Reuse    |
+| **Image Display**       | `sanitizeImageUrl`, `ImageWithFallback`         | ✅ Reuse    |
 
 ---
 
 ## 🧱 2. Data Contracts (Customer-Facing)
 
 ### `Product` (from `productSchema`)
+
 ```ts
 {
   id: string;
@@ -50,12 +52,14 @@ We will:
   requires_batch_tracking: boolean;
 }
 ```
+
 - **Used By**: `/store`, `ProductCard`, `ProductDetail`
 - **Critique**: Strong. Already includes stock and category.
 
 ---
 
 ### `Category` (from `categorySchema`)
+
 ```ts
 {
   id: string;
@@ -63,28 +67,32 @@ We will:
   description?: string;
 }
 ```
+
 - **Used By**: Filter chips in `/store`
 - **Critique**: Good. Simple and clear.
 
 ---
 
 ### `CartItem`
+
 ```ts
 {
-  product_id: string;
-  product_name: string;
-  product_sku: string;
-  price: number;
-  quantity: number;
-  finalPrice: number; // after discounts
+	product_id: string;
+	product_name: string;
+	product_sku: string;
+	price: number;
+	quantity: number;
+	finalPrice: number; // after discounts
 }
 ```
+
 - **Used By**: `cartStore`, `CartSidebar`
 - **Critique**: Missing `image_url` — **add for UI**.
 
 ---
 
 ### `Transaction` (Checkout Payload)
+
 ```ts
 {
   transactionId: string;
@@ -101,24 +109,27 @@ We will:
   status: 'pending' | 'confirmed' | 'preparing' | 'out_for_delivery' | 'delivered';
 }
 ```
+
 - **Used By**: Checkout, confirmation page
 - **Critique**: Already exists in `Receipt.svelte` — reuse fields.
 
 ---
 
 ### `Discount` (from `DiscountSchema`)
+
 ```ts
 {
-  id: string;
-  name: string;
-  amount: number;
-  is_percentage: boolean;
-  minimum_purchase_amount: number | null;
-  start_date: string;
-  end_date: string | null;
-  active: boolean;
+	id: string;
+	name: string;
+	amount: number;
+	is_percentage: boolean;
+	minimum_purchase_amount: number | null;
+	start_date: string;
+	end_date: string | null;
+	active: boolean;
 }
 ```
+
 - **Used By**: `cartStore.finalizeCart()` — apply if `total >= minimum_purchase_amount`
 - **Critique**: Strong. Can be reused as-is.
 
@@ -127,31 +138,37 @@ We will:
 ## 🧩 3. Required Components for `/store`
 
 ### `ProductCard.svelte`
+
 - Displays: image, name, price, stock status
 - Action: "Add to Cart" button (disabled if `stock <= 0`)
 - Uses: `Product`, `sanitizeImageUrl`
 
 ### `ProductDetailModal.svelte`
+
 - Modal or page showing full product info
 - Includes: description, image, price, stock
 - Action: quantity selector + "Add to Cart"
 
 ### `SearchBar.svelte`
+
 - Input with bind to `$searchTerm`
 - Supports barcode scan (via `handleBarcodeScanned`)
 - Debounced
 
 ### `CategoryFilter.svelte`
+
 - Chips for each category (e.g., "Produce", "Dairy")
 - Active category highlight
 
 ### `CartSidebar.svelte`
+
 - Slide-in panel showing cart items
 - Edit quantity, remove item
 - Shows subtotal, discount, total
 - "Checkout" button
 
 ### `CheckoutForm.svelte`
+
 - Fields:
   - Full Name (`required`)
   - Email (`required`, email format)
@@ -161,6 +178,7 @@ We will:
 - On submit: create `Transaction`, show confirmation
 
 ### `OrderConfirmation.svelte`
+
 - Show order ID, items, total, payment method
 - Estimated delivery time
 - "Continue Shopping" button
@@ -170,19 +188,23 @@ We will:
 ## 🧠 4. Required Stores
 
 ### `cartStore` (Existing — Reuse)
+
 - Methods: `add(item)`, `update(id, qty)`, `remove(id)`, `finalizeCart()`
 - Derived: `subtotal`, `total`, `itemCount`
 - **Add**: `clear()` after successful checkout
 
 ### `products` (Existing — Reuse)
+
 - Already loads from API or IndexedDB
 - Filtered by `!is_archived` and `stock > 0` for `/store`
 
 ### `categories` (Existing — Reuse)
+
 - Used for filtering
 - Load once on app start
 
 ### `discounts` (New or Reuse)
+
 - Load active discounts (`active && now between start/end`)
 - Apply in `finalizeCart()` if conditions met
 
@@ -195,6 +217,7 @@ We will:
 We keep role logic **minimal** but compatible with existing system.
 
 ### `User` (from `users` store)
+
 ```ts
 {
   id: string;
@@ -205,6 +228,7 @@ We keep role logic **minimal** but compatible with existing system.
 ```
 
 ### Login Flow for `/store`
+
 - **Customers**: No login. Shop as guest.
 - **Staff**: Optional PIN login (e.g., for price override, manual entry).
 - **Role Impact**:
@@ -212,6 +236,7 @@ We keep role logic **minimal** but compatible with existing system.
   - Else, hide all internal UI.
 
 ### Session Store
+
 - Use `sessionStore` to hold:
   ```ts
   { user: User | null, isAuthenticated: boolean }
@@ -258,25 +283,27 @@ src/
 ## 🧪 7. Server-Side Requirements
 
 ### `src/routes/store/+page.server.ts`
+
 ```ts
 export const load = async () => {
-  const products = await getActiveProducts(); // exclude archived, low stock?
-  const categories = await getCategories();
-  const discounts = await getActiveDiscounts();
+	const products = await getActiveProducts(); // exclude archived, low stock?
+	const categories = await getCategories();
+	const discounts = await getActiveDiscounts();
 
-  return { products, categories, discounts };
+	return { products, categories, discounts };
 };
 ```
 
 ### `src/routes/store/checkout/+page.server.ts`
+
 ```ts
 export const actions = {
-  default: async ({ request }) => {
-    const data = await request.formData();
-    // Validate with Zod
-    // Create Transaction
-    // Return success, redirect to /store/checkout/success
-  }
+	default: async ({ request }) => {
+		const data = await request.formData();
+		// Validate with Zod
+		// Create Transaction
+		// Return success, redirect to /store/checkout/success
+	}
 };
 ```
 
@@ -284,19 +311,19 @@ export const actions = {
 
 ## ✅ 8. Final MVP Checklist
 
-| Item | Status |
-|------|--------|
-| Reuse `productSchema`, `categorySchema`, `DiscountSchema` | ✅ |
-| Reuse `products`, `categories`, `cartStore` | ✅ |
-| Build `/store/+page.svelte` with search, filter, product grid | ✅ |
-| Add "Add to Cart" with stock check | ✅ |
-| Implement cart sidebar with edit/remove | ✅ |
-| Guest checkout with name, email, address, payment | ✅ |
-| Order confirmation page | ✅ |
-| Staff login via PIN (optional) | ✅ |
-| Hide internal UI from guests | ✅ |
-| Use `sanitizeImageUrl` for safe image rendering | ✅ |
-| No account creation, no order history (post-MVP) | ✅ |
+| Item                                                          | Status |
+| ------------------------------------------------------------- | ------ |
+| Reuse `productSchema`, `categorySchema`, `DiscountSchema`     | ✅     |
+| Reuse `products`, `categories`, `cartStore`                   | ✅     |
+| Build `/store/+page.svelte` with search, filter, product grid | ✅     |
+| Add "Add to Cart" with stock check                            | ✅     |
+| Implement cart sidebar with edit/remove                       | ✅     |
+| Guest checkout with name, email, address, payment             | ✅     |
+| Order confirmation page                                       | ✅     |
+| Staff login via PIN (optional)                                | ✅     |
+| Hide internal UI from guests                                  | ✅     |
+| Use `sanitizeImageUrl` for safe image rendering               | ✅     |
+| No account creation, no order history (post-MVP)              | ✅     |
 
 ---
 

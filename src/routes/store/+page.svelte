@@ -13,7 +13,7 @@
 	import StaffModeBadge from '$lib/components/ui/StaffModeBadge.svelte';
 	import RoleGuard from '$lib/components/ui/RoleGuard.svelte';
 	import type { GroceryCartItemInput } from '$lib/types/groceryCart.schema';
-	
+
 	// Reactive state using Svelte 5 runes
 	let searchQuery = $state('');
 	let selectedCategory = $state('all');
@@ -21,20 +21,11 @@
 	let viewMode = $state('grid'); // 'grid' or 'list'
 
 	// TanStack Query hooks for data management
-	const {
-		productsQuery,
-		activeProducts,
-		isLoading,
-		isError,
-		error
-	} = useProducts({ is_active: true });
+	const { productsQuery, activeProducts, isLoading, isError, error } = useProducts({
+		is_active: true
+	});
 
-	const {
-		cart,
-		cartTotals,
-		addItem,
-		isAddingItem
-	} = useGroceryCart();
+	const { cart, cartTotals, addItem, isAddingItem } = useGroceryCart();
 
 	// Filtered products using $derived
 	const filteredProducts = $derived.by(() => {
@@ -45,16 +36,17 @@
 		// Filter by search query
 		if (searchQuery.trim()) {
 			const query = searchQuery.toLowerCase();
-			filtered = filtered.filter(product => 
-				product.name.toLowerCase().includes(query) ||
-				product.description?.toLowerCase().includes(query) ||
-				product.sku.toLowerCase().includes(query)
+			filtered = filtered.filter(
+				(product) =>
+					product.name.toLowerCase().includes(query) ||
+					product.description?.toLowerCase().includes(query) ||
+					product.sku.toLowerCase().includes(query)
 			);
 		}
 
 		// Filter by category
 		if (selectedCategory !== 'all') {
-			filtered = filtered.filter(product => product.category_id === selectedCategory);
+			filtered = filtered.filter((product) => product.category_id === selectedCategory);
 		}
 
 		return filtered;
@@ -102,15 +94,18 @@
 					<StaffModeBadge />
 
 					<!-- Cart Button -->
-					<Button 
-						variant="outline" 
+					<Button
+						variant="outline"
 						class="relative flex items-center gap-2"
 						onclick={toggleCartSidebar}
 					>
 						<ShoppingCart class="h-4 w-4" />
 						Cart
 						{#if cartTotals && cartTotals.item_count > 0}
-							<Badge variant="destructive" class="absolute -right-2 -top-2 h-5 w-5 p-0 flex items-center justify-center text-xs">
+							<Badge
+								variant="destructive"
+								class="absolute -right-2 -top-2 h-5 w-5 p-0 flex items-center justify-center text-xs"
+							>
 								{cartTotals.item_count}
 							</Badge>
 						{/if}
@@ -127,18 +122,14 @@
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-2">
 						<Badge variant="default">Staff Mode Active</Badge>
-						<span class="text-sm text-muted-foreground">Additional tools and information available</span>
+						<span class="text-sm text-muted-foreground"
+							>Additional tools and information available</span
+						>
 					</div>
 					<div class="flex gap-2">
-						<Button variant="outline" size="sm">
-							Inventory Management
-						</Button>
-						<Button variant="outline" size="sm">
-							Price Updates
-						</Button>
-						<Button variant="outline" size="sm">
-							Reports
-						</Button>
+						<Button variant="outline" size="sm">Inventory Management</Button>
+						<Button variant="outline" size="sm">Price Updates</Button>
+						<Button variant="outline" size="sm">Reports</Button>
 					</div>
 				</div>
 			</CardContent>
@@ -184,17 +175,21 @@
 					<div class="text-center py-12">
 						<div class="text-lg font-semibold mb-2">No products found</div>
 						<p class="text-muted-foreground mb-4">
-							{searchQuery ? `No results for "${searchQuery}"` : 'No products available in this category'}
+							{searchQuery
+								? `No results for "${searchQuery}"`
+								: 'No products available in this category'}
 						</p>
-						<Button onclick={() => { searchQuery = ''; selectedCategory = 'all'; }}>Clear Filters</Button>
+						<Button
+							onclick={() => {
+								searchQuery = '';
+								selectedCategory = 'all';
+							}}>Clear Filters</Button
+						>
 					</div>
 				{:else}
 					<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 						{#each filteredProducts as product (product.id)}
-							<ProductCard 
-								{product} 
-								onAddToCart={addToCart}
-							/>
+							<ProductCard {product} onAddToCart={addToCart} />
 						{/each}
 					</div>
 				{/if}
@@ -205,7 +200,5 @@
 
 <!-- Cart Sidebar -->
 {#if showCartSidebar}
-	<CartSidebar 
-		bind:open={showCartSidebar}
-	/>
+	<CartSidebar bind:open={showCartSidebar} />
 {/if}

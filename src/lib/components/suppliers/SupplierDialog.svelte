@@ -1,5 +1,12 @@
 <script lang="ts">
-	import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '$lib/components/ui/dialog';
+	import {
+		Dialog,
+		DialogContent,
+		DialogHeader,
+		DialogTitle,
+		DialogDescription,
+		DialogFooter
+	} from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
@@ -14,13 +21,14 @@
 		supplier?: Supplier | null;
 	} = $props();
 
-	const { createSupplier, updateSupplier, isCreating, isUpdating, createError, updateError } = useSuppliers();
+	const { createSupplier, updateSupplier, isCreating, isUpdating, createError, updateError } =
+		useSuppliers();
 
 	let formData: Partial<SupplierInput> = $state({});
 
 	$effect(() => {
 		if (supplier) {
-			formData = { 
+			formData = {
 				name: supplier.name,
 				code: supplier.code,
 				email: supplier.email,
@@ -37,11 +45,11 @@
 				tags: supplier.tags
 			};
 		} else {
-			formData = { 
-				name: '', 
-				code: '', 
-				email: '', 
-				phone: '', 
+			formData = {
+				name: '',
+				code: '',
+				email: '',
+				phone: '',
 				currency: 'USD',
 				is_active: true
 			};
@@ -65,7 +73,9 @@
 		<DialogHeader>
 			<DialogTitle>{isEditing ? 'Edit Supplier' : 'Add New Supplier'}</DialogTitle>
 			<DialogDescription>
-				{isEditing ? 'Update the details for this supplier.' : 'Enter the details for the new supplier.'}
+				{isEditing
+					? 'Update the details for this supplier.'
+					: 'Enter the details for the new supplier.'}
 			</DialogDescription>
 		</DialogHeader>
 
@@ -99,7 +109,9 @@
 		{/if}
 
 		<DialogFooter>
-			<Button variant="outline" onclick={() => (open = false)} disabled={isCreating || isUpdating}>Cancel</Button>
+			<Button variant="outline" onclick={() => (open = false)} disabled={isCreating || isUpdating}
+				>Cancel</Button
+			>
 			<Button onclick={handleSubmit} disabled={isCreating || isUpdating}>
 				{#if isCreating || isUpdating}
 					{isEditing ? 'Updating...' : 'Creating...'}

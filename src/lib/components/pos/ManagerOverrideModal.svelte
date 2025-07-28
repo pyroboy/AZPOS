@@ -69,36 +69,36 @@
 
 <Dialog.Root bind:open={show} onOpenChange={(isOpen) => !isOpen && handleCancel()}>
 	<Dialog.Content class="sm:max-w-md">
-			<Dialog.Header>
-				<Dialog.Title>{title}</Dialog.Title>
-				<Dialog.Description>{message}</Dialog.Description>
-			</Dialog.Header>
-			<div class="grid gap-4 py-4">
-				<div class="grid gap-2">
-					<Label for="pin">Manager PIN</Label>
-					<Input
+		<Dialog.Header>
+			<Dialog.Title>{title}</Dialog.Title>
+			<Dialog.Description>{message}</Dialog.Description>
+		</Dialog.Header>
+		<div class="grid gap-4 py-4">
+			<div class="grid gap-2">
+				<Label for="pin">Manager PIN</Label>
+				<Input
 					ref={pinInputRef}
-						id="pin"
-						type="password"
-						bind:value={pin}
-						onkeydown={handleKeydown}
-						autocomplete="one-time-code"
-						required
-					/>
-				</div>
-				{#if needsReason}
-					<div class="grid gap-2">
-						<Label for="reason">Reason (Optional)</Label>
-						<Input id="reason" bind:value={reason} onkeydown={handleKeydown} />
-					</div>
-				{/if}
-				{#if error}
-					<p class="text-sm font-medium text-destructive">{error}</p>
-				{/if}
+					id="pin"
+					type="password"
+					bind:value={pin}
+					onkeydown={handleKeydown}
+					autocomplete="one-time-code"
+					required
+				/>
 			</div>
-			<Dialog.Footer>
-				<Button type="button" variant="outline" onclick={handleCancel}>Cancel</Button>
-				<Button type="submit" onclick={handleSubmit}>Confirm</Button>
-			</Dialog.Footer>
+			{#if needsReason}
+				<div class="grid gap-2">
+					<Label for="reason">Reason (Optional)</Label>
+					<Input id="reason" bind:value={reason} onkeydown={handleKeydown} />
+				</div>
+			{/if}
+			{#if error}
+				<p class="text-sm font-medium text-destructive">{error}</p>
+			{/if}
+		</div>
+		<Dialog.Footer>
+			<Button type="button" variant="outline" onclick={handleCancel}>Cancel</Button>
+			<Button type="submit" onclick={handleSubmit}>Confirm</Button>
+		</Dialog.Footer>
 	</Dialog.Content>
 </Dialog.Root>

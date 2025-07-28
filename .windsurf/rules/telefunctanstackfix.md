@@ -4,7 +4,7 @@ trigger: manual
 
 This guideline will help you fix these errors systematically.
 
------
+---
 
 ### \#\# 1. Fixing TanStack Query Accessor Errors (`.data`, `.mutate`, `.isPending`, etc.)
 
@@ -14,9 +14,9 @@ This is the most common issue in your logs. You're trying to access properties o
 
 You're getting errors like:
 
-  * `Property 'data' does not exist on type 'CreateQueryResult<...>'`
-  * `Property 'mutate' does not exist on type 'CreateMutationResult<...>'`
-  * `Property 'isPending' does not exist on type 'CreateQueryResult<...>'`
+- `Property 'data' does not exist on type 'CreateQueryResult<...>'`
+- `Property 'mutate' does not exist on type 'CreateMutationResult<...>'`
+- `Property 'isPending' does not exist on type 'CreateQueryResult<...>'`
 
 #### **The Cause**
 
@@ -33,8 +33,8 @@ You need to either destructure the reactive properties from the query/mutation r
 ```typescript
 // lib/data/cart.ts or your component
 const cartQuery = createQuery({
-  queryKey: ['cart'],
-  queryFn: () => getCart() // Your telefunc
+	queryKey: ['cart'],
+	queryFn: () => getCart() // Your telefunc
 });
 
 const items = cartQuery.data.items; // ❌ ERROR: .data does not exist on cartQuery
@@ -50,9 +50,14 @@ import { createQuery } from '@tanstack/svelte-query';
 import { getCart } from '$lib/server/telefuncs/cart.telefunc';
 
 // Destructure the reactive properties
-const { data: cartData, isPending, isError, error } = createQuery({
-  queryKey: ['cart'],
-  queryFn: () => getCart()
+const {
+	data: cartData,
+	isPending,
+	isError,
+	error
+} = createQuery({
+	queryKey: ['cart'],
+	queryFn: () => getCart()
 });
 
 // Now use them as stores with the '$' prefix in your logic or template
@@ -66,10 +71,12 @@ export const isCartLoading = $derived($isPending);
 ❌ **Incorrect:**
 
 ```typescript
-const addItemMutation = createMutation({ /* ... */ });
+const addItemMutation = createMutation({
+	/* ... */
+});
 
 function handleAddItem(product) {
-  addItemMutation.mutate(product); // ❌ ERROR: .mutate does not exist
+	addItemMutation.mutate(product); // ❌ ERROR: .mutate does not exist
 }
 ```
 
@@ -83,20 +90,20 @@ import { addItemToCart } from '$lib/server/telefuncs/cart.telefunc';
 
 // Destructure the mutation function and state
 const { mutate: addItem, isPending: isAddingItem } = createMutation({
-  mutationFn: (product) => addItemToCart(product),
-  // ... onSuccess, onError, etc.
+	mutationFn: (product) => addItemToCart(product)
+	// ... onSuccess, onError, etc.
 });
 
 // To use it, call the destructured function directly
 function handleAddItem(product) {
-  addItem(product); // ✅ Correct!
+	addItem(product); // ✅ Correct!
 }
 
 // You can access state reactively
 console.log($isAddingItem);
 ```
 
------
+---
 
 ### \#\# 2. Fixing Telefunc Server Context Errors (`Context.user`)
 
@@ -166,7 +173,7 @@ You haven't told TypeScript what the shape of your Telefunc context is. Telefunc
 
 After these two steps, TypeScript will no longer complain about `context.user` in your `.telefunc.ts` files.
 
------
+---
 
 ### \#\# 3. Fixing General TypeScript & ESLint Hygiene
 
@@ -174,14 +181,14 @@ These errors are side-effects of your refactoring.
 
 #### **The Problem**
 
-  * `Parameter '...' implicitly has an 'any' type.`
-  * `Unexpected any. Specify a different type.`
-  * `'Discount' is defined but never used.`
+- `Parameter '...' implicitly has an 'any' type.`
+- `Unexpected any. Specify a different type.`
+- `'Discount' is defined but never used.`
 
 #### **The Cause**
 
-  * **Implicit `any`:** You have function parameters without explicit types, and TypeScript can't infer them.
-  * **Unused variables:** You have leftover types or variables from your old RuneStore implementation that are no longer needed.
+- **Implicit `any`:** You have function parameters without explicit types, and TypeScript can't infer them.
+- **Unused variables:** You have leftover types or variables from your old RuneStore implementation that are no longer needed.
 
 #### **The Solution: Leverage Your Schemas and Clean Up**
 
@@ -191,7 +198,9 @@ These errors are side-effects of your refactoring.
 
     ```typescript
     // Parameter 'discount' implicitly has an 'any' type
-    export const createDiscount = (discount) => { /* ... */ };
+    export const createDiscount = (discount) => {
+    	/* ... */
+    };
     ```
 
     ✅ **Correct:**
@@ -204,8 +213,8 @@ These errors are side-effects of your refactoring.
     type DiscountCreatePayload = z.infer<typeof discountCreateSchema>;
 
     export const createDiscount = (discount: DiscountCreatePayload) => {
-        // Now 'discount' is fully typed!
-        return telefuncCreateDiscount(discount);
+    	// Now 'discount' is fully typed!
+    	return telefuncCreateDiscount(discount);
     };
     ```
 

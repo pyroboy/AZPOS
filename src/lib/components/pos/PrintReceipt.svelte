@@ -55,20 +55,29 @@
 	function handleClose() {
 		onClose?.();
 	}
-
 </script>
 
-<Dialog.Root open={!!receiptData} onOpenChange={(o) => { if (!o) handleClose(); }}>
+<Dialog.Root
+	open={!!receiptData}
+	onOpenChange={(o) => {
+		if (!o) handleClose();
+	}}
+>
 	{#if receiptData}
 		<Dialog.Content class="sm:max-w-md bg-gray-100">
 			<Dialog.Header>
 				<Dialog.Title>Receipt Preview</Dialog.Title>
 			</Dialog.Header>
 
-						<div id="receipt-printable-area" class="my-4 max-h-[60vh] overflow-y-auto p-2 bg-white rounded-sm">
+			<div
+				id="receipt-printable-area"
+				class="my-4 max-h-[60vh] overflow-y-auto p-2 bg-white rounded-sm"
+			>
 				{#if receiptData}
 					<!-- Create a simple receipt preview since GeneratedReceipt doesn't match Receipt component props -->
-					<div class="bg-white text-black p-4 font-mono text-xs max-w-sm mx-auto border border-dashed border-gray-400">
+					<div
+						class="bg-white text-black p-4 font-mono text-xs max-w-sm mx-auto border border-dashed border-gray-400"
+					>
 						<header class="text-center mb-4">
 							<h1 class="text-lg font-bold uppercase">AZPOS Pharmacy</h1>
 							<p>Receipt Preview</p>
@@ -107,12 +116,22 @@
 			</div>
 
 			<Dialog.Footer class="sm:justify-between grid grid-cols-2 gap-2">
-												<div onclick={() => handleClose()} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && handleClose()}>
+				<div
+					onclick={() => handleClose()}
+					role="button"
+					tabindex="0"
+					onkeydown={(e) => e.key === 'Enter' && handleClose()}
+				>
 					<Button variant="outline" class="w-full">
 						<X class="mr-2 h-4 w-4" /> Close
 					</Button>
 				</div>
-												<div onclick={() => printReceipt()} role="button" tabindex="0" onkeydown={(e) => e.key === 'Enter' && printReceipt()}>
+				<div
+					onclick={() => printReceipt()}
+					role="button"
+					tabindex="0"
+					onkeydown={(e) => e.key === 'Enter' && printReceipt()}
+				>
 					<Button class="w-full">
 						<Printer class="mr-2 h-4 w-4" /> Print Receipt
 					</Button>

@@ -4,7 +4,7 @@
 	interface Props {
 		value?: string;
 		onscan?: (code: string) => void;
-		[key: string]: any;   // allow all other Input props
+		[key: string]: any; // allow all other Input props
 	}
 
 	let { value = $bindable(''), onscan, ...rest }: Props = $props();

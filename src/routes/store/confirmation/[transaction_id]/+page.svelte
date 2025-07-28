@@ -1,6 +1,5 @@
 <!-- Agent: agent_coder | File: +page.svelte | Last Updated: 2025-07-28T10:29:03+08:00 -->
 <script lang="ts">
-
 	import { goto } from '$app/navigation';
 	import { onMount } from 'svelte';
 	import { Button } from '$lib/components/ui/button';
@@ -9,14 +8,14 @@
 	import { Separator } from '$lib/components/ui/separator';
 	import { CheckCircle, Download, ArrowLeft, ShoppingBag, Clock, MapPin } from 'lucide-svelte';
 	import { page } from '$app/stores';
-	
+
 	// Type definitions
 	interface OrderModifier {
 		modifier_id: string;
 		modifier_name: string;
 		price_adjustment: number;
 	}
-	
+
 	interface OrderItem {
 		cart_item_id: string;
 		product_name: string;
@@ -28,7 +27,7 @@
 		selected_modifiers: OrderModifier[];
 		applied_discounts: any[];
 	}
-	
+
 	interface OrderData {
 		transaction_id: string;
 		order_number: string;
@@ -50,10 +49,10 @@
 		estimated_ready_time: string;
 		pickup_location: string;
 	}
-	
+
 	// Get transaction ID from URL params
 	let transactionId = $derived($page.params.transaction_id);
-	
+
 	// Mock order data - in real app, this would be fetched from API
 	let orderData = $state<OrderData>({
 		transaction_id: $page.params.transaction_id || '',
@@ -79,7 +78,7 @@
 					{
 						modifier_id: 'mod1',
 						modifier_name: 'Extra Strength',
-						price_adjustment: 2.00
+						price_adjustment: 2.0
 					}
 				],
 				applied_discounts: []
@@ -89,15 +88,15 @@
 			subtotal: 25.98,
 			discountAmount: 0,
 			tax: 3.12,
-			total: 29.10
+			total: 29.1
 		},
 		estimated_ready_time: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes from now
 		pickup_location: 'Main Counter'
 	});
-	
+
 	let loading = $state<boolean>(true);
 	let error = $state<string | null>(null);
-	
+
 	// Format price
 	function formatPrice(price: number): string {
 		return new Intl.NumberFormat('en-US', {
@@ -105,7 +104,7 @@
 			currency: 'USD'
 		}).format(price);
 	}
-	
+
 	// Format date/time
 	function formatDateTime(dateString: string): string {
 		return new Date(dateString).toLocaleString('en-US', {
@@ -116,7 +115,7 @@
 			minute: '2-digit'
 		});
 	}
-	
+
 	// Format time only
 	function formatTime(dateString: string): string {
 		return new Date(dateString).toLocaleString('en-US', {
@@ -124,7 +123,7 @@
 			minute: '2-digit'
 		});
 	}
-	
+
 	// Get payment method display name
 	function getPaymentMethodName(method: string): string {
 		const methods: Record<string, string> = {
@@ -134,35 +133,41 @@
 		};
 		return methods[method] || method;
 	}
-	
+
 	// Get status badge variant
-	function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+	function getStatusVariant(status: string): 'default' | 'secondary' | 'destructive' | 'outline' {
 		switch (status) {
-			case 'confirmed': return 'default';
-			case 'preparing': return 'secondary';
-			case 'ready': return 'default';
-			case 'completed': return 'default';
-			case 'cancelled': return 'destructive';
-			default: return 'secondary';
+			case 'confirmed':
+				return 'default';
+			case 'preparing':
+				return 'secondary';
+			case 'ready':
+				return 'default';
+			case 'completed':
+				return 'default';
+			case 'cancelled':
+				return 'destructive';
+			default:
+				return 'secondary';
 		}
 	}
-	
+
 	// Handle print receipt
 	function printReceipt() {
 		window.print();
 	}
-	
+
 	// Handle download receipt
 	function downloadReceipt() {
 		// In a real app, this would generate and download a PDF
 		console.log('Downloading receipt for order:', orderData.order_number);
 	}
-	
+
 	// Continue shopping
 	function continueShopping() {
 		goto('/store');
 	}
-	
+
 	// Load order data
 	onMount(async () => {
 		try {
@@ -170,9 +175,9 @@
 			// const response = await fetch(`/store/api/orders/${transactionId}`);
 			// if (!response.ok) throw new Error('Order not found');
 			// orderData = await response.json();
-			
+
 			// Simulate loading delay
-			await new Promise(resolve => setTimeout(resolve, 1000));
+			await new Promise((resolve) => setTimeout(resolve, 1000));
 			loading = false;
 		} catch (error) {
 			error = error as string;
@@ -214,7 +219,7 @@
 				Thank you for your order. We'll have it ready for you soon.
 			</p>
 		</div>
-		
+
 		<!-- Order Summary Cards -->
 		<div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
 			<!-- Order Info -->
@@ -250,7 +255,7 @@
 					</div>
 				</CardContent>
 			</Card>
-			
+
 			<!-- Pickup Info -->
 			<Card>
 				<CardHeader>
@@ -276,7 +281,7 @@
 				</CardContent>
 			</Card>
 		</div>
-		
+
 		<!-- Order Items -->
 		<Card class="mb-6">
 			<CardHeader>
@@ -289,18 +294,20 @@
 							<!-- Product Image -->
 							<div class="w-16 h-16 bg-muted rounded-md overflow-hidden flex-shrink-0">
 								{#if item.image_url}
-									<img 
-										src={item.image_url} 
+									<img
+										src={item.image_url}
 										alt={item.product_name}
 										class="w-full h-full object-cover"
 									/>
 								{:else}
-									<div class="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
+									<div
+										class="w-full h-full flex items-center justify-center text-muted-foreground text-xs"
+									>
 										No Image
 									</div>
 								{/if}
 							</div>
-							
+
 							<!-- Item Details -->
 							<div class="flex-1">
 								<div class="flex justify-between items-start">
@@ -313,7 +320,7 @@
 										<div class="font-semibold">{formatPrice(item.final_price)}</div>
 									</div>
 								</div>
-								
+
 								<!-- Modifiers -->
 								{#if item.selected_modifiers && item.selected_modifiers.length > 0}
 									<div class="mt-2 flex flex-wrap gap-1">
@@ -330,7 +337,7 @@
 				</div>
 			</CardContent>
 		</Card>
-		
+
 		<!-- Order Total -->
 		<Card class="mb-8">
 			<CardHeader>
@@ -342,21 +349,21 @@
 						<span>Subtotal</span>
 						<span>{formatPrice(orderData.totals.subtotal)}</span>
 					</div>
-					
+
 					{#if orderData.totals.discountAmount > 0}
 						<div class="flex justify-between text-green-600">
 							<span>Discount Applied</span>
 							<span>-{formatPrice(orderData.totals.discountAmount)}</span>
 						</div>
 					{/if}
-					
+
 					<div class="flex justify-between">
 						<span>Tax</span>
 						<span>{formatPrice(orderData.totals.tax)}</span>
 					</div>
-					
+
 					<Separator />
-					
+
 					<div class="flex justify-between font-bold text-lg">
 						<span>Total</span>
 						<span>{formatPrice(orderData.totals.total)}</span>
@@ -364,7 +371,7 @@
 				</div>
 			</CardContent>
 		</Card>
-		
+
 		<!-- Action Buttons -->
 		<div class="flex flex-col sm:flex-row gap-4 justify-center">
 			<Button variant="outline" onclick={printReceipt}>
@@ -380,16 +387,16 @@
 				Continue Shopping
 			</Button>
 		</div>
-		
+
 		<!-- Customer Support -->
 		<div class="text-center mt-8 p-4 bg-muted rounded-lg">
 			<p class="text-sm text-muted-foreground">
-				Questions about your order? Contact us at <strong>(555) 123-4567</strong> or email <strong>support@azpos.com</strong>
+				Questions about your order? Contact us at <strong>(555) 123-4567</strong> or email
+				<strong>support@azpos.com</strong>
 			</p>
 		</div>
 	{/if}
 </div>
 
 <style>
-
 </style>

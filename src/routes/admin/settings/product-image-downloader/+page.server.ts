@@ -23,7 +23,7 @@ async function parseCsv(csvText: string): Promise<Product[]> {
 				}
 			},
 			error: (error: Error) => {
-					reject(error);
+				reject(error);
 			}
 		});
 	});
@@ -41,7 +41,10 @@ export const actions: Actions = {
 			const filePath = path.resolve('./static', 'products_master.csv');
 			const csvText = await fs.readFile(filePath, 'utf-8');
 			const products = await parseCsv(csvText);
-			const productsWithStatus: ProductWithStatus[] = products.map((p) => ({ ...p, status: 'initial' }));
+			const productsWithStatus: ProductWithStatus[] = products.map((p) => ({
+				...p,
+				status: 'initial'
+			}));
 			return { success: true, products: productsWithStatus };
 		} catch (e) {
 			console.error('Failed to load master CSV:', e);
@@ -61,7 +64,10 @@ export const actions: Actions = {
 		try {
 			const csvText = await file.text();
 			const products = await parseCsv(csvText);
-			const productsWithStatus: ProductWithStatus[] = products.map((p) => ({ ...p, status: 'initial' }));
+			const productsWithStatus: ProductWithStatus[] = products.map((p) => ({
+				...p,
+				status: 'initial'
+			}));
 			return { success: true, products: productsWithStatus };
 		} catch (e) {
 			console.error('Failed to process uploaded CSV:', e);
@@ -70,60 +76,73 @@ export const actions: Actions = {
 	},
 
 	exportCsv: async ({ request }) => {
-        const formData = await request.formData();
-        const productsJson = formData.get('products') as string;
+		const formData = await request.formData();
+		const productsJson = formData.get('products') as string;
 
-        try {
-            const products: ProductWithStatus[] = JSON.parse(productsJson);
+		try {
+			const products: ProductWithStatus[] = JSON.parse(productsJson);
 
-            const productsToExport = await Promise.all(
-                products.map(async (p) => {
-                    // Start with the existing URL, or a blank string if null/undefined
-                    let finalImageUrl = p.image_url || '';
+			const productsToExport = await Promise.all(
+				products.map(async (p) => {
+					// Start with the existing URL, or a blank string if null/undefined
+					let finalImageUrl = p.image_url || '';
 
-                    // ONLY process the URL if it's a full online link
-                    if (finalImageUrl && finalImageUrl.startsWith('http')) {
-                        try {
-                            const response = await fetch(finalImageUrl, { method: 'HEAD', signal: AbortSignal.timeout(5000) });
-                            if (response.ok) {
-                                const contentType = response.headers.get('content-type');
-                                if (contentType && contentType.startsWith('image/')) {
-                                    const fileExtension = contentType.split('/')[1] || 'jpg';
-                                    // Overwrite with the new local path
-                                    finalImageUrl = `/images/products/${p.sku}.${fileExtension}`;
-                                }
-                            }
-                        } catch (fetchError) {
-                            console.error(`Could not fetch headers for ${finalImageUrl}:`, fetchError);
-                            // If fetching fails, you might want to keep the original URL or clear it.
-                            // Here we clear it to avoid broken links in the export.
-                            finalImageUrl = '';
-                        }
-                    }
+					// ONLY process the URL if it's a full online link
+					if (finalImageUrl && finalImageUrl.startsWith('http')) {
+						try {
+							const response = await fetch(finalImageUrl, {
+								method: 'HEAD',
+								signal: AbortSignal.timeout(5000)
+							});
+							if (response.ok) {
+								const contentType = response.headers.get('content-type');
+								if (contentType && contentType.startsWith('image/')) {
+									const fileExtension = contentType.split('/')[1] || 'jpg';
+									// Overwrite with the new local path
+									finalImageUrl = `/images/products/${p.sku}.${fileExtension}`;
+								}
+							}
+						} catch (fetchError) {
+							console.error(`Could not fetch headers for ${finalImageUrl}:`, fetchError);
+							// If fetching fails, you might want to keep the original URL or clear it.
+							// Here we clear it to avoid broken links in the export.
+							finalImageUrl = '';
+						}
+					}
 
-                    // Return the product data, preserving existing local paths or blanks
-                    return {
-                        id: p.id,
-                        sku: p.sku,
-                        name: p.name,
-                        description: p.description,
-                        stock: p.stock,
-                        price: p.price,
-                        category_id: p.category_id,
-                        supplier_id: p.supplier_id,
-                        image_url: finalImageUrl
-                    };
-                })
-            );
+					// Return the product data, preserving existing local paths or blanks
+					return {
+						id: p.id,
+						sku: p.sku,
+						name: p.name,
+						description: p.description,
+						stock: p.stock,
+						price: p.price,
+						category_id: p.category_id,
+						supplier_id: p.supplier_id,
+						image_url: finalImageUrl
+					};
+				})
+			);
 
-            const csv = Papa.unparse(productsToExport, {
-                columns: ['id', 'sku', 'name', 'description', 'stock', 'price', 'category_id', 'supplier_id', 'image_url']
-            });
+			const csv = Papa.unparse(productsToExport, {
+				columns: [
+					'id',
+					'sku',
+					'name',
+					'description',
+					'stock',
+					'price',
+					'category_id',
+					'supplier_id',
+					'image_url'
+				]
+			});
 
-            return { success: true, csv };
-        } catch (e) {
-            console.error('Failed to export CSV:', e);
-            return fail(500, { error: 'Failed to generate CSV for export.' });
-        }
-    }
+			return { success: true, csv };
+		} catch (e) {
+			console.error('Failed to export CSV:', e);
+			return fail(500, { error: 'Failed to generate CSV for export.' });
+		}
+	}
 };

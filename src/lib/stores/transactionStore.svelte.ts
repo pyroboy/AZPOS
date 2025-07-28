@@ -7,39 +7,39 @@ export type NewTransactionInput = Omit<Transaction, 'id' | 'created_at' | 'statu
 export const transactions = $state<Transaction[]>([]);
 
 // Derived state for completed transactions
-export const completedTransactions = $derived(transactions.filter(t => t.status === 'completed'));
+export const completedTransactions = $derived(transactions.filter((t) => t.status === 'completed'));
 
 // Derived state for pending transactions
-export const pendingTransactions = $derived(transactions.filter(t => t.status === 'pending'));
+export const pendingTransactions = $derived(transactions.filter((t) => t.status === 'pending'));
 
 // Export functions that directly mutate the state
 export function addTransaction(transactionData: NewTransactionInput): Transaction {
-    const newTransaction: Transaction = {
-        ...transactionData,
-        id: crypto.randomUUID(),
-        created_at: new SvelteDate().toISOString(),
-        status: 'completed' // Default to completed, can be updated later
-    };
-    transactions.push(newTransaction);
-    return newTransaction;
+	const newTransaction: Transaction = {
+		...transactionData,
+		id: crypto.randomUUID(),
+		created_at: new SvelteDate().toISOString(),
+		status: 'completed' // Default to completed, can be updated later
+	};
+	transactions.push(newTransaction);
+	return newTransaction;
 }
 
 export function findById(id: string): Transaction | undefined {
-    return transactions.find(t => t.id === id);
+	return transactions.find((t) => t.id === id);
 }
 
 export function updateStatus(id: string, status: 'completed' | 'voided' | 'pending') {
-    const index = transactions.findIndex(t => t.id === id);
-    if (index !== -1) {
-        transactions[index] = { ...transactions[index], status };
-    }
+	const index = transactions.findIndex((t) => t.id === id);
+	if (index !== -1) {
+		transactions[index] = { ...transactions[index], status };
+	}
 }
 
 export function setTransactions(newTransactions: Transaction[]) {
-    transactions.length = 0; // Clear existing transactions
-    transactions.push(...newTransactions);
+	transactions.length = 0; // Clear existing transactions
+	transactions.push(...newTransactions);
 }
 
 export function reset() {
-    transactions.length = 0;
+	transactions.length = 0;
 }

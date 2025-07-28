@@ -45,7 +45,7 @@ export interface CartTotals {
 
 function createCartStore() {
 	const STORAGE_KEY = 'azpos_cart_session';
-	
+
 	// Load initial state from session storage
 	const loadInitialState = (): CartState => {
 		if (browser) {
@@ -67,7 +67,7 @@ function createCartStore() {
 				console.warn('Failed to load cart from session storage:', error);
 			}
 		}
-		
+
 		return {
 			items: [],
 			discount: null,
@@ -82,7 +82,7 @@ function createCartStore() {
 	// 2. Use $derived for computed totals
 	const totals = $derived.by(() => {
 		const subtotal = state.items.reduce((acc, item) => acc + item.subtotal, 0);
-		
+
 		let discount_amount = 0;
 		if (state.discount) {
 			if (state.discount.type === 'percentage') {
@@ -91,12 +91,12 @@ function createCartStore() {
 				discount_amount = state.discount.value;
 			}
 		}
-		
+
 		const taxableAmount = subtotal - discount_amount;
 		const tax = taxableAmount * 0.12; // 12% VAT
 		const total = taxableAmount + tax;
 		const item_count = state.items.reduce((acc, item) => acc + item.quantity, 0);
-		
+
 		return {
 			subtotal,
 			discount_amount,
@@ -109,7 +109,7 @@ function createCartStore() {
 	// 3. Use $effect for localStorage synchronization
 	$effect(() => {
 		if (!browser) return;
-		
+
 		try {
 			localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
 		} catch (error) {
@@ -135,15 +135,27 @@ function createCartStore() {
 	}
 
 	// 4. Methods directly mutate the state
-	function addItem(product: Product, batch: ProductBatch, quantity: number, modifiers: Modifier[] = [], notes?: string) {
+	function addItem(
+		product: Product,
+		batch: ProductBatch,
+		quantity: number,
+		modifiers: Modifier[] = [],
+		notes?: string
+	) {
 		// Validate quantity (max 999 as per schema)
 		const validQuantity = Math.min(Math.max(1, quantity), 999);
-		
-		const modifierIds = modifiers.map((m) => m.id).sort().join(',');
+
+		const modifierIds = modifiers
+			.map((m) => m.id)
+			.sort()
+			.join(',');
 		const existingItem = state.items.find(
 			(item) =>
 				item.product_id === product.id &&
-				item.selected_modifiers?.map((m) => m.modifier_id).sort().join(',') === modifierIds
+				item.selected_modifiers
+					?.map((m) => m.modifier_id)
+					.sort()
+					.join(',') === modifierIds
 		);
 
 		const now = new Date().toISOString();
@@ -152,8 +164,10 @@ function createCartStore() {
 
 		if (existingItem) {
 			const newQuantity = Math.min(existingItem.quantity + validQuantity, 999);
-			const itemIndex = state.items.findIndex(item => item.cart_item_id === existingItem.cart_item_id);
-			
+			const itemIndex = state.items.findIndex(
+				(item) => item.cart_item_id === existingItem.cart_item_id
+			);
+
 			state.items[itemIndex] = {
 				...state.items[itemIndex],
 				quantity: newQuantity,
@@ -186,7 +200,7 @@ function createCartStore() {
 
 			state.items.push(newItem);
 		}
-		
+
 		state.last_updated = now;
 	}
 
@@ -198,13 +212,14 @@ function createCartStore() {
 	function updateQuantity(cartItemId: string, quantity: number) {
 		const validQuantity = Math.min(Math.max(1, quantity), 999);
 		const now = new Date().toISOString();
-		
-		const itemIndex = state.items.findIndex(item => item.cart_item_id === cartItemId);
+
+		const itemIndex = state.items.findIndex((item) => item.cart_item_id === cartItemId);
 		if (itemIndex !== -1) {
 			const item = state.items[itemIndex];
-			const modifierPrice = item.selected_modifiers?.reduce((sum, m) => sum + m.price_adjustment, 0) || 0;
+			const modifierPrice =
+				item.selected_modifiers?.reduce((sum, m) => sum + m.price_adjustment, 0) || 0;
 			const newSubtotal = (item.base_price + modifierPrice) * validQuantity;
-			
+
 			state.items[itemIndex] = {
 				...item,
 				quantity: validQuantity,
@@ -219,13 +234,14 @@ function createCartStore() {
 
 	function updateItemPrice(cartItemId: string, newPrice: number) {
 		const now = new Date().toISOString();
-		const itemIndex = state.items.findIndex(item => item.cart_item_id === cartItemId);
-		
+		const itemIndex = state.items.findIndex((item) => item.cart_item_id === cartItemId);
+
 		if (itemIndex !== -1) {
 			const item = state.items[itemIndex];
-			const modifierPrice = item.selected_modifiers?.reduce((sum, m) => sum + m.price_adjustment, 0) || 0;
+			const modifierPrice =
+				item.selected_modifiers?.reduce((sum, m) => sum + m.price_adjustment, 0) || 0;
 			const newSubtotal = (newPrice + modifierPrice) * item.quantity;
-			
+
 			state.items[itemIndex] = {
 				...item,
 				base_price: newPrice,
@@ -242,8 +258,8 @@ function createCartStore() {
 		// Validate notes length (max 500 chars as per schema)
 		const validNotes = notes.length > 500 ? notes.substring(0, 500) : notes;
 		const now = new Date().toISOString();
-		
-		const itemIndex = state.items.findIndex(item => item.cart_item_id === cartItemId);
+
+		const itemIndex = state.items.findIndex((item) => item.cart_item_id === cartItemId);
 		if (itemIndex !== -1) {
 			state.items[itemIndex] = {
 				...state.items[itemIndex],

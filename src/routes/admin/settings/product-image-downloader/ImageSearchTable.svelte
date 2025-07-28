@@ -30,11 +30,15 @@
 				);
 			} else {
 				console.error('Search failed');
-				products = products.map((p: ProductWithStatus) => (p.sku === product.sku ? { ...p, status: 'error' } : p));
+				products = products.map((p: ProductWithStatus) =>
+					p.sku === product.sku ? { ...p, status: 'error' } : p
+				);
 			}
 		} catch (error) {
 			console.error('Error during search:', error);
-			products = products.map((p: ProductWithStatus) => (p.sku === product.sku ? { ...p, status: 'error' } : p));
+			products = products.map((p: ProductWithStatus) =>
+				p.sku === product.sku ? { ...p, status: 'error' } : p
+			);
 		} finally {
 			isLoading = false;
 		}
@@ -46,7 +50,13 @@
 		const currentProductSku = activeProduct.sku;
 		products = products.map((p: ProductWithStatus) => {
 			if (p.sku === currentProductSku) {
-				return { ...p, image_url: image.image_url, status: 'selected', foundImages: [], imageBlob: blob };
+				return {
+					...p,
+					image_url: image.image_url,
+					status: 'selected',
+					foundImages: [],
+					imageBlob: blob
+				};
 			}
 			return p;
 		});
@@ -89,18 +99,14 @@
 		for (const product of productsToUpdate) {
 			try {
 				const response = await fetch(
-					`/admin/settings/product-image-downloader/search?name=${encodeURIComponent(
-						product.name
-					)}`
+					`/admin/settings/product-image-downloader/search?name=${encodeURIComponent(product.name)}`
 				);
 				if (response.ok) {
 					const data = await response.json();
 					const firstImage = data.images?.[0];
 					if (firstImage) {
 						updatedProducts = updatedProducts.map((p) =>
-							p.sku === product.sku
-								? { ...p, image_url: firstImage.image_url, status: 'found' }
-								: p
+							p.sku === product.sku ? { ...p, image_url: firstImage.image_url, status: 'found' } : p
 						);
 					} else {
 						updatedProducts = updatedProducts.map((p) =>
@@ -149,7 +155,7 @@
 						src={product.image_url}
 						fallbackSrc={product.selected_image_url}
 						alt={product.name}
-						product={product}
+						{product}
 					/>
 				</Table.Cell>
 				<Table.Cell class="capitalize">{product.status}</Table.Cell>

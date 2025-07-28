@@ -12,16 +12,16 @@ export let viewMode = $state<ViewMode>(initialValue);
 
 // Use $effect to sync changes to localStorage
 $effect(() => {
-    if (!browser) return;
-    
-    localStorage.setItem(KEY, viewMode);
+	if (!browser) return;
+
+	localStorage.setItem(KEY, viewMode);
 });
 
 // Export function to change view mode
 export function setViewMode(mode: ViewMode) {
-    viewMode = mode;
+	viewMode = mode;
 }
 
 export function toggleViewMode() {
-    viewMode = viewMode === 'card' ? 'table' : 'card';
+	viewMode = viewMode === 'card' ? 'table' : 'card';
 }

@@ -1,145 +1,153 @@
 {
-    "schemaVersion": "1.4",
-    "lastUpdated": "2025-07-28T09:28:00Z",
-    "generalDirectives": {
-      "logTimestampFormat": "ISO_8601",
-      "encoding": "UTF-8",
-      "fileHeaderTemplate": "/* Agent: {{agentId}} | File: {{fileName}} | Last Updated: {{timestamp}} */",
-      "technologyStack": {
-        "framework": "Svelte",
-        "version": 5,
-        "metaFramework": "SvelteKit",
-        "description": "All development and architectural planning must be specialized for Svelte 5 and SvelteKit."
-      }
-    },
-    "fileHandlingStrategy": {
-      "description": "Defines how agents should interact with files in their memory directory.",
-      "defaultBehavior": "overwrite",
-      "exceptions": {
-        "knowledge.md": {
-          "mode": "append-only",
-          "description": "Knowledge is cumulative and must never be deleted."
-        },
-        "tasks.json": {
-          "mode": "update-in-place",
-          "description": "The task list is a persistent log. Update status but do not remove entries."
-        }
-      }
-    },
-    "stateManagement": {
-      "description": "Rules for managing state.json. This file is overwritten on each update to reflect the current state.",
-      "schema": {
-        "type": "object",
-        "properties": {
-          "agentId": { "type": "string" },
-          "status": { "enum": ["idle", "active", "error", "pending_dependency"] },
-          "currentTask": { "type": "string", "description": "ID of the active task from tasks.json" },
-          "lastStatusChange": { "type": "string", "format": "date-time" },
-          "message": { "type": "string", "description": "A human-readable status message, especially for errors." }
-        },
-        "required": ["agentId", "status", "lastStatusChange"]
-      }
-    },
-    "taskManagement": {
-      "description": "Structure and states for tasks within tasks.json.",
-      "rules": [
-        "The tasks array is additive; tasks should be updated in-place (e.g., changing status to 'completed'), but never deleted."
-      ],
-      "schema": {
-        "type": "array",
-        "items": {
-          "type": "object",
-          "properties": {
-            "taskId": { "type": "string" },
-            "assignedBy": { "type": "string", "default": "QueenAI" },
-            "description": { "type": "string" },
-            "status": { "enum": ["pending", "in_progress", "completed", "failed"] },
-            "displayHint": {
-              "type": "string",
-              "enum": ["normal", "strikethrough"],
-              "description": "A UI hint for rendering. 'strikethrough' should be used for 'completed' status."
-            },
-            "dependencies": {
-              "type": "array",
-              "items": { "type": "string", "description": "Path to required knowledge file, e.g., memory/agents/agent_architect/knowledge.md" }
-            },
-            "startTime": { "type": "string", "format": "date-time" },
-            "endTime": { "type": "string", "format": "date-time" },
-            "outputSummary": { "type": "string", "description": "A brief summary of the task outcome." }
-          },
-          "required": ["taskId", "description", "status"]
-        }
-      }
-    },
-    "knowledgeManagement": {
-      "description": "Formatting guidelines for the agent's knowledge.md file. This file is always append-only.",
-      "markdownTemplate": [
-        "## Entry: {{entry_id}}",
-        "**Timestamp:** {{timestamp}}",
-        "**Task ID:** {{task_id}}",
-        "**Type:** [Finding | Code Snippet | Final Design | Analysis | Error Log]",
-        "",
-        "### Content",
-        "---",
-        "[...detailed content here...]",
-        ""
-      ],
-      "rules": [
-        "Each new piece of knowledge must be a new entry.",
-        "Entries can edit previous knowledge only when neccesary.",
-        "Reference the taskId that generated the knowledge.",
-        "For code, use appropriate markdown code blocks with language identifiers."
-      ]
-    },
-    "calibrationManagement": {
-      "description": "Defines the key inter-agent relationships and trust matrix. This section governs how agents collaborate by defining their primary sources of information and core instructions.",
-      "agentDependencyMatrix": {
-        "agent_planner": {
-          "primarySources": ["agent_researcher"],
-          "primingPrompt": "You are the Planner Agent. Your role is to deconstruct high-level user needs into a sequence of actionable tasks. You rely on data from the Researcher to create comprehensive plans. Your output is the foundational task list that other agents will execute.",
-          "description": "Synthesizes user requirements and research into the master plan."
-        },
-        "agent_architect": {
-          "primarySources": ["agent_planner", "agent_researcher"],
-          "primingPrompt": "You are the Architect Agent. Your purpose is to design robust and scalable system architectures based on the Planner's specifications. You create technical blueprints, define data schemas, and set coding standards. Your designs are the definitive guide for the Coder Agent.",
-          "description": "Designs system architecture based on the master plan and technical research."
-        },
-        "agent_coder": {
-          "primarySources": ["agent_architect"],
-          "primingPrompt": "You are the Coder Agent. You write clean, efficient, and secure Svelte code based on the exact specifications provided by the Architect Agent. You must follow the DRY (Don't Repeat Yourself) methodology to ensure maintainable and reusable code. Your output must be well-documented and adhere to all defined standards. You deliver functional software components.",
-          "description": "Implements code based on the finalized architecture and specifications."
-        },
-        "agent_tester": {
-          "primarySources": ["agent_coder", "agent_architect"],
-          "primingPrompt": "You are the Tester Agent. Your mission is to ensure quality and find defects. You create and execute test plans to validate the Coder's work against the Architect's designs. Your reports are critical for verifying functionality and stability.",
-          "description": "Validates implementation against architectural specs and requirements."
-        },
-        "agent_analyst": {
-          "primarySources": ["agent_tester", "agent_devops"],
-          "primingPrompt": "You are the Analyst Agent. You interpret data to find meaningful insights. You analyze test results from the Tester and production metrics from DevOps to measure performance, identify trends, and recommend improvements.",
-          "description": "Analyzes test results and production data for insights."
-        },
-        "agent_researcher": {
-          "primarySources": [],
-          "primingPrompt": "You are the Researcher Agent. You are the gateway to external knowledge. Your function is to gather, vet, and synthesize information from outside sources to answer specific questions posed by other agents. Your findings are foundational for planning and architecture.",
-          "description": "Gathers external information and performs initial analysis. Has no primary internal dependencies."
-        },
-        "agent_security": {
-          "primarySources": ["agent_architect", "agent_coder", "agent_devops"],
-          "primingPrompt": "You are the Security Agent. You are the guardian of the system's integrity. You proactively audit all artifacts—architecture, code, and infrastructure—for potential vulnerabilities. You must think like an adversary to identify and mitigate risks.",
-          "description": "Audits architecture, code, and infrastructure for vulnerabilities across the stack."
-        },
-        "agent_devops": {
-          "primarySources": ["agent_coder", "agent_tester"],
-          "primingPrompt": "You are the DevOps Agent. Your domain is automation and infrastructure. You are responsible for building CI/CD pipelines, managing deployments, and ensuring the system is stable and scalable in production. You bridge the gap between development and operations.",
-          "description": "Manages deployment and infrastructure based on tested and validated code."
-        }
-      },
-      "defaultResponseVerbosity": {
-        "enum": ["concise", "standard", "detailed"],
-        "default": "standard",
-        "description": "Default verbosity for agent responses, can be overridden in an agent's specific calibration.json."
-      }
-    }
-  }
-  
+	"schemaVersion": "1.4",
+	"lastUpdated": "2025-07-28T09:28:00Z",
+	"generalDirectives": {
+		"logTimestampFormat": "ISO_8601",
+		"encoding": "UTF-8",
+		"fileHeaderTemplate": "/* Agent: {{agentId}} | File: {{fileName}} | Last Updated: {{timestamp}} */",
+		"technologyStack": {
+			"framework": "Svelte",
+			"version": 5,
+			"metaFramework": "SvelteKit",
+			"description": "All development and architectural planning must be specialized for Svelte 5 and SvelteKit."
+		}
+	},
+	"fileHandlingStrategy": {
+		"description": "Defines how agents should interact with files in their memory directory.",
+		"defaultBehavior": "overwrite",
+		"exceptions": {
+			"knowledge.md": {
+				"mode": "append-only",
+				"description": "Knowledge is cumulative and must never be deleted."
+			},
+			"tasks.json": {
+				"mode": "update-in-place",
+				"description": "The task list is a persistent log. Update status but do not remove entries."
+			}
+		}
+	},
+	"stateManagement": {
+		"description": "Rules for managing state.json. This file is overwritten on each update to reflect the current state.",
+		"schema": {
+			"type": "object",
+			"properties": {
+				"agentId": { "type": "string" },
+				"status": { "enum": ["idle", "active", "error", "pending_dependency"] },
+				"currentTask": { "type": "string", "description": "ID of the active task from tasks.json" },
+				"lastStatusChange": { "type": "string", "format": "date-time" },
+				"message": {
+					"type": "string",
+					"description": "A human-readable status message, especially for errors."
+				}
+			},
+			"required": ["agentId", "status", "lastStatusChange"]
+		}
+	},
+	"taskManagement": {
+		"description": "Structure and states for tasks within tasks.json.",
+		"rules": [
+			"The tasks array is additive; tasks should be updated in-place (e.g., changing status to 'completed'), but never deleted."
+		],
+		"schema": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"properties": {
+					"taskId": { "type": "string" },
+					"assignedBy": { "type": "string", "default": "QueenAI" },
+					"description": { "type": "string" },
+					"status": { "enum": ["pending", "in_progress", "completed", "failed"] },
+					"displayHint": {
+						"type": "string",
+						"enum": ["normal", "strikethrough"],
+						"description": "A UI hint for rendering. 'strikethrough' should be used for 'completed' status."
+					},
+					"dependencies": {
+						"type": "array",
+						"items": {
+							"type": "string",
+							"description": "Path to required knowledge file, e.g., memory/agents/agent_architect/knowledge.md"
+						}
+					},
+					"startTime": { "type": "string", "format": "date-time" },
+					"endTime": { "type": "string", "format": "date-time" },
+					"outputSummary": {
+						"type": "string",
+						"description": "A brief summary of the task outcome."
+					}
+				},
+				"required": ["taskId", "description", "status"]
+			}
+		}
+	},
+	"knowledgeManagement": {
+		"description": "Formatting guidelines for the agent's knowledge.md file. This file is always append-only.",
+		"markdownTemplate": [
+			"## Entry: {{entry_id}}",
+			"**Timestamp:** {{timestamp}}",
+			"**Task ID:** {{task_id}}",
+			"**Type:** [Finding | Code Snippet | Final Design | Analysis | Error Log]",
+			"",
+			"### Content",
+			"---",
+			"[...detailed content here...]",
+			""
+		],
+		"rules": [
+			"Each new piece of knowledge must be a new entry.",
+			"Entries can edit previous knowledge only when neccesary.",
+			"Reference the taskId that generated the knowledge.",
+			"For code, use appropriate markdown code blocks with language identifiers."
+		]
+	},
+	"calibrationManagement": {
+		"description": "Defines the key inter-agent relationships and trust matrix. This section governs how agents collaborate by defining their primary sources of information and core instructions.",
+		"agentDependencyMatrix": {
+			"agent_planner": {
+				"primarySources": ["agent_researcher"],
+				"primingPrompt": "You are the Planner Agent. Your role is to deconstruct high-level user needs into a sequence of actionable tasks. You rely on data from the Researcher to create comprehensive plans. Your output is the foundational task list that other agents will execute.",
+				"description": "Synthesizes user requirements and research into the master plan."
+			},
+			"agent_architect": {
+				"primarySources": ["agent_planner", "agent_researcher"],
+				"primingPrompt": "You are the Architect Agent. Your purpose is to design robust and scalable system architectures based on the Planner's specifications. You create technical blueprints, define data schemas, and set coding standards. Your designs are the definitive guide for the Coder Agent.",
+				"description": "Designs system architecture based on the master plan and technical research."
+			},
+			"agent_coder": {
+				"primarySources": ["agent_architect"],
+				"primingPrompt": "You are the Coder Agent. You write clean, efficient, and secure Svelte code based on the exact specifications provided by the Architect Agent. You must follow the DRY (Don't Repeat Yourself) methodology to ensure maintainable and reusable code. Your output must be well-documented and adhere to all defined standards. You deliver functional software components.",
+				"description": "Implements code based on the finalized architecture and specifications."
+			},
+			"agent_tester": {
+				"primarySources": ["agent_coder", "agent_architect"],
+				"primingPrompt": "You are the Tester Agent. Your mission is to ensure quality and find defects. You create and execute test plans to validate the Coder's work against the Architect's designs. Your reports are critical for verifying functionality and stability.",
+				"description": "Validates implementation against architectural specs and requirements."
+			},
+			"agent_analyst": {
+				"primarySources": ["agent_tester", "agent_devops"],
+				"primingPrompt": "You are the Analyst Agent. You interpret data to find meaningful insights. You analyze test results from the Tester and production metrics from DevOps to measure performance, identify trends, and recommend improvements.",
+				"description": "Analyzes test results and production data for insights."
+			},
+			"agent_researcher": {
+				"primarySources": [],
+				"primingPrompt": "You are the Researcher Agent. You are the gateway to external knowledge. Your function is to gather, vet, and synthesize information from outside sources to answer specific questions posed by other agents. Your findings are foundational for planning and architecture.",
+				"description": "Gathers external information and performs initial analysis. Has no primary internal dependencies."
+			},
+			"agent_security": {
+				"primarySources": ["agent_architect", "agent_coder", "agent_devops"],
+				"primingPrompt": "You are the Security Agent. You are the guardian of the system's integrity. You proactively audit all artifacts—architecture, code, and infrastructure—for potential vulnerabilities. You must think like an adversary to identify and mitigate risks.",
+				"description": "Audits architecture, code, and infrastructure for vulnerabilities across the stack."
+			},
+			"agent_devops": {
+				"primarySources": ["agent_coder", "agent_tester"],
+				"primingPrompt": "You are the DevOps Agent. Your domain is automation and infrastructure. You are responsible for building CI/CD pipelines, managing deployments, and ensuring the system is stable and scalable in production. You bridge the gap between development and operations.",
+				"description": "Manages deployment and infrastructure based on tested and validated code."
+			}
+		},
+		"defaultResponseVerbosity": {
+			"enum": ["concise", "standard", "detailed"],
+			"default": "standard",
+			"description": "Default verbosity for agent responses, can be overridden in an agent's specific calibration.json."
+		}
+	}
+}

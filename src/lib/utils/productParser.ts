@@ -6,23 +6,23 @@ import { productSchema, type Product } from '$lib/schemas/models';
 let productsCache: Product[] | null = null;
 
 export async function parseProducts() {
-    if (productsCache) {
-        return productsCache;
-    }
+	if (productsCache) {
+		return productsCache;
+	}
 
-    try {
-        // The 'static' directory is served at the root, but on the server, we need to read from the filesystem.
-        const filePath = path.resolve(process.cwd(), 'static', 'products_master.csv');
-        const fileContent = await fs.readFile(filePath, { encoding: 'utf-8' });
+	try {
+		// The 'static' directory is served at the root, but on the server, we need to read from the filesystem.
+		const filePath = path.resolve(process.cwd(), 'static', 'products_master.csv');
+		const fileContent = await fs.readFile(filePath, { encoding: 'utf-8' });
 
-        const lines = fileContent.trim().split('\n');
-        if (lines.length < 2) {
-            productsCache = [];
-            return []; // No data to parse
-        }
+		const lines = fileContent.trim().split('\n');
+		if (lines.length < 2) {
+			productsCache = [];
+			return []; // No data to parse
+		}
 
-        const header = lines[0].split(',').map(h => h.trim());
-        const products: Product[] = lines
+		const header = lines[0].split(',').map((h) => h.trim());
+		const products: Product[] = lines
 			.slice(1)
 			.map((line, i) => {
 				const values = line.split(',');
@@ -44,10 +44,10 @@ export async function parseProducts() {
 			})
 			.filter((p): p is Product => p !== null); // Filter out the null (invalid) entries
 
-        productsCache = products;
-        return products;
-    } catch (error) {
-        console.error('Failed to read or parse products_master.csv:', error);
-        return []; // Return empty array on error
-    }
+		productsCache = products;
+		return products;
+	} catch (error) {
+		console.error('Failed to read or parse products_master.csv:', error);
+		return []; // Return empty array on error
+	}
 }

@@ -61,21 +61,21 @@
 			// We've handled the data manually, so we can prevent the full page reload.
 			await update({ reset: false });
 		};
-	}
+	};
 </script>
 
 <div class="space-y-6 p-4 md:p-6">
 	<div>
 		<h2 class="text-2xl font-bold">Product Image Downloader</h2>
-		<p class="text-muted-foreground">
-			Load a product CSV, find images, and export the results.
-		</p>
+		<p class="text-muted-foreground">Load a product CSV, find images, and export the results.</p>
 	</div>
 
 	<Card.Root>
 		<Card.Header>
 			<Card.Title>Controls</Card.Title>
-			<Card.Description>Load the master product list or upload your own custom CSV.</Card.Description>
+			<Card.Description
+				>Load the master product list or upload your own custom CSV.</Card.Description
+			>
 		</Card.Header>
 		<Card.Content class="flex flex-col gap-4 sm:flex-row">
 			<form method="POST" action="?/loadMasterCsv" use:enhance={handleFormSubmit}>
@@ -83,7 +83,12 @@
 					{isLoading ? 'Loading...' : 'Load Master CSV'}
 				</Button>
 			</form>
-			<form method="POST" action="?/uploadCsv" use:enhance={handleFormSubmit} enctype="multipart/form-data">
+			<form
+				method="POST"
+				action="?/uploadCsv"
+				use:enhance={handleFormSubmit}
+				enctype="multipart/form-data"
+			>
 				<Input
 					name="csvfile"
 					type="file"
@@ -93,7 +98,12 @@
 					disabled={isLoading}
 					class="hidden"
 				/>
-				<Button onclick={() => fileInput.click()} disabled={isLoading} variant="secondary" class="w-full sm:w-auto">
+				<Button
+					onclick={() => fileInput.click()}
+					disabled={isLoading}
+					variant="secondary"
+					class="w-full sm:w-auto"
+				>
 					Upload Custom CSV
 				</Button>
 			</form>
@@ -108,13 +118,13 @@
 				<div class="text-sm text-muted-foreground">
 					Found new images for
 					<span class="font-bold text-primary">{status.found}</span> of
-					<span class="font-bold">{status.total}</span> products (<span class="font-bold text-primary"
-						>{status.percent}%</span
+					<span class="font-bold">{status.total}</span> products (<span
+						class="font-bold text-primary">{status.percent}%</span
 					>)
 				</div>
 				<div class="flex w-full gap-2 sm:w-auto">
-					<CsvExporter products={products} />
-					<ZipDownloader products={products} />
+					<CsvExporter {products} />
+					<ZipDownloader {products} />
 				</div>
 			</div>
 			<ImageSearchTable bind:products />

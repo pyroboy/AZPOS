@@ -31,7 +31,8 @@
 	);
 
 	const areAllFilteredSelected = $derived(
-		filteredProducts.length > 0 && filteredProducts.every((item: InventoryItem) => selectedProductIds.has(item.id))
+		filteredProducts.length > 0 &&
+			filteredProducts.every((item: InventoryItem) => selectedProductIds.has(item.id))
 	);
 
 	function toggleSelectAll() {
@@ -59,7 +60,9 @@
 	}
 
 	function openBulkAdjustModal() {
-		const selected = inventoryItems.filter((item: InventoryItem) => selectedProductIds.has(item.id));
+		const selected = inventoryItems.filter((item: InventoryItem) =>
+			selectedProductIds.has(item.id)
+		);
 		selectedProductsForModal = selected.length > 0 ? selected : null;
 		selectedProduct = null;
 		isModalOpen = true;
@@ -124,15 +127,15 @@
 								<Table.Cell>
 									<Checkbox
 										checked={selectedProductIds.has(item.id)}
-									onclick={() => {
-										if (selectedProductIds.has(item.id)) {
-											selectedProductIds.delete(item.id);
-										} else {
-											selectedProductIds.add(item.id);
-										}
-										// Trigger reactivity
-										selectedProductIds = selectedProductIds;
-									}}
+										onclick={() => {
+											if (selectedProductIds.has(item.id)) {
+												selectedProductIds.delete(item.id);
+											} else {
+												selectedProductIds.add(item.id);
+											}
+											// Trigger reactivity
+											selectedProductIds = selectedProductIds;
+										}}
 									/>
 								</Table.Cell>
 							{/if}

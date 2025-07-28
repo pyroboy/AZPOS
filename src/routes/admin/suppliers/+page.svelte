@@ -22,23 +22,20 @@
 </script>
 
 <div class="p-4 sm:p-6">
-    <header class="flex items-center justify-between mb-6">
-        <div>
-            <h1 class="text-2xl font-bold">Supplier Management</h1>
-            <p class="text-muted-foreground">Add, edit, and manage your product suppliers.</p>
-        </div>
-        <Button onclick={handleAddSupplier}>
-            <PlusCircle class="mr-2 h-4 w-4" />
-            Add New Supplier
-        </Button>
-    </header>
+	<header class="flex items-center justify-between mb-6">
+		<div>
+			<h1 class="text-2xl font-bold">Supplier Management</h1>
+			<p class="text-muted-foreground">Add, edit, and manage your product suppliers.</p>
+		</div>
+		<Button onclick={handleAddSupplier}>
+			<PlusCircle class="mr-2 h-4 w-4" />
+			Add New Supplier
+		</Button>
+	</header>
 
-    <SupplierTable onEditSupplier={handleEditSupplier} />
+	<SupplierTable onEditSupplier={handleEditSupplier} />
 
-    <SupplierDialog 
-        bind:open={dialogOpen} 
-        bind:supplier={selectedSupplier}
-    />
+	<SupplierDialog bind:open={dialogOpen} bind:supplier={selectedSupplier} />
 </div>
 
 <!-- TODO: SupplierDialog component will go here -->

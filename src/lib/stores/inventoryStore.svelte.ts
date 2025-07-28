@@ -1,4 +1,9 @@
-import type { Product, ProductBatch, InventoryAdjustment, CsvAdjustment } from '$lib/schemas/models';
+import type {
+	Product,
+	ProductBatch,
+	InventoryAdjustment,
+	CsvAdjustment
+} from '$lib/schemas/models';
 import { get as getFromIdb, set as setToIdb } from 'idb-keyval';
 import { browser } from '$app/environment';
 import { debounce } from 'ts-debounce';
@@ -19,7 +24,7 @@ class InventoryManager {
 	// Core reactive state using Svelte 5 runes
 	products = $state<Product[]>([]);
 	productBatches = $state<ProductBatch[]>([]);
-	
+
 	// Meta information state
 	meta = $state({
 		totalProducts: 0,
@@ -32,7 +37,16 @@ class InventoryManager {
 	// Filter state (consolidated from filters.ts)
 	searchTerm = $state('');
 	activeCategories = $state<string[]>([]);
-	sortOrder = $state<'name_asc' | 'name_desc' | 'stock_asc' | 'stock_desc' | 'price_asc' | 'price_desc' | 'expiry_asc' | 'expiry_desc'>('name_asc');
+	sortOrder = $state<
+		| 'name_asc'
+		| 'name_desc'
+		| 'stock_asc'
+		| 'stock_desc'
+		| 'price_asc'
+		| 'price_desc'
+		| 'expiry_asc'
+		| 'expiry_desc'
+	>('name_asc');
 	stockStatusFilter = $state<'all' | 'low_stock' | 'out_of_stock' | 'in_stock'>('all');
 
 	// Selection state (consolidated from selection.ts)
@@ -75,10 +89,7 @@ class InventoryManager {
 			const batchesForProduct = this.productBatches.filter(
 				(batch) => batch.product_id === product.id
 			);
-			const totalStock = batchesForProduct.reduce(
-				(sum, batch) => sum + batch.quantity_on_hand,
-				0
-			);
+			const totalStock = batchesForProduct.reduce((sum, batch) => sum + batch.quantity_on_hand, 0);
 
 			return {
 				...product,
@@ -94,10 +105,8 @@ class InventoryManager {
 		return this.inventory
 			.filter((p) => {
 				const matchesSearch =
-					st === '' ||
-					p.name.toLowerCase().includes(st) ||
-					p.sku.toLowerCase().includes(st);
-				
+					st === '' || p.name.toLowerCase().includes(st) || p.sku.toLowerCase().includes(st);
+
 				const matchesStockStatus = (() => {
 					switch (this.stockStatusFilter) {
 						case 'low_stock':
@@ -131,9 +140,11 @@ class InventoryManager {
 						return b.price - a.price;
 					case 'expiry_asc': {
 						const getSoonestExpiry = (p: ProductWithStock) => {
-							const validBatches = p.batches.filter(b => b.expiration_date);
-							return validBatches.length > 0 
-								? new Date(Math.min(...validBatches.map(b => new Date(b.expiration_date!).getTime())))
+							const validBatches = p.batches.filter((b) => b.expiration_date);
+							return validBatches.length > 0
+								? new Date(
+										Math.min(...validBatches.map((b) => new Date(b.expiration_date!).getTime()))
+									)
 								: null;
 						};
 						const expiryA = getSoonestExpiry(a);
@@ -145,9 +156,11 @@ class InventoryManager {
 					}
 					case 'expiry_desc': {
 						const getSoonestExpiry = (p: ProductWithStock) => {
-							const validBatches = p.batches.filter(b => b.expiration_date);
-							return validBatches.length > 0 
-								? new Date(Math.min(...validBatches.map(b => new Date(b.expiration_date!).getTime())))
+							const validBatches = p.batches.filter((b) => b.expiration_date);
+							return validBatches.length > 0
+								? new Date(
+										Math.min(...validBatches.map((b) => new Date(b.expiration_date!).getTime()))
+									)
 								: null;
 						};
 						const expiryA = getSoonestExpiry(a);
@@ -165,8 +178,8 @@ class InventoryManager {
 
 	// Derived selection state
 	areAllVisibleRowsSelected = $derived(
-		this.filteredProducts.length > 0 && 
-		this.selectedProductIds.length === this.filteredProducts.length
+		this.filteredProducts.length > 0 &&
+			this.selectedProductIds.length === this.filteredProducts.length
 	);
 
 	// Debounced search function
@@ -190,9 +203,9 @@ class InventoryManager {
 			const res = await fetchFn('/api/products');
 			if (!res.ok) throw new Error('Failed to fetch products');
 			const data = await res.json();
-			
+
 			this.products = data;
-			
+
 			// Cache in browser
 			if (browser) {
 				await setToIdb('products', data);
@@ -226,7 +239,7 @@ class InventoryManager {
 	}
 
 	updateProduct(id: string, updates: Partial<Product>) {
-		const index = this.products.findIndex(p => p.id === id);
+		const index = this.products.findIndex((p) => p.id === id);
 		if (index !== -1) {
 			this.products[index] = {
 				...this.products[index],
@@ -236,9 +249,9 @@ class InventoryManager {
 	}
 
 	deleteProduct(id: string) {
-		this.products = this.products.filter(p => p.id !== id);
+		this.products = this.products.filter((p) => p.id !== id);
 		// Also remove associated batches
-		this.productBatches = this.productBatches.filter(b => b.product_id !== id);
+		this.productBatches = this.productBatches.filter((b) => b.product_id !== id);
 	}
 
 	// Batch management methods
@@ -253,7 +266,7 @@ class InventoryManager {
 	}
 
 	updateBatch(id: string, updates: Partial<ProductBatch>) {
-		const index = this.productBatches.findIndex(b => b.id === id);
+		const index = this.productBatches.findIndex((b) => b.id === id);
 		if (index !== -1) {
 			this.productBatches[index] = {
 				...this.productBatches[index],
@@ -263,12 +276,12 @@ class InventoryManager {
 	}
 
 	deleteBatch(id: string) {
-		this.productBatches = this.productBatches.filter(b => b.id !== id);
+		this.productBatches = this.productBatches.filter((b) => b.id !== id);
 	}
 
 	// Enhanced batch management methods (consolidated from productBatchStore.ts)
 	addStockToBatch(batchId: string, quantity: number) {
-		const index = this.productBatches.findIndex(b => b.id === batchId);
+		const index = this.productBatches.findIndex((b) => b.id === batchId);
 		if (index !== -1) {
 			this.productBatches[index] = {
 				...this.productBatches[index],
@@ -278,7 +291,7 @@ class InventoryManager {
 	}
 
 	removeStockFromBatch(batchId: string, quantity: number) {
-		const index = this.productBatches.findIndex(b => b.id === batchId);
+		const index = this.productBatches.findIndex((b) => b.id === batchId);
 		if (index !== -1) {
 			this.productBatches[index] = {
 				...this.productBatches[index],
@@ -288,7 +301,7 @@ class InventoryManager {
 	}
 
 	setStockForBatch(batchId: string, quantity: number) {
-		const index = this.productBatches.findIndex(b => b.id === batchId);
+		const index = this.productBatches.findIndex((b) => b.id === batchId);
 		if (index !== -1) {
 			this.productBatches[index] = {
 				...this.productBatches[index],
@@ -318,9 +331,9 @@ class InventoryManager {
 
 	// CSV adjustment methods
 	processCsvAdjustments(adjustments: CsvAdjustment[]) {
-		adjustments.forEach(adj => {
-			const batch = this.productBatches.find(b => 
-				b.product_id === adj.product_id && b.batch_number === adj.batch_number
+		adjustments.forEach((adj) => {
+			const batch = this.productBatches.find(
+				(b) => b.product_id === adj.product_id && b.batch_number === adj.batch_number
 			);
 			if (batch) {
 				const oldQuantity = batch.quantity_on_hand;
@@ -340,7 +353,7 @@ class InventoryManager {
 	// Filter methods (consolidated from filters.ts)
 	toggleCategory(category: string) {
 		if (this.activeCategories.includes(category)) {
-			this.activeCategories = this.activeCategories.filter(c => c !== category);
+			this.activeCategories = this.activeCategories.filter((c) => c !== category);
 		} else {
 			this.activeCategories = [...this.activeCategories, category];
 		}
@@ -355,14 +368,14 @@ class InventoryManager {
 	// Selection methods (consolidated from selection.ts)
 	handleRowSelect(productId: string) {
 		if (this.selectedProductIds.includes(productId)) {
-			this.selectedProductIds = this.selectedProductIds.filter(id => id !== productId);
+			this.selectedProductIds = this.selectedProductIds.filter((id) => id !== productId);
 		} else {
 			this.selectedProductIds = [...this.selectedProductIds, productId];
 		}
 	}
 
 	toggleSelectAll() {
-		const allIds = this.filteredProducts.map(p => p.id);
+		const allIds = this.filteredProducts.map((p) => p.id);
 		this.selectedProductIds = this.selectedProductIds.length === allIds.length ? [] : allIds;
 	}
 
@@ -388,7 +401,7 @@ class InventoryManager {
 			return;
 		}
 
-		const productToUpdate = this.products.find(p => p.id === productId);
+		const productToUpdate = this.products.find((p) => p.id === productId);
 		if (productToUpdate) {
 			this.updateProduct(productId, { [field]: numericValue });
 		}
@@ -408,28 +421,28 @@ class InventoryManager {
 	// Utility methods
 	getTotalStockForProduct(productId: string): number {
 		return this.productBatches
-			.filter(batch => batch.product_id === productId)
+			.filter((batch) => batch.product_id === productId)
 			.reduce((sum, batch) => sum + batch.quantity_on_hand, 0);
 	}
 
 	getProductById(productId: string): Product | undefined {
-		return this.products.find(p => p.id === productId);
+		return this.products.find((p) => p.id === productId);
 	}
 
 	getProductWithStock(productId: string): ProductWithStock | undefined {
-		return this.inventory.find(p => p.id === productId);
+		return this.inventory.find((p) => p.id === productId);
 	}
 
 	getBatchesForProduct(productId: string): ProductBatch[] {
-		return this.productBatches.filter(b => b.product_id === productId);
+		return this.productBatches.filter((b) => b.product_id === productId);
 	}
 
 	getAdjustmentsForProduct(productId: string): InventoryAdjustment[] {
-		return this.inventoryAdjustments.filter(adj => adj.product_id === productId);
+		return this.inventoryAdjustments.filter((adj) => adj.product_id === productId);
 	}
 
 	getAdjustmentsForBatch(batchId: string): InventoryAdjustment[] {
-		return this.inventoryAdjustments.filter(adj => adj.batch_id === batchId);
+		return this.inventoryAdjustments.filter((adj) => adj.batch_id === batchId);
 	}
 }
 
@@ -456,7 +469,10 @@ export const {
 } = inventoryManager;
 
 // Export utility functions for backward compatibility
-export const getTotalStockForProduct = (productId: string) => inventoryManager.getTotalStockForProduct(productId);
+export const getTotalStockForProduct = (productId: string) =>
+	inventoryManager.getTotalStockForProduct(productId);
 export const getProductById = (productId: string) => inventoryManager.getProductById(productId);
-export const getProductWithStock = (productId: string) => inventoryManager.getProductWithStock(productId);
-export const getBatchesForProduct = (productId: string) => inventoryManager.getBatchesForProduct(productId);
+export const getProductWithStock = (productId: string) =>
+	inventoryManager.getProductWithStock(productId);
+export const getBatchesForProduct = (productId: string) =>
+	inventoryManager.getBatchesForProduct(productId);

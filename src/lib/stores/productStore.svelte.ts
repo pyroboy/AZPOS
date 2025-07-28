@@ -9,13 +9,13 @@ import { browser } from '$app/environment';
 class ProductManager {
 	// Core reactive state using Svelte 5 runes
 	products = $state<Product[]>([]);
-	
+
 	// Loading and pagination state
 	isLoading = $state(false);
 	currentPage = $state(1);
 	totalProducts = $state(0);
 	hasMore = $state(true);
-	
+
 	// Meta information state
 	meta = $state({
 		totalProducts: 0,
@@ -26,7 +26,7 @@ class ProductManager {
 	});
 
 	// Derived active products
-	activeProducts = $derived(this.products.filter(p => !p.is_archived));
+	activeProducts = $derived(this.products.filter((p) => !p.is_archived));
 
 	async loadMeta(fetchFn: typeof fetch = fetch) {
 		try {
@@ -44,7 +44,7 @@ class ProductManager {
 		this.currentPage = 1;
 		this.hasMore = true;
 		this.isLoading = false;
-		
+
 		// On the server, this store acts as a request-level cache.
 		// On the client, it's a long-lived cache.
 		if (this.products.length > 0) {
@@ -110,12 +110,11 @@ class ProductManager {
 					setToIdb('products', updatedProducts);
 				}
 				this.currentPage = nextPage;
-			} 
+			}
 
 			if (this.products.length >= this.totalProducts) {
 				this.hasMore = newProducts.length === 100; // 100 == full page
 			}
-
 		} catch (error) {
 			console.error('Failed to load more products:', error);
 		} finally {
@@ -135,7 +134,7 @@ class ProductManager {
 	}
 
 	updateProduct(id: string, data: Partial<Omit<Product, 'id'>>) {
-		const index = this.products.findIndex(p => p.id === id);
+		const index = this.products.findIndex((p) => p.id === id);
 		if (index !== -1) {
 			this.products[index] = {
 				...this.products[index],
@@ -146,8 +145,8 @@ class ProductManager {
 	}
 
 	bulkUpdatePrices(updates: { id: string; price: number }[]) {
-		const updatesMap = new Map(updates.map(u => [u.id, u.price]));
-		this.products = this.products.map(p => {
+		const updatesMap = new Map(updates.map((u) => [u.id, u.price]));
+		this.products = this.products.map((p) => {
 			if (p.id) {
 				const newPrice = updatesMap.get(p.id);
 				if (newPrice !== undefined) {
@@ -158,8 +157,8 @@ class ProductManager {
 		});
 	}
 
-	bulkUpdateProducts(updates: { ids: string[]; data: Partial<Omit<Product, 'id'>>; }) {
-		this.products = this.products.map(p => {
+	bulkUpdateProducts(updates: { ids: string[]; data: Partial<Omit<Product, 'id'>> }) {
+		this.products = this.products.map((p) => {
 			if (p.id && updates.ids.includes(p.id)) {
 				return { ...p, ...updates.data, updated_at: new Date().toISOString() };
 			}
@@ -168,31 +167,36 @@ class ProductManager {
 	}
 
 	archiveProduct(productId: string) {
-		const productToArchive = this.products.find(p => p.id === productId);
+		const productToArchive = this.products.find((p) => p.id === productId);
 		if (!productToArchive) {
 			throw new Error('Product not found');
 		}
 
-		const activeVariants = this.products.filter(p =>
-			p.master_product_id === productId && !p.is_archived
+		const activeVariants = this.products.filter(
+			(p) => p.master_product_id === productId && !p.is_archived
 		);
 
-		const parentBundles = this.products.filter(p => 
-			p.product_type === 'bundle' && 
-			!p.is_archived &&
-			p.bundle_components?.some((c: BundleComponent) => c.product_id === productId)
+		const parentBundles = this.products.filter(
+			(p) =>
+				p.product_type === 'bundle' &&
+				!p.is_archived &&
+				p.bundle_components?.some((c: BundleComponent) => c.product_id === productId)
 		);
 
 		if (parentBundles.length > 0) {
-			const bundleNames = parentBundles.map(p => p.name).join(', ');
-			throw new Error(`Cannot archive product: it is a component in the following active bundle(s): ${bundleNames}.`);
+			const bundleNames = parentBundles.map((p) => p.name).join(', ');
+			throw new Error(
+				`Cannot archive product: it is a component in the following active bundle(s): ${bundleNames}.`
+			);
 		}
 
 		if (activeVariants.length > 0) {
-			throw new Error(`Cannot archive product: ${activeVariants.length} active variant(s) still exist. Archive variants first.`);
+			throw new Error(
+				`Cannot archive product: ${activeVariants.length} active variant(s) still exist. Archive variants first.`
+			);
 		}
 
-		const index = this.products.findIndex(p => p.id === productId);
+		const index = this.products.findIndex((p) => p.id === productId);
 		if (index !== -1) {
 			this.products[index] = {
 				...this.products[index],
@@ -203,7 +207,7 @@ class ProductManager {
 	}
 
 	unarchiveProduct(productId: string) {
-		const index = this.products.findIndex(p => p.id === productId);
+		const index = this.products.findIndex((p) => p.id === productId);
 		if (index !== -1) {
 			this.products[index] = {
 				...this.products[index],
@@ -214,7 +218,7 @@ class ProductManager {
 	}
 
 	findById(productId: string): Product | undefined {
-		return this.products.find(p => p.id === productId);
+		return this.products.find((p) => p.id === productId);
 	}
 
 	setProducts(newProducts: Product[]) {

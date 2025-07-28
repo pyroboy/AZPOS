@@ -46,7 +46,11 @@
 	<section class="mb-2 border-t border-b border-dashed border-gray-400 py-2">
 		<div class="flex justify-between">
 			<span>Date: {new Intl.DateTimeFormat('en-US').format(timestamp)}</span>
-			<span>Time: {new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(timestamp)}</span>
+			<span
+				>Time: {new Intl.DateTimeFormat('en-US', { hour: '2-digit', minute: '2-digit' }).format(
+					timestamp
+				)}</span
+			>
 		</div>
 		<div class="flex justify-between">
 			<span>Transaction #:</span>
@@ -99,7 +103,9 @@
 			<span>VAT (12%):</span>
 			<span>₱{tax.toFixed(2)}</span>
 		</div>
-		<div class="flex justify-between font-bold text-lg border-t border-dashed border-gray-400 mt-2 pt-2">
+		<div
+			class="flex justify-between font-bold text-lg border-t border-dashed border-gray-400 mt-2 pt-2"
+		>
 			<span>TOTAL:</span>
 			<span>₱{total.toFixed(2)}</span>
 		</div>

@@ -15,10 +15,6 @@ export const settingsSchema = z.object({
 		.optional()
 });
 
-
-
-
-
 // =======================================================================
 // 6.1 Product Information
 // =======================================================================
@@ -27,7 +23,6 @@ export const bundleComponentSchema = z.object({
 	product_id: z.string().uuid(),
 	quantity: z.coerce.number().int().positive()
 });
-
 
 export const productSchema = z.object({
 	// Core fields
@@ -46,7 +41,11 @@ export const productSchema = z.object({
 
 	// Inventory & Location
 	base_unit: z.enum(['piece', 'gram', 'kg', 'ml', 'L', 'pack', 'can', 'bottle']).default('piece'),
-	reorder_point: z.coerce.number().int().nonnegative('Reorder point must be a whole number').optional(),
+	reorder_point: z.coerce
+		.number()
+		.int()
+		.nonnegative('Reorder point must be a whole number')
+		.optional(),
 	aisle: z.string().optional(),
 	storage_requirement: z
 		.enum(['room_temperature', 'refrigerated', 'frozen'])
@@ -65,7 +64,6 @@ export const productSchema = z.object({
 	created_at: z.string().datetime().optional(),
 	updated_at: z.string().datetime().optional()
 });
-
 
 export const productBatchSchema = z.object({
 	id: z.string().uuid(),
@@ -170,7 +168,14 @@ export const inventoryAdjustmentSchema = z.object({
 // 6.4 Users & Roles
 // =======================================================================
 
-export const roleSchema = z.enum(['admin', 'owner', 'manager', 'pharmacist', 'cashier', 'customer']);
+export const roleSchema = z.enum([
+	'admin',
+	'owner',
+	'manager',
+	'pharmacist',
+	'cashier',
+	'customer'
+]);
 
 export const userSchema = z.object({
 	id: z.string().uuid(),
@@ -281,8 +286,6 @@ export const returnSchema = z.object({
 	updated_at: z.string().datetime()
 });
 
-
-
 // =======================================================================
 // 6.7 Orders
 // =======================================================================
@@ -300,7 +303,7 @@ export const CartItemSchema = z.object({
 	finalPrice: z.coerce.number().positive(),
 	created_at: z.string().datetime(),
 	updated_at: z.string().datetime(),
-	image_url: z.string().url('Must be a valid URL').optional().or(z.literal('')),
+	image_url: z.string().url('Must be a valid URL').optional().or(z.literal(''))
 });
 
 export const fastMoverSchema = z.object({
@@ -337,7 +340,6 @@ export const csvAdjustmentSchema = z.object({
 });
 
 export type CsvAdjustment = z.infer<typeof csvAdjustmentSchema>;
-
 
 export const reorderItemSchema = z.object({
 	sku: z.string(),

@@ -1,5 +1,4 @@
 <script lang="ts">
-	
 	import type { Product, ProductBatch } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
 	import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '$lib/components/ui/card';
@@ -11,7 +10,7 @@
 	}
 	import { Badge } from '$lib/components/ui/badge';
 
-	let { 
+	let {
 		product,
 		batches,
 		onClose,
@@ -34,16 +33,24 @@
 	}
 </script>
 
-<div role="dialog" aria-modal="true" tabindex="-1" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center" onkeydown={handleKeydown}>
+<div
+	role="dialog"
+	aria-modal="true"
+	tabindex="-1"
+	class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center"
+	onkeydown={handleKeydown}
+>
 	<div role="document" class="w-full max-w-md">
 		<Card>
 			<CardHeader>
 				<CardTitle>Select a Batch for: {product.name}</CardTitle>
-				<p class="text-sm text-muted-foreground">Choose which batch to sell from. Batches are sorted by expiration date (FIFO).</p>
+				<p class="text-sm text-muted-foreground">
+					Choose which batch to sell from. Batches are sorted by expiration date (FIFO).
+				</p>
 			</CardHeader>
 			<CardContent class="max-h-[60vh] overflow-y-auto space-y-3">
 				{#each batches as batch (batch.id)}
-					<button 
+					<button
 						type="button"
 						class="p-4 border-b cursor-pointer hover:bg-muted/50 text-left w-full"
 						onclick={() => handleSelect(batch)}

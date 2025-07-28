@@ -1,13 +1,17 @@
 <script lang="ts">
 	import { get } from 'svelte/store';
-import { users } from '$lib/stores/userStore.svelte';
+	import { users } from '$lib/stores/userStore.svelte';
 	import type { Role, User } from '$lib/schemas/models';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Input } from '$lib/components/ui/input';
 	import { Button } from '$lib/components/ui/button';
 	import { Label } from '$lib/components/ui/label';
 
-	let { open = $bindable(), onSuccess, requiredRole = 'manager' }: {
+	let {
+		open = $bindable(),
+		onSuccess,
+		requiredRole = 'manager'
+	}: {
 		open?: boolean;
 		onSuccess: (user: User) => void;
 		requiredRole?: Role | Role[];

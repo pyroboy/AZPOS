@@ -1,302 +1,316 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import { 
-  onGetProductBatches,
-  onGetProductBatchById,
-  onCreateProductBatch,
-  onUpdateProductBatch,
-  onDeleteProductBatch,
-  onGetBatchesByProduct,
-  onGetExpiringBatches
+import {
+	onGetProductBatches,
+	onGetProductBatchById,
+	onCreateProductBatch,
+	onUpdateProductBatch,
+	onDeleteProductBatch,
+	onGetBatchesByProduct,
+	onGetExpiringBatches
 } from '$lib/server/telefuncs/productBatch.telefunc';
-import type { 
-  ProductBatch,
-  ProductBatchInput,
-  ProductBatchFilters,
-  PaginatedProductBatches
+import type {
+	ProductBatch,
+	ProductBatchInput,
+	ProductBatchFilters,
+	PaginatedProductBatches
 } from '$lib/types/productBatch.schema';
 
 // Query keys for consistent cache management
 const productBatchQueryKeys = {
-  all: ['productBatches'] as const,
-  lists: () => [...productBatchQueryKeys.all, 'list'] as const,
-  list: (filters?: ProductBatchFilters) => [...productBatchQueryKeys.lists(), filters] as const,
-  details: () => [...productBatchQueryKeys.all, 'detail'] as const,
-  detail: (id: string) => [...productBatchQueryKeys.details(), id] as const,
-  byProduct: (productId: string) => [...productBatchQueryKeys.all, 'byProduct', productId] as const,
-  expiring: () => [...productBatchQueryKeys.all, 'expiring'] as const
+	all: ['productBatches'] as const,
+	lists: () => [...productBatchQueryKeys.all, 'list'] as const,
+	list: (filters?: ProductBatchFilters) => [...productBatchQueryKeys.lists(), filters] as const,
+	details: () => [...productBatchQueryKeys.all, 'detail'] as const,
+	detail: (id: string) => [...productBatchQueryKeys.details(), id] as const,
+	byProduct: (productId: string) => [...productBatchQueryKeys.all, 'byProduct', productId] as const,
+	expiring: () => [...productBatchQueryKeys.all, 'expiring'] as const
 };
 
 export function useProductBatches(filters?: ProductBatchFilters) {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  // Query to fetch paginated product batches with filters
-  const batchesQuery = createQuery<PaginatedProductBatches>({
-    queryKey: productBatchQueryKeys.list(filters),
-    queryFn: () => onGetProductBatches(filters),
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 10 // 10 minutes
-  });
+	// Query to fetch paginated product batches with filters
+	const batchesQuery = createQuery<PaginatedProductBatches>({
+		queryKey: productBatchQueryKeys.list(filters),
+		queryFn: () => onGetProductBatches(filters),
+		staleTime: 1000 * 60 * 2, // 2 minutes
+		gcTime: 1000 * 60 * 10 // 10 minutes
+	});
 
-  // Query to fetch expiring batches
-  const expiringBatchesQuery = createQuery<ProductBatch[]>({
-    queryKey: productBatchQueryKeys.expiring(),
-    queryFn: onGetExpiringBatches,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 15 // 15 minutes
-  });
+	// Query to fetch expiring batches
+	const expiringBatchesQuery = createQuery<ProductBatch[]>({
+		queryKey: productBatchQueryKeys.expiring(),
+		queryFn: onGetExpiringBatches,
+		staleTime: 1000 * 60 * 5, // 5 minutes
+		gcTime: 1000 * 60 * 15 // 15 minutes
+	});
 
-  // Mutation to create a new product batch
-  const createBatchMutation = createMutation({
-    mutationFn: (batchData: ProductBatchInput) => onCreateProductBatch(batchData),
-    onSuccess: (newBatch) => {
-      // Invalidate and refetch batches list
-      queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() });
-      queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.byProduct(newBatch.product_id) });
-      
-      // Optimistically add the new batch to cache
-      queryClient.setQueryData<PaginatedProductBatches>(
-        productBatchQueryKeys.list(filters),
-        (oldData) => {
-          if (!oldData) return { 
-            batches: [newBatch], 
-            pagination: { page: 1, limit: 20, total: 1, total_pages: 1, has_more: false } 
-          };
-          return {
-            ...oldData,
-            batches: [newBatch, ...oldData.batches],
-            pagination: {
-              ...oldData.pagination,
-              total: oldData.pagination.total + 1
-            }
-          };
-        }
-      );
-    },
-    onError: (error) => {
-      console.error('Failed to create product batch:', error);
-    }
-  });
+	// Mutation to create a new product batch
+	const createBatchMutation = createMutation({
+		mutationFn: (batchData: ProductBatchInput) => onCreateProductBatch(batchData),
+		onSuccess: (newBatch) => {
+			// Invalidate and refetch batches list
+			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.lists() });
+			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() });
+			queryClient.invalidateQueries({
+				queryKey: productBatchQueryKeys.byProduct(newBatch.product_id)
+			});
 
-  // Mutation to update a product batch
-  const updateBatchMutation = createMutation({
-    mutationFn: ({ batchId, batchData }: { batchId: string; batchData: Partial<ProductBatchInput> }) => 
-      onUpdateProductBatch(batchId, batchData),
-    onSuccess: (updatedBatch) => {
-      // Update the specific batch in all relevant queries
-      queryClient.setQueryData<PaginatedProductBatches>(
-        productBatchQueryKeys.list(filters),
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            batches: oldData.batches.map(batch => 
-              batch.id === updatedBatch.id ? updatedBatch : batch
-            )
-          };
-        }
-      );
-      
-      // Update detail cache if it exists
-      queryClient.setQueryData(
-        productBatchQueryKeys.detail(updatedBatch.id),
-        updatedBatch
-      );
-      
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() });
-      queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.byProduct(updatedBatch.product_id) });
-    },
-    onError: (error) => {
-      console.error('Failed to update product batch:', error);
-    }
-  });
+			// Optimistically add the new batch to cache
+			queryClient.setQueryData<PaginatedProductBatches>(
+				productBatchQueryKeys.list(filters),
+				(oldData) => {
+					if (!oldData)
+						return {
+							batches: [newBatch],
+							pagination: { page: 1, limit: 20, total: 1, total_pages: 1, has_more: false }
+						};
+					return {
+						...oldData,
+						batches: [newBatch, ...oldData.batches],
+						pagination: {
+							...oldData.pagination,
+							total: oldData.pagination.total + 1
+						}
+					};
+				}
+			);
+		},
+		onError: (error) => {
+			console.error('Failed to create product batch:', error);
+		}
+	});
 
-  // Mutation to delete a product batch
-  const deleteBatchMutation = createMutation({
-    mutationFn: (batchId: string) => onDeleteProductBatch(batchId),
-    onSuccess: (_, batchId) => {
-      // Remove from all lists
-      queryClient.setQueryData<PaginatedProductBatches>(
-        productBatchQueryKeys.list(filters),
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            batches: oldData.batches.filter(batch => batch.id !== batchId),
-            pagination: {
-              ...oldData.pagination,
-              total: oldData.pagination.total - 1
-            }
-          };
-        }
-      );
-      
-      // Remove from detail cache
-      queryClient.removeQueries({ queryKey: productBatchQueryKeys.detail(batchId) });
-      
-      // Invalidate related queries
-      queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() });
-    },
-    onError: (error) => {
-      console.error('Failed to delete product batch:', error);
-    }
-  });
+	// Mutation to update a product batch
+	const updateBatchMutation = createMutation({
+		mutationFn: ({
+			batchId,
+			batchData
+		}: {
+			batchId: string;
+			batchData: Partial<ProductBatchInput>;
+		}) => onUpdateProductBatch(batchId, batchData),
+		onSuccess: (updatedBatch) => {
+			// Update the specific batch in all relevant queries
+			queryClient.setQueryData<PaginatedProductBatches>(
+				productBatchQueryKeys.list(filters),
+				(oldData) => {
+					if (!oldData) return oldData;
+					return {
+						...oldData,
+						batches: oldData.batches.map((batch) =>
+							batch.id === updatedBatch.id ? updatedBatch : batch
+						)
+					};
+				}
+			);
 
-  // Derived reactive state using Svelte 5 runes
-  const batches = $derived(batchesQuery.data?.batches ?? []);
-  const pagination = $derived(batchesQuery.data?.pagination);
-  const expiringBatches = $derived(expiringBatchesQuery.data ?? []);
-  
-  // Derived filtered states
-  const activeBatches = $derived(batches.filter((b: ProductBatch) => b.quantity_on_hand > 0));
-  const expiredBatches = $derived(batches.filter((b: ProductBatch) => {
-    if (!b.expiry_date) return false;
-    return new Date(b.expiry_date) < new Date();
-  }));
-  const nearExpiryBatches = $derived(batches.filter((b: ProductBatch) => {
-    if (!b.expiry_date) return false;
-    const expiryDate = new Date(b.expiry_date);
-    const thirtyDaysFromNow = new Date();
-    thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-    return expiryDate < thirtyDaysFromNow && expiryDate >= new Date();
-  }));
+			// Update detail cache if it exists
+			queryClient.setQueryData(productBatchQueryKeys.detail(updatedBatch.id), updatedBatch);
 
-  // Loading and error states
-  const isLoading = $derived(batchesQuery.isPending);
-  const isError = $derived(batchesQuery.isError);
-  const error = $derived(batchesQuery.error);
-  
-  const isExpiringLoading = $derived(expiringBatchesQuery.isPending);
-  const isExpiringError = $derived(expiringBatchesQuery.isError);
+			// Invalidate related queries
+			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() });
+			queryClient.invalidateQueries({
+				queryKey: productBatchQueryKeys.byProduct(updatedBatch.product_id)
+			});
+		},
+		onError: (error) => {
+			console.error('Failed to update product batch:', error);
+		}
+	});
 
-  return {
-    // Queries
-    batchesQuery,
-    expiringBatchesQuery,
-    
-    // Reactive data
-    batches,
-    pagination,
-    expiringBatches,
-    
-    // Filtered data
-    activeBatches,
-    expiredBatches,
-    nearExpiryBatches,
-    
-    // Loading states
-    isLoading,
-    isError,
-    error,
-    isExpiringLoading,
-    isExpiringError,
-    
-    // Mutations
-    createBatch: createBatchMutation.mutate,
-    updateBatch: updateBatchMutation.mutate,
-    deleteBatch: deleteBatchMutation.mutate,
-    
-    // Mutation states
-    isCreating: $derived(createBatchMutation.isPending),
-    isUpdating: $derived(updateBatchMutation.isPending),
-    isDeleting: $derived(deleteBatchMutation.isPending),
-    
-    createError: $derived(createBatchMutation.error),
-    updateError: $derived(updateBatchMutation.error),
-    deleteError: $derived(deleteBatchMutation.error),
-    
-    // Utility functions
-    refetch: () => queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.lists() }),
-    refetchExpiring: () => queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() })
-  };
+	// Mutation to delete a product batch
+	const deleteBatchMutation = createMutation({
+		mutationFn: (batchId: string) => onDeleteProductBatch(batchId),
+		onSuccess: (_, batchId) => {
+			// Remove from all lists
+			queryClient.setQueryData<PaginatedProductBatches>(
+				productBatchQueryKeys.list(filters),
+				(oldData) => {
+					if (!oldData) return oldData;
+					return {
+						...oldData,
+						batches: oldData.batches.filter((batch) => batch.id !== batchId),
+						pagination: {
+							...oldData.pagination,
+							total: oldData.pagination.total - 1
+						}
+					};
+				}
+			);
+
+			// Remove from detail cache
+			queryClient.removeQueries({ queryKey: productBatchQueryKeys.detail(batchId) });
+
+			// Invalidate related queries
+			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() });
+		},
+		onError: (error) => {
+			console.error('Failed to delete product batch:', error);
+		}
+	});
+
+	// Derived reactive state using Svelte 5 runes
+	const batches = $derived(batchesQuery.data?.batches ?? []);
+	const pagination = $derived(batchesQuery.data?.pagination);
+	const expiringBatches = $derived(expiringBatchesQuery.data ?? []);
+
+	// Derived filtered states
+	const activeBatches = $derived(batches.filter((b: ProductBatch) => b.quantity_on_hand > 0));
+	const expiredBatches = $derived(
+		batches.filter((b: ProductBatch) => {
+			if (!b.expiry_date) return false;
+			return new Date(b.expiry_date) < new Date();
+		})
+	);
+	const nearExpiryBatches = $derived(
+		batches.filter((b: ProductBatch) => {
+			if (!b.expiry_date) return false;
+			const expiryDate = new Date(b.expiry_date);
+			const thirtyDaysFromNow = new Date();
+			thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
+			return expiryDate < thirtyDaysFromNow && expiryDate >= new Date();
+		})
+	);
+
+	// Loading and error states
+	const isLoading = $derived(batchesQuery.isPending);
+	const isError = $derived(batchesQuery.isError);
+	const error = $derived(batchesQuery.error);
+
+	const isExpiringLoading = $derived(expiringBatchesQuery.isPending);
+	const isExpiringError = $derived(expiringBatchesQuery.isError);
+
+	return {
+		// Queries
+		batchesQuery,
+		expiringBatchesQuery,
+
+		// Reactive data
+		batches,
+		pagination,
+		expiringBatches,
+
+		// Filtered data
+		activeBatches,
+		expiredBatches,
+		nearExpiryBatches,
+
+		// Loading states
+		isLoading,
+		isError,
+		error,
+		isExpiringLoading,
+		isExpiringError,
+
+		// Mutations
+		createBatch: createBatchMutation.mutate,
+		updateBatch: updateBatchMutation.mutate,
+		deleteBatch: deleteBatchMutation.mutate,
+
+		// Mutation states
+		isCreating: $derived(createBatchMutation.isPending),
+		isUpdating: $derived(updateBatchMutation.isPending),
+		isDeleting: $derived(deleteBatchMutation.isPending),
+
+		createError: $derived(createBatchMutation.error),
+		updateError: $derived(updateBatchMutation.error),
+		deleteError: $derived(deleteBatchMutation.error),
+
+		// Utility functions
+		refetch: () => queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.lists() }),
+		refetchExpiring: () =>
+			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() })
+	};
 }
 
 // Hook for fetching a single product batch by ID
 export function useProductBatch(batchId: string) {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  const batchQuery = createQuery<ProductBatch | null>({
-    queryKey: productBatchQueryKeys.detail(batchId),
-    queryFn: () => onGetProductBatchById(batchId),
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 15, // 15 minutes
-    enabled: !!batchId
-  });
+	const batchQuery = createQuery<ProductBatch | null>({
+		queryKey: productBatchQueryKeys.detail(batchId),
+		queryFn: () => onGetProductBatchById(batchId),
+		staleTime: 1000 * 60 * 5, // 5 minutes
+		gcTime: 1000 * 60 * 15, // 15 minutes
+		enabled: !!batchId
+	});
 
-  const batch = $derived(batchQuery.data);
-  const isLoading = $derived(batchQuery.isPending);
-  const isError = $derived(batchQuery.isError);
-  const error = $derived(batchQuery.error);
+	const batch = $derived(batchQuery.data);
+	const isLoading = $derived(batchQuery.isPending);
+	const isError = $derived(batchQuery.isError);
+	const error = $derived(batchQuery.error);
 
-  return {
-    batchQuery,
-    batch,
-    isLoading,
-    isError,
-    error,
-    refetch: () => queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.detail(batchId) })
-  };
+	return {
+		batchQuery,
+		batch,
+		isLoading,
+		isError,
+		error,
+		refetch: () =>
+			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.detail(batchId) })
+	};
 }
 
 // Hook for fetching batches by product ID
 export function useProductBatchesByProduct(productId: string) {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  const batchesQuery = createQuery<ProductBatch[]>({
-    queryKey: productBatchQueryKeys.byProduct(productId),
-    queryFn: () => onGetBatchesByProduct(productId),
-    staleTime: 1000 * 60 * 2, // 2 minutes
-    gcTime: 1000 * 60 * 10, // 10 minutes
-    enabled: !!productId
-  });
+	const batchesQuery = createQuery<ProductBatch[]>({
+		queryKey: productBatchQueryKeys.byProduct(productId),
+		queryFn: () => onGetBatchesByProduct(productId),
+		staleTime: 1000 * 60 * 2, // 2 minutes
+		gcTime: 1000 * 60 * 10, // 10 minutes
+		enabled: !!productId
+	});
 
-  const batches = $derived(batchesQuery.data ?? []);
-  const isLoading = $derived(batchesQuery.isPending);
-  const isError = $derived(batchesQuery.isError);
-  const error = $derived(batchesQuery.error);
+	const batches = $derived(batchesQuery.data ?? []);
+	const isLoading = $derived(batchesQuery.isPending);
+	const isError = $derived(batchesQuery.isError);
+	const error = $derived(batchesQuery.error);
 
-  return {
-    batchesQuery,
-    batches,
-    isLoading,
-    isError,
-    error,
-    refetch: () => queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.byProduct(productId) })
-  };
+	return {
+		batchesQuery,
+		batches,
+		isLoading,
+		isError,
+		error,
+		refetch: () =>
+			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.byProduct(productId) })
+	};
 }
 
 // Hook for optimistic batch updates
 export function useOptimisticBatchUpdate() {
-  const queryClient = useQueryClient();
+	const queryClient = useQueryClient();
 
-  return {
-    // Optimistically update batch quantity in cache before server response
-    updateQuantityOptimistic: (batchId: string, newQuantity: number) => {
-      // Update all relevant queries optimistically
-      queryClient.setQueriesData<PaginatedProductBatches>(
-        { queryKey: productBatchQueryKeys.lists() },
-        (oldData) => {
-          if (!oldData) return oldData;
-          return {
-            ...oldData,
-            batches: oldData.batches.map(batch => 
-              batch.id === batchId 
-                ? { ...batch, quantity_on_hand: newQuantity, updated_at: new Date().toISOString() }
-                : batch
-            )
-          };
-        }
-      );
-      
-      // Update detail cache if it exists
-      queryClient.setQueriesData<ProductBatch>(
-        { queryKey: productBatchQueryKeys.details() },
-        (oldData) => 
-          oldData?.id === batchId 
-            ? { ...oldData, quantity_on_hand: newQuantity, updated_at: new Date().toISOString() }
-            : oldData
-      );
-    }
-  };
+	return {
+		// Optimistically update batch quantity in cache before server response
+		updateQuantityOptimistic: (batchId: string, newQuantity: number) => {
+			// Update all relevant queries optimistically
+			queryClient.setQueriesData<PaginatedProductBatches>(
+				{ queryKey: productBatchQueryKeys.lists() },
+				(oldData) => {
+					if (!oldData) return oldData;
+					return {
+						...oldData,
+						batches: oldData.batches.map((batch) =>
+							batch.id === batchId
+								? { ...batch, quantity_on_hand: newQuantity, updated_at: new Date().toISOString() }
+								: batch
+						)
+					};
+				}
+			);
+
+			// Update detail cache if it exists
+			queryClient.setQueriesData<ProductBatch>(
+				{ queryKey: productBatchQueryKeys.details() },
+				(oldData) =>
+					oldData?.id === batchId
+						? { ...oldData, quantity_on_hand: newQuantity, updated_at: new Date().toISOString() }
+						: oldData
+			);
+		}
+	};
 }
