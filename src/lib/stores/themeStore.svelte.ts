@@ -1,10 +1,11 @@
-import { writable } from 'svelte/store';
 import { browser } from '$app/environment';
 
 function createThemeStore() {
-  const { subscribe, set } = writable<'light' | 'dark' | 'system'>('system');
+  // Use $state for theme value
+  let theme = $state<'light' | 'dark' | 'system'>('system');
 
-  function applyTheme(theme: 'light' | 'dark' | 'system') {
+  // Use $effect to apply theme changes to DOM and localStorage
+  $effect(() => {
     if (!browser) return;
 
     const root = document.documentElement;
@@ -18,18 +19,22 @@ function createThemeStore() {
       root.classList.add(theme);
       localStorage.setItem('theme', theme);
     }
-    set(theme);
-  }
+  });
 
+  // Initialize theme from localStorage on first load
   if (browser) {
     const savedTheme = localStorage.getItem('theme') as 'light' | 'dark' | null;
-    applyTheme(savedTheme || 'system');
+    theme = savedTheme || 'system';
+  }
+
+  function setTheme(newTheme: 'light' | 'dark' | 'system') {
+    theme = newTheme;
   }
 
   return {
-    subscribe,
-    set: applyTheme,
+    get theme() { return theme; },
+    setTheme
   };
 }
 
-export const theme = createThemeStore();
+export const themeStore = createThemeStore();
