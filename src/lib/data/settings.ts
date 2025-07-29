@@ -8,7 +8,7 @@ import {
 	onGetSettingsBackups,
 	onDeleteSettingsBackup,
 	onValidateSettings
-} from '$lib/server/telefuncs/settings.telefunc';
+} from '$lib/server/telefuncs/settings.telefunc.js';
 import type { Settings, SettingsUpdate, SettingsBackup } from '$lib/types/settings.schema';
 
 const settingsQueryKey = ['settings'];

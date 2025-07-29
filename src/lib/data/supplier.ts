@@ -8,7 +8,7 @@ import {
 	onGetSupplierPerformance,
 	onGetSupplierProducts,
 	onDeleteSupplier
-} from '$lib/server/telefuncs/supplier.telefunc';
+} from '$lib/server/telefuncs/supplier.telefunc.js';
 import type {
 	Supplier,
 	SupplierInput,

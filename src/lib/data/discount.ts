@@ -1,10 +1,25 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetDiscounts,
-	onCreateDiscount,
-	onValidateDiscount,
-	onGetDiscountStats
-} from '$lib/server/telefuncs/discount.telefunc';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetDiscounts = async (filters: DiscountFilters): Promise<PaginatedDiscounts> => {
+	const { onGetDiscounts } = await import('$lib/server/telefuncs/discount.telefunc');
+	return onGetDiscounts(filters);
+};
+
+const onCreateDiscount = async (discountData: DiscountInput): Promise<any> => {
+	const { onCreateDiscount } = await import('$lib/server/telefuncs/discount.telefunc');
+	return onCreateDiscount(discountData);
+};
+
+const onValidateDiscount = async (validationData: ValidateDiscount): Promise<any> => {
+	const { onValidateDiscount } = await import('$lib/server/telefuncs/discount.telefunc');
+	return onValidateDiscount(validationData);
+};
+
+const onGetDiscountStats = async (): Promise<DiscountStats> => {
+	const { onGetDiscountStats } = await import('$lib/server/telefuncs/discount.telefunc');
+	return onGetDiscountStats();
+};
 import type {
 	DiscountInput,
 	DiscountFilters,

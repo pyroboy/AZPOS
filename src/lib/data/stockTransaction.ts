@@ -1,13 +1,76 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onCreateStockTransaction,
-	onProcessBulkAdjustment,
-	onProcessStockTransfer,
-	onGetStockTransactions,
-	onGetStockTransactionStats,
-	onGetStockValuation,
-	onGetStockAging
-} from '$lib/server/telefuncs/stockTransaction.telefunc';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onCreateStockTransaction telefunc to avoid SSR import issues.
+ * @param {StockTransactionCreate} transactionData - The parameters for the telefunc.
+ * @returns {Promise<StockTransaction>} The result from the telefunc.
+ */
+const onCreateStockTransaction = async (transactionData: StockTransactionCreate): Promise<StockTransaction> => {
+	const { onCreateStockTransaction } = await import('$lib/server/telefuncs/stockTransaction.telefunc.js');
+	return onCreateStockTransaction(transactionData);
+};
+
+/**
+ * A wrapper for the onProcessBulkAdjustment telefunc to avoid SSR import issues.
+ * @param {BulkAdjustment} adjustmentData - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onProcessBulkAdjustment = async (adjustmentData: BulkAdjustment): Promise<any> => {
+	const { onProcessBulkAdjustment } = await import('$lib/server/telefuncs/stockTransaction.telefunc.js');
+	return onProcessBulkAdjustment(adjustmentData);
+};
+
+/**
+ * A wrapper for the onProcessStockTransfer telefunc to avoid SSR import issues.
+ * @param {StockTransfer} transferData - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onProcessStockTransfer = async (transferData: StockTransfer): Promise<any> => {
+	const { onProcessStockTransfer } = await import('$lib/server/telefuncs/stockTransaction.telefunc.js');
+	return onProcessStockTransfer(transferData);
+};
+
+/**
+ * A wrapper for the onGetStockTransactions telefunc to avoid SSR import issues.
+ * @param {StockTransactionFilters} filters - The parameters for the telefunc.
+ * @returns {Promise<PaginatedStockTransactions>} The result from the telefunc.
+ */
+const onGetStockTransactions = async (filters: StockTransactionFilters): Promise<PaginatedStockTransactions> => {
+	const { onGetStockTransactions } = await import('$lib/server/telefuncs/stockTransaction.telefunc.js');
+	return onGetStockTransactions(filters);
+};
+
+/**
+ * A wrapper for the onGetStockTransactionStats telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<StockTransactionStats>} The result from the telefunc.
+ */
+const onGetStockTransactionStats = async (): Promise<StockTransactionStats> => {
+	const { onGetStockTransactionStats } = await import('$lib/server/telefuncs/stockTransaction.telefunc.js');
+	return onGetStockTransactionStats();
+};
+
+/**
+ * A wrapper for the onGetStockValuation telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<StockValuation[]>} The result from the telefunc.
+ */
+const onGetStockValuation = async (): Promise<StockValuation[]> => {
+	const { onGetStockValuation } = await import('$lib/server/telefuncs/stockTransaction.telefunc.js');
+	return onGetStockValuation();
+};
+
+/**
+ * A wrapper for the onGetStockAging telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<StockAgingReport[]>} The result from the telefunc.
+ */
+const onGetStockAging = async (): Promise<StockAgingReport[]> => {
+	const { onGetStockAging } = await import('$lib/server/telefuncs/stockTransaction.telefunc.js');
+	return onGetStockAging();
+};
+
 import type {
 	StockTransaction,
 	StockTransactionCreate,

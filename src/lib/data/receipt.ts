@@ -3,7 +3,7 @@ import {
 	onGenerateReceipt,
 	onGetReceipts,
 	onGetReceiptStats
-} from '$lib/server/telefuncs/receipt.telefunc';
+} from '$lib/server/telefuncs/receipt.telefunc.js';
 import type {
 	GeneratedReceipt,
 	ReceiptGeneration,

@@ -5,7 +5,7 @@ import {
 	onUpdateModifier,
 	onValidateModifierSelection,
 	onGetModifierStats
-} from '$lib/server/telefuncs/modifier.telefunc';
+} from '$lib/server/telefuncs/modifier.telefunc.js';
 import type {
 	Modifier,
 	ModifierInput,

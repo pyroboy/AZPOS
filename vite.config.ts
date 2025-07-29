@@ -5,5 +5,13 @@ import { telefunc } from 'telefunc/vite';
 import tailwindcss from '@tailwindcss/vite';
 
 export default defineConfig({
-	plugins: [tailwindcss(), telefunc(), sveltekit()]
+	plugins: [
+		tailwindcss(),
+		telefunc({
+			// Configure telefunc for ESM compatibility
+			outDir: '.telefunc',
+			transformImports: true
+		}),
+		sveltekit()
+	]
 });

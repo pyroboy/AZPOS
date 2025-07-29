@@ -1,12 +1,35 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetCart,
-	onAddCartItem,
-	onUpdateCartItem,
-	onApplyCartDiscount,
-	onClearCart,
-	onCalculateCartTotals
-} from '$lib/server/telefuncs/cart.telefunc';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetCart = async (sessionId: string): Promise<CartState> => {
+	const { onGetCart } = await import('$lib/server/telefuncs/cart.telefunc');
+	return onGetCart(sessionId);
+};
+
+const onAddCartItem = async (itemData: AddCartItemInput, sessionId: string): Promise<void> => {
+	const { onAddCartItem } = await import('$lib/server/telefuncs/cart.telefunc');
+	return onAddCartItem(itemData, sessionId);
+};
+
+const onUpdateCartItem = async (updateData: UpdateCartItemInput): Promise<void> => {
+	const { onUpdateCartItem } = await import('$lib/server/telefuncs/cart.telefunc');
+	return onUpdateCartItem(updateData);
+};
+
+const onApplyCartDiscount = async (discount: CartDiscount, sessionId: string): Promise<void> => {
+	const { onApplyCartDiscount } = await import('$lib/server/telefuncs/cart.telefunc');
+	return onApplyCartDiscount(discount, sessionId);
+};
+
+const onClearCart = async (sessionId: string): Promise<void> => {
+	const { onClearCart } = await import('$lib/server/telefuncs/cart.telefunc');
+	return onClearCart(sessionId);
+};
+
+const onCalculateCartTotals = async (sessionId: string): Promise<CartTotals> => {
+	const { onCalculateCartTotals } = await import('$lib/server/telefuncs/cart.telefunc');
+	return onCalculateCartTotals(sessionId);
+};
 import type {
 	CartState,
 	EnhancedCartItem,
@@ -47,7 +70,8 @@ export function useCart() {
 		queryKey: [...cartQueryKey, sessionId],
 		queryFn: () => onGetCart(sessionId),
 		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 30 // 30 minutes
+		gcTime: 1000 * 60 * 30, // 30 minutes
+		enabled: browser
 	});
 
 	// Query to fetch cart totals (derived from cart state)
@@ -55,7 +79,7 @@ export function useCart() {
 		queryKey: [...cartTotalsQueryKey, sessionId],
 		queryFn: () => onCalculateCartTotals(sessionId),
 		staleTime: 1000 * 60 * 5, // 5 minutes
-		enabled: !!cartQuery.data // Only run when cart data is available
+		enabled: browser && !!cartQuery.data // Only run when cart data is available
 	});
 
 	// Mutation to add item to cart

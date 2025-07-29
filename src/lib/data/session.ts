@@ -1,15 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-// Import telefunc functions using proper client-side approach
-const {
-	onCreateSession,
-	onUpdateSession,
-	onGetCurrentSession,
-	onGetSessions,
-	onEndSession,
-	onCleanupExpiredSessions,
-	onGetSessionStats,
-	onGetSessionActivity
-} = await import('$lib/server/telefuncs/session.telefunc');
+import { browser } from '$app/environment';
 import type {
 	SessionState,
 	SessionFilters,
@@ -17,6 +7,47 @@ import type {
 	SessionStats,
 	SessionActivity
 } from '$lib/types/session.schema';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onCreateSession = async (sessionData: Record<string, unknown>): Promise<SessionState> => {
+	const { onCreateSession } = await import('$lib/server/telefuncs/session.telefunc');
+	return onCreateSession(sessionData);
+};
+
+const onUpdateSession = async (sessionId: string, sessionData: Record<string, unknown>): Promise<SessionState> => {
+	const { onUpdateSession } = await import('$lib/server/telefuncs/session.telefunc');
+	return onUpdateSession(sessionId, sessionData);
+};
+
+const onGetCurrentSession = async (): Promise<SessionState | null> => {
+	const { onGetCurrentSession } = await import('$lib/server/telefuncs/session.telefunc');
+	return onGetCurrentSession();
+};
+
+const onGetSessions = async (filters?: SessionFilters): Promise<PaginatedSessions> => {
+	const { onGetSessions } = await import('$lib/server/telefuncs/session.telefunc');
+	return onGetSessions(filters);
+};
+
+const onEndSession = async (sessionId: string): Promise<void> => {
+	const { onEndSession } = await import('$lib/server/telefuncs/session.telefunc');
+	return onEndSession(sessionId);
+};
+
+const onCleanupExpiredSessions = async (): Promise<number> => {
+	const { onCleanupExpiredSessions } = await import('$lib/server/telefuncs/session.telefunc');
+	return onCleanupExpiredSessions();
+};
+
+const onGetSessionStats = async (): Promise<SessionStats> => {
+	const { onGetSessionStats } = await import('$lib/server/telefuncs/session.telefunc');
+	return onGetSessionStats();
+};
+
+const onGetSessionActivity = async (sessionId?: string, limit?: number): Promise<SessionActivity[]> => {
+	const { onGetSessionActivity } = await import('$lib/server/telefuncs/session.telefunc');
+	return onGetSessionActivity(sessionId, limit);
+};
 
 const sessionsQueryKey = ['sessions'];
 const currentSessionQueryKey = ['current-session'];
@@ -38,19 +69,22 @@ export function useSessions() {
 	const currentSessionQuery = createQuery<SessionState | null>({
 		queryKey: currentSessionQueryKey,
 		queryFn: onGetCurrentSession,
-		staleTime: 30 * 1000 // 30 seconds
+		staleTime: 30 * 1000, // 30 seconds
+		enabled: browser
 	});
 
 	// Query for paginated sessions
 	const sessionsQuery = createQuery<PaginatedSessions>({
 		queryKey: $derived([...sessionsQueryKey, filters]),
-		queryFn: () => onGetSessions(filters)
+		queryFn: () => onGetSessions(filters),
+		enabled: browser
 	});
 
 	// Query for session statistics
 	const statsQuery = createQuery<SessionStats>({
 		queryKey: sessionStatsQueryKey,
-		queryFn: () => onGetSessionStats()
+		queryFn: () => onGetSessionStats(),
+		enabled: browser
 	});
 
 	// Mutation to create session
@@ -307,7 +341,8 @@ export function useSessions() {
 	function useSessionActivity(sessionId?: string, limit: number = 50) {
 		return createQuery<SessionActivity[]>({
 			queryKey: [...sessionActivityQueryKey, sessionId, limit],
-			queryFn: () => onGetSessionActivity(sessionId, limit)
+			queryFn: () => onGetSessionActivity(sessionId, limit),
+			enabled: browser
 		});
 	}
 

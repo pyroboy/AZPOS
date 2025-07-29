@@ -1,14 +1,45 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetGroceryCart,
-	onAddToGroceryCart,
-	onUpdateGroceryCartItem,
-	onRemoveFromGroceryCart,
-	onUpdateGroceryCart,
-	onClearGroceryCart,
-	onGetDeliveryTimeSlots,
-	onCalculateDeliveryFee
-} from '$lib/server/telefuncs/groceryCart.telefunc';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetGroceryCart = async (): Promise<GroceryCartWithItems> => {
+	const { onGetGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onGetGroceryCart();
+};
+
+const onAddToGroceryCart = async (itemData: GroceryCartItemInput): Promise<void> => {
+	const { onAddToGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onAddToGroceryCart(itemData);
+};
+
+const onUpdateGroceryCartItem = async (itemData: GroceryCartItemUpdate): Promise<void> => {
+	const { onUpdateGroceryCartItem } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onUpdateGroceryCartItem(itemData);
+};
+
+const onRemoveFromGroceryCart = async (itemId: string): Promise<void> => {
+	const { onRemoveFromGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onRemoveFromGroceryCart(itemId);
+};
+
+const onUpdateGroceryCart = async (cartData: GroceryCartInput): Promise<void> => {
+	const { onUpdateGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onUpdateGroceryCart(cartData);
+};
+
+const onClearGroceryCart = async (): Promise<void> => {
+	const { onClearGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onClearGroceryCart();
+};
+
+const onGetDeliveryTimeSlots = async (date?: string): Promise<DeliveryTimeSlot[]> => {
+	const { onGetDeliveryTimeSlots } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onGetDeliveryTimeSlots(date);
+};
+
+const onCalculateDeliveryFee = async (data: { subtotal: number; is_express?: boolean }): Promise<any> => {
+	const { onCalculateDeliveryFee } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onCalculateDeliveryFee(data);
+};
 import type {
 	GroceryCart,
 	GroceryCartWithItems,

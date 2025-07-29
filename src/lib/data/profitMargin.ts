@@ -1,10 +1,20 @@
 import { createQuery, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetProfitMarginReport,
-	onGetProfitMarginReportByDateRange,
-	onGetProductProfitMargin,
-	type ProfitMarginReport
-} from '$lib/server/telefuncs/profitMargin.telefunc';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetProfitMarginReport = async (): PromiseProfitMarginReport =e => {
+const { onGetProfitMarginReport } = await import('$lib/server/telefuncs/profitMargin.telefunc');
+return onGetProfitMarginReport();
+};
+
+const onGetProfitMarginReportByDateRange = async (startDate: string, endDate: string): PromiseProfitMarginReport =e => {
+const { onGetProfitMarginReportByDateRange } = await import('$lib/server/telefuncs/profitMargin.telefunc');
+return onGetProfitMarginReportByDateRange(startDate, endDate);
+};
+
+const onGetProductProfitMargin = async (productId: string): PromiseProfitMarginReport =e => {
+const { onGetProductProfitMargin } = await import('$lib/server/telefuncs/profitMargin.telefunc');
+return onGetProductProfitMargin(productId);
+};
 
 // Query keys for consistent cache management
 const profitMarginQueryKeys = {

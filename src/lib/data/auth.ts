@@ -1,18 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onLogin,
-	onRegister,
-	onLogout,
-	onGetCurrentUser,
-	onUpdateProfile,
-	onChangePassword,
-	onRequestPasswordReset,
-	onVerifyEmail,
-	onGetAuthStats,
-	onGetUserActivity,
-	onLoginWithPin,
-	onToggleStaffMode
-} from '$lib/server/telefuncs/auth.telefunc';
+import { browser } from '$app/environment';
 import type {
 	AuthUser,
 	AuthSession,
@@ -26,6 +13,67 @@ import type {
 	AuthActivity,
 	PinLogin
 } from '$lib/types/auth.schema';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onLogin = async (loginData: Login): Promise<AuthSession> => {
+	const { onLogin } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onLogin(loginData);
+};
+
+const onRegister = async (registerData: Register): Promise<AuthSession> => {
+	const { onRegister } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onRegister(registerData);
+};
+
+const onLogout = async (): Promise<void> => {
+	const { onLogout } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onLogout();
+};
+
+const onGetCurrentUser = async (): Promise<AuthUser | null> => {
+	const { onGetCurrentUser } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onGetCurrentUser();
+};
+
+const onUpdateProfile = async (profileData: ProfileUpdate): Promise<AuthUser> => {
+	const { onUpdateProfile } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onUpdateProfile(profileData);
+};
+
+const onChangePassword = async (passwordData: ChangePassword): Promise<void> => {
+	const { onChangePassword } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onChangePassword(passwordData);
+};
+
+const onRequestPasswordReset = async (resetData: PasswordResetRequest): Promise<void> => {
+	const { onRequestPasswordReset } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onRequestPasswordReset(resetData);
+};
+
+const onVerifyEmail = async (verificationData: EmailVerification): Promise<void> => {
+	const { onVerifyEmail } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onVerifyEmail(verificationData);
+};
+
+const onGetAuthStats = async (): Promise<AuthStats> => {
+	const { onGetAuthStats } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onGetAuthStats();
+};
+
+const onGetUserActivity = async (): Promise<AuthActivity[]> => {
+	const { onGetUserActivity } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onGetUserActivity();
+};
+
+const onLoginWithPin = async (pinData: PinLogin): Promise<AuthSession> => {
+	const { onLoginWithPin } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onLoginWithPin(pinData);
+};
+
+const onToggleStaffMode = async (): Promise<void> => {
+	const { onToggleStaffMode } = await import('$lib/server/telefuncs/auth.telefunc');
+	return onToggleStaffMode();
+};
 
 const authQueryKey = ['auth'];
 const authStatsQueryKey = ['auth-stats'];
@@ -42,7 +90,8 @@ export function useAuth() {
 		queryKey: [...authQueryKey, 'current-user'],
 		queryFn: onGetCurrentUser,
 		retry: false,
-		staleTime: 5 * 60 * 1000 // 5 minutes
+		staleTime: 5 * 60 * 1000, // 5 minutes
+		enabled: browser
 	});
 
 	// Query for auth statistics (admin/manager only)
@@ -50,7 +99,7 @@ export function useAuth() {
 		queryKey: authStatsQueryKey,
 		queryFn: onGetAuthStats,
 		enabled: $derived(
-			!!currentUserQuery.data && ['admin', 'manager'].includes(currentUserQuery.data.role)
+			browser && !!currentUserQuery.data && ['admin', 'manager'].includes(currentUserQuery.data.role)
 		)
 	});
 
@@ -234,7 +283,7 @@ export function useAuth() {
 		return createQuery<AuthActivity[]>({
 			queryKey: [...userActivityQueryKey, userId, limit],
 			queryFn: () => onGetUserActivity(userId, limit),
-			enabled: !!user
+			enabled: browser && !!user
 		});
 	}
 

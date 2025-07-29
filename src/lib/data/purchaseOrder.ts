@@ -7,7 +7,7 @@ import {
 	onApprovePurchaseOrder,
 	onReceiveItems,
 	onGetPurchaseOrderStats
-} from '$lib/server/telefuncs/purchaseOrder.telefunc';
+} from '$lib/server/telefuncs/purchaseOrder.telefunc.js';
 import type {
 	PurchaseOrder,
 	CreatePurchaseOrder,

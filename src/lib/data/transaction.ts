@@ -1,4 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
+import { browser } from '$app/environment';
 import {
 	onGetTransactions,
 	onGetTransaction,
@@ -6,7 +7,7 @@ import {
 	onProcessRefund,
 	onGetTransactionStats,
 	onGenerateReceipt
-} from '$lib/server/telefuncs/transaction.telefunc';
+} from '$lib/server/telefuncs/transaction.telefunc.js';
 import type {
 	Transaction,
 	CreateTransaction,
@@ -33,13 +34,15 @@ export function useTransactions() {
 	// Query for paginated transactions
 	const transactionsQuery = createQuery<PaginatedTransactions>({
 		queryKey: $derived([...transactionsQueryKey, filters]),
-		queryFn: () => onGetTransactions(filters)
+		queryFn: () => onGetTransactions(filters),
+		enabled: browser
 	});
 
 	// Query for transaction statistics
 	const statsQuery = createQuery<TransactionStats>({
 		queryKey: transactionStatsQueryKey,
-		queryFn: () => onGetTransactionStats()
+		queryFn: () => onGetTransactionStats(),
+		enabled: browser
 	});
 
 	// Mutation to create transaction
@@ -203,7 +206,7 @@ export function useTransactions() {
 		return createQuery<Transaction>({
 			queryKey: ['transaction', transactionId],
 			queryFn: () => onGetTransaction(transactionId),
-			enabled: !!transactionId
+			enabled: browser && !!transactionId
 		});
 	}
 

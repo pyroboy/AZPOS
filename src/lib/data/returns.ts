@@ -1,12 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetReturns,
-	onCreateReturn,
-	onUpdateReturnStatus,
-	onGetReturnById,
-	onGetReturnStats,
-	onDeleteReturn
-} from '$lib/server/telefuncs/returns.telefunc';
+import { browser } from '$app/environment';
 import type {
 	EnhancedReturnRecord,
 	NewReturnInput,
@@ -14,6 +7,37 @@ import type {
 	ReturnFilters,
 	ReturnStats
 } from '$lib/types/returns.schema';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetReturns = async (filters?: ReturnFilters): Promise<EnhancedReturnRecord[]> => {
+	const { onGetReturns } = await import('$lib/server/telefuncs/returns.telefunc');
+	return onGetReturns(filters);
+};
+
+const onCreateReturn = async (newReturn: NewReturnInput): Promise<EnhancedReturnRecord> => {
+	const { onCreateReturn } = await import('$lib/server/telefuncs/returns.telefunc');
+	return onCreateReturn(newReturn);
+};
+
+const onUpdateReturnStatus = async (updateData: UpdateReturnStatusInput): Promise<EnhancedReturnRecord> => {
+	const { onUpdateReturnStatus } = await import('$lib/server/telefuncs/returns.telefunc');
+	return onUpdateReturnStatus(updateData);
+};
+
+const onGetReturnById = async (returnId: string): Promise<EnhancedReturnRecord | null> => {
+	const { onGetReturnById } = await import('$lib/server/telefuncs/returns.telefunc');
+	return onGetReturnById(returnId);
+};
+
+const onGetReturnStats = async (): Promise<ReturnStats> => {
+	const { onGetReturnStats } = await import('$lib/server/telefuncs/returns.telefunc');
+	return onGetReturnStats();
+};
+
+const onDeleteReturn = async (returnId: string): Promise<void> => {
+	const { onDeleteReturn } = await import('$lib/server/telefuncs/returns.telefunc');
+	return onDeleteReturn(returnId);
+};
 
 // Query keys for consistent cache management
 const returnsQueryKeys = {
@@ -33,7 +57,8 @@ export function useReturns(filters?: ReturnFilters) {
 		queryKey: returnsQueryKeys.list(filters),
 		queryFn: () => onGetReturns(filters),
 		staleTime: 1000 * 60 * 2, // 2 minutes
-		gcTime: 1000 * 60 * 10 // 10 minutes
+		gcTime: 1000 * 60 * 10, // 10 minutes
+		enabled: browser
 	});
 
 	// Query to fetch return statistics
@@ -41,7 +66,8 @@ export function useReturns(filters?: ReturnFilters) {
 		queryKey: returnsQueryKeys.stats(),
 		queryFn: onGetReturnStats,
 		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 15 // 15 minutes
+		gcTime: 1000 * 60 * 15, // 15 minutes
+		enabled: browser
 	});
 
 	// Mutation to create a new return
@@ -188,7 +214,7 @@ export function useReturn(returnId: string) {
 		queryFn: () => onGetReturnById(returnId),
 		staleTime: 1000 * 60 * 5, // 5 minutes
 		gcTime: 1000 * 60 * 15, // 15 minutes
-		enabled: !!returnId
+		enabled: browser && !!returnId
 	});
 
 	const returnData = $derived(returnQuery.data);

@@ -11,7 +11,7 @@ import {
 	onImportTheme,
 	onGetThemeStats,
 	onValidateTheme
-} from '$lib/server/telefuncs/theme.telefunc';
+} from '$lib/server/telefuncs/theme.telefunc.js';
 import type {
 	ThemeConfig,
 	ThemeCustomization,

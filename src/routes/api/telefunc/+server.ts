@@ -1,13 +1,26 @@
-import { handleTelefuncRequest } from '$lib/server/telefunc.config';
-import type { RequestEvent } from '@sveltejs/kit';
+import { telefunc } from 'telefunc'
+import type { RequestHandler } from '@sveltejs/kit'
 
-export const POST = async (event: RequestEvent) => {
-	const response = await handleTelefuncRequest(event);
+export const POST: RequestHandler = async (event) => {
+  const httpResponse = await telefunc({
+    url: event.url.pathname,
+    method: event.request.method,
+    body: await event.request.text(),
+    context: {
+      user: event.locals.user,
+      request: event.request
+    }
+  })
 
-	if (response) {
-		return response;
-	}
+  return new Response(httpResponse.body, {
+    status: httpResponse.statusCode,
+    headers: {
+      'Content-Type': httpResponse.contentType ?? 'application/json'
+    }
+  })
+}
 
-	// If Telefunc doesn't handle this request, return 404
-	return new Response('Not Found', { status: 404 });
-};
+// Handle other HTTP methods
+export const GET = POST
+export const PUT = POST
+export const DELETE = POST

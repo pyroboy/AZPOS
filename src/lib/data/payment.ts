@@ -1,9 +1,36 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onProcessPayment,
-	onGetPayments,
-	onGetPaymentStats
-} from '$lib/server/telefuncs/payment.telefunc';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onProcessPayment telefunc to avoid SSR import issues.
+ * @param {PaymentProcessing} paymentData - The parameters for the telefunc.
+ * @returns {Promise<PaymentResult>} The result from the telefunc.
+ */
+const onProcessPayment = async (paymentData: PaymentProcessing): Promise<PaymentResult> => {
+	const { onProcessPayment } = await import('$lib/server/telefuncs/payment.telefunc.js');
+	return onProcessPayment(paymentData);
+};
+
+/**
+ * A wrapper for the onGetPayments telefunc to avoid SSR import issues.
+ * @param {PaymentFilters} filters - The parameters for the telefunc.
+ * @returns {Promise<PaginatedPayments>} The result from the telefunc.
+ */
+const onGetPayments = async (filters: PaymentFilters): Promise<PaginatedPayments> => {
+	const { onGetPayments } = await import('$lib/server/telefuncs/payment.telefunc.js');
+	return onGetPayments(filters);
+};
+
+/**
+ * A wrapper for the onGetPaymentStats telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<PaymentStats>} The result from the telefunc.
+ */
+const onGetPaymentStats = async (): Promise<PaymentStats> => {
+	const { onGetPaymentStats } = await import('$lib/server/telefuncs/payment.telefunc.js');
+	return onGetPaymentStats();
+};
+
 import type {
 	PaymentResult,
 	PaymentProcessing,

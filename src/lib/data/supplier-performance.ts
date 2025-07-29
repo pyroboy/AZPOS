@@ -3,7 +3,7 @@ import {
 	onGetSupplierPerformanceReport,
 	onGetSupplierPerformanceDetail,
 	onExportSupplierPerformanceReport
-} from '$lib/server/telefuncs/supplier-performance.telefunc';
+} from '$lib/server/telefuncs/supplier-performance.telefunc.js';
 import type {
 	SupplierPerformanceReport,
 	SupplierPerformanceFilters,

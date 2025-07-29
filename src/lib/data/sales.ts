@@ -1,10 +1,25 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetSalesReport,
-	onGetSalesStats,
-	onGetSalesSummary,
-	onGetProductPerformance
-} from '$lib/server/telefuncs/sales.telefunc';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetSalesReport = async (filters: SalesReportFilters): PromisePaginatedSalesReport =e => {
+const { onGetSalesReport } = await import('$lib/server/telefuncs/sales.telefunc.js');
+return onGetSalesReport(filters);
+};
+
+const onGetSalesStats = async (date_from?: string, date_to?: string): PromiseSalesStats =e => {
+const { onGetSalesStats } = await import('$lib/server/telefuncs/sales.telefunc.js');
+return onGetSalesStats(date_from, date_to);
+};
+
+const onGetSalesSummary = async (period: 'today' | 'week' | 'month' | 'year' | 'custom', customFrom?: string, customTo?: string): PromiseSalesSummary =e => {
+const { onGetSalesSummary } = await import('$lib/server/telefuncs/sales.telefunc.js');
+return onGetSalesSummary(period, customFrom, customTo);
+};
+
+const onGetProductPerformance = async (dateFrom?: string, dateTo?: string, limit: number = 50): PromiseProductPerformance[] =e => {
+const { onGetProductPerformance } = await import('$lib/server/telefuncs/sales.telefunc.js');
+return onGetProductPerformance(dateFrom, dateTo, limit);
+};
 import type {
 	SalesItem,
 	SalesReportFilters,

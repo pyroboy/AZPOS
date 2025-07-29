@@ -1,12 +1,36 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetCategories,
-	onGetCategoryTree,
-	onCreateCategory,
-	onUpdateCategory,
-	onGetCategoryStats,
-	onMoveCategory
-} from '$lib/server/telefuncs/category.telefunc';
+import { browser } from '$app/environment';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetCategories = async (filters?: CategoryFilters): Promise<Category[]> => {
+  const { onGetCategories } = await import('$lib/server/telefuncs/category.telefunc');
+  return onGetCategories(filters);
+};
+
+const onGetCategoryTree = async (): Promise<CategoryTree[]> => {
+  const { onGetCategoryTree } = await import('$lib/server/telefuncs/category.telefunc');
+  return onGetCategoryTree();
+};
+
+const onCreateCategory = async (categoryData: unknown): Promise<Category> => {
+  const { onCreateCategory } = await import('$lib/server/telefuncs/category.telefunc');
+  return onCreateCategory(categoryData);
+};
+
+const onUpdateCategory = async (categoryId: string, categoryData: unknown): Promise<Category> => {
+  const { onUpdateCategory } = await import('$lib/server/telefuncs/category.telefunc');
+  return onUpdateCategory(categoryId, categoryData);
+};
+
+const onGetCategoryStats = async (): Promise<CategoryStats> => {
+  const { onGetCategoryStats } = await import('$lib/server/telefuncs/category.telefunc');
+  return onGetCategoryStats();
+};
+
+const onMoveCategory = async (moveData: unknown): Promise<void> => {
+  const { onMoveCategory } = await import('$lib/server/telefuncs/category.telefunc');
+  return onMoveCategory(moveData);
+};
 import type {
 	Category,
 	CategoryTree,
@@ -31,7 +55,8 @@ export function useCategories(filters?: CategoryFilters) {
 		queryKey: categoryQueryKeys.list(filters),
 		queryFn: () => onGetCategories(filters),
 		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 15 // 15 minutes
+		gcTime: 1000 * 60 * 15, // 15 minutes
+		enabled: browser
 	});
 
 	// Query to fetch category tree
@@ -39,7 +64,8 @@ export function useCategories(filters?: CategoryFilters) {
 		queryKey: categoryQueryKeys.tree(),
 		queryFn: onGetCategoryTree,
 		staleTime: 1000 * 60 * 10, // 10 minutes
-		gcTime: 1000 * 60 * 30 // 30 minutes
+		gcTime: 1000 * 60 * 30, // 30 minutes
+		enabled: browser
 	});
 
 	// Query to fetch category stats
@@ -47,7 +73,8 @@ export function useCategories(filters?: CategoryFilters) {
 		queryKey: categoryQueryKeys.stats(),
 		queryFn: onGetCategoryStats,
 		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 15 // 15 minutes
+		gcTime: 1000 * 60 * 15, // 15 minutes
+		enabled: browser
 	});
 
 	// Mutation to create a new category

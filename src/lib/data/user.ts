@@ -7,7 +7,7 @@ import {
 	onChangePassword,
 	onGetUserStats,
 	onGetUserActivity
-} from '$lib/server/telefuncs/user.telefunc';
+} from '$lib/server/telefuncs/user.telefunc.js';
 import type {
 	User,
 	UserInput,
