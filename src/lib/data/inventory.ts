@@ -1,12 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetInventoryItems,
-	onCreateInventoryMovement,
-	onGetInventoryMovements,
-	onGetInventoryValuation,
-	onCreateStockCount,
-	onGetInventoryAlerts
-} from '$lib/server/telefuncs/inventory.telefunc';
+import { browser } from '$app/environment';
 import type {
 	InventoryItem,
 	InventoryMovement,
@@ -16,6 +9,37 @@ import type {
 	CreateStockCount,
 	InventoryAlert
 } from '$lib/types/inventory.schema';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetInventoryItems = async (filters?: InventoryFilters): Promise<InventoryItem[]> => {
+	const { onGetInventoryItems } = await import('$lib/server/telefuncs/inventory.telefunc');
+	return onGetInventoryItems(filters);
+};
+
+const onCreateInventoryMovement = async (movementData: CreateInventoryMovement): Promise<InventoryMovement> => {
+	const { onCreateInventoryMovement } = await import('$lib/server/telefuncs/inventory.telefunc');
+	return onCreateInventoryMovement(movementData);
+};
+
+const onGetInventoryMovements = async (productId?: string, locationId?: string): Promise<InventoryMovement[]> => {
+	const { onGetInventoryMovements } = await import('$lib/server/telefuncs/inventory.telefunc');
+	return onGetInventoryMovements(productId, locationId);
+};
+
+const onGetInventoryValuation = async (): Promise<InventoryValuation> => {
+	const { onGetInventoryValuation } = await import('$lib/server/telefuncs/inventory.telefunc');
+	return onGetInventoryValuation();
+};
+
+const onCreateStockCount = async (countData: CreateStockCount): Promise<any> => {
+	const { onCreateStockCount } = await import('$lib/server/telefuncs/inventory.telefunc');
+	return onCreateStockCount(countData);
+};
+
+const onGetInventoryAlerts = async (): Promise<InventoryAlert[]> => {
+	const { onGetInventoryAlerts } = await import('$lib/server/telefuncs/inventory.telefunc');
+	return onGetInventoryAlerts();
+};
 
 // Query keys for consistent cache management
 const inventoryQueryKeys = {
@@ -38,7 +62,8 @@ export function useInventory(filters?: InventoryFilters) {
 		queryKey: inventoryQueryKeys.itemsList(filters),
 		queryFn: () => onGetInventoryItems(filters),
 		staleTime: 1000 * 60 * 2, // 2 minutes
-		gcTime: 1000 * 60 * 10 // 10 minutes
+		gcTime: 1000 * 60 * 10, // 10 minutes
+		enabled: browser // Only run on client-side
 	});
 
 	// Query to fetch inventory valuation
@@ -46,7 +71,8 @@ export function useInventory(filters?: InventoryFilters) {
 		queryKey: inventoryQueryKeys.valuation(),
 		queryFn: onGetInventoryValuation,
 		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 15 // 15 minutes
+		gcTime: 1000 * 60 * 15, // 15 minutes
+		enabled: browser // Only run on client-side
 	});
 
 	// Query to fetch inventory alerts
@@ -54,7 +80,8 @@ export function useInventory(filters?: InventoryFilters) {
 		queryKey: inventoryQueryKeys.alerts(),
 		queryFn: onGetInventoryAlerts,
 		staleTime: 1000 * 60 * 1, // 1 minute - alerts should be fresh
-		gcTime: 1000 * 60 * 5 // 5 minutes
+		gcTime: 1000 * 60 * 5, // 5 minutes
+		enabled: browser // Only run on client-side
 	});
 
 	// Mutation to create inventory movement
@@ -186,7 +213,7 @@ export function useInventoryMovements(productId?: string, locationId?: string) {
 		queryFn: () => onGetInventoryMovements(productId, locationId),
 		staleTime: 1000 * 60 * 5, // 5 minutes
 		gcTime: 1000 * 60 * 15, // 15 minutes
-		enabled: !!(productId || locationId) // Only run if we have at least one filter
+		enabled: browser && !!(productId || locationId) // Only run on client-side and if we have filters
 	});
 
 	const movements = $derived(movementsQuery.data ?? []);

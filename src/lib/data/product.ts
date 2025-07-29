@@ -1,14 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetProducts,
-	onGetProductById,
-	onCreateProduct,
-	onUpdateProduct,
-	onGetProductMeta,
-	onBulkUpdateProducts,
-	onAdjustStock,
-	onDeleteProduct
-} from '$lib/server/telefuncs/product.telefunc';
+import { browser } from '$app/environment';
 import type {
 	Product,
 	ProductInput,
@@ -18,6 +9,47 @@ import type {
 	BulkProductUpdate,
 	StockAdjustment
 } from '$lib/types/product.schema';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetProducts = async (filters?: ProductFilters): Promise<PaginatedProducts> => {
+	const { onGetProducts } = await import('$lib/server/telefuncs/product.telefunc');
+	return onGetProducts(filters);
+};
+
+const onGetProductById = async (productId: string): Promise<Product | null> => {
+	const { onGetProductById } = await import('$lib/server/telefuncs/product.telefunc');
+	return onGetProductById(productId);
+};
+
+const onCreateProduct = async (productData: ProductInput): Promise<Product> => {
+	const { onCreateProduct } = await import('$lib/server/telefuncs/product.telefunc');
+	return onCreateProduct(productData);
+};
+
+const onUpdateProduct = async (productId: string, productData: Partial<ProductInput>): Promise<Product> => {
+	const { onUpdateProduct } = await import('$lib/server/telefuncs/product.telefunc');
+	return onUpdateProduct(productId, productData);
+};
+
+const onGetProductMeta = async (): Promise<ProductMeta> => {
+	const { onGetProductMeta } = await import('$lib/server/telefuncs/product.telefunc');
+	return onGetProductMeta();
+};
+
+const onBulkUpdateProducts = async (updateData: BulkProductUpdate): Promise<Product[]> => {
+	const { onBulkUpdateProducts } = await import('$lib/server/telefuncs/product.telefunc');
+	return onBulkUpdateProducts(updateData);
+};
+
+const onAdjustStock = async (adjustmentData: StockAdjustment): Promise<Product> => {
+	const { onAdjustStock } = await import('$lib/server/telefuncs/product.telefunc');
+	return onAdjustStock(adjustmentData);
+};
+
+const onDeleteProduct = async (productId: string): Promise<void> => {
+	const { onDeleteProduct } = await import('$lib/server/telefuncs/product.telefunc');
+	return onDeleteProduct(productId);
+};
 
 // Query keys for consistent cache management
 const productQueryKeys = {
@@ -37,7 +69,8 @@ export function useProducts(filters?: ProductFilters) {
 		queryKey: productQueryKeys.list(filters),
 		queryFn: () => onGetProducts(filters),
 		staleTime: 1000 * 60 * 2, // 2 minutes
-		gcTime: 1000 * 60 * 10 // 10 minutes
+		gcTime: 1000 * 60 * 10, // 10 minutes
+		enabled: browser // Only run on client-side
 	});
 
 	// Query to fetch product meta information
@@ -45,7 +78,8 @@ export function useProducts(filters?: ProductFilters) {
 		queryKey: productQueryKeys.meta(),
 		queryFn: onGetProductMeta,
 		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 15 // 15 minutes
+		gcTime: 1000 * 60 * 15, // 15 minutes
+		enabled: browser // Only run on client-side
 	});
 
 	// Mutation to create a new product
@@ -276,7 +310,7 @@ export function useProduct(productId: string) {
 		queryFn: () => onGetProductById(productId),
 		staleTime: 1000 * 60 * 5, // 5 minutes
 		gcTime: 1000 * 60 * 15, // 15 minutes
-		enabled: !!productId
+		enabled: browser && !!productId // Only run on client-side
 	});
 
 	const product = $derived(productQuery.data);

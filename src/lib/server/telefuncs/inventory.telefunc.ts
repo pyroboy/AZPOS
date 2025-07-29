@@ -109,8 +109,8 @@ export async function onGetInventoryItems(filters?: InventoryFilters): Promise<I
 // Telefunc to create inventory movement
 export async function onCreateInventoryMovement(movementData: unknown): Promise<InventoryMovement> {
 	const { user } = getContext();
-	if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-		throw new Error('Not authorized - admin/manager access required');
+	if (!user || !user.permissions.includes('pos:operate')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const validatedData = createInventoryMovementSchema.parse(movementData);
@@ -202,8 +202,8 @@ export async function onGetInventoryMovements(
 // Telefunc to get inventory valuation
 export async function onGetInventoryValuation(): Promise<InventoryValuation> {
 	const { user } = getContext();
-	if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-		throw new Error('Not authorized - admin/manager access required');
+	if (!user || !user.permissions.includes('reports:view')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const supabase = createSupabaseClient();
@@ -282,8 +282,8 @@ export async function onGetInventoryValuation(): Promise<InventoryValuation> {
 // Telefunc to create stock count
 export async function onCreateStockCount(countData: unknown): Promise<StockCount> {
 	const { user } = getContext();
-	if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-		throw new Error('Not authorized - admin/manager access required');
+	if (!user || !user.permissions.includes('pos:operate')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const validatedData = createStockCountSchema.parse(countData);
@@ -349,8 +349,8 @@ export async function onCreateStockCount(countData: unknown): Promise<StockCount
 // Telefunc to get inventory alerts
 export async function onGetInventoryAlerts(): Promise<InventoryAlert[]> {
 	const { user } = getContext();
-	if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-		throw new Error('Not authorized - admin/manager access required');
+	if (!user || !user.permissions.includes('reports:view')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const supabase = createSupabaseClient();

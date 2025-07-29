@@ -1,15 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetCurrentViewState,
-	onUpdateViewState,
-	onGetViewConfigs,
-	onCreateViewConfig,
-	onUpdateViewConfig,
-	onGetUserViewPreferences,
-	onUpdateUserViewPreferences,
-	onGetNavigationMenu,
-	onGetViewStats
-} from '$lib/server/telefuncs/view.telefunc';
+import { browser } from '$app/environment';
 import type {
 	ViewState,
 	ViewConfig,
@@ -17,6 +7,52 @@ import type {
 	NavigationMenu,
 	ViewStats
 } from '$lib/types/view.schema';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetCurrentViewState = async (): Promise<ViewState> => {
+	const { onGetCurrentViewState } = await import('$lib/server/telefuncs/view.telefunc');
+	return onGetCurrentViewState();
+};
+
+const onUpdateViewState = async (viewStateData: Partial<ViewState>): Promise<ViewState> => {
+	const { onUpdateViewState } = await import('$lib/server/telefuncs/view.telefunc');
+	return onUpdateViewState(viewStateData);
+};
+
+const onGetViewConfigs = async (): Promise<ViewConfig[]> => {
+	const { onGetViewConfigs } = await import('$lib/server/telefuncs/view.telefunc');
+	return onGetViewConfigs();
+};
+
+const onCreateViewConfig = async (configData: ViewConfig): Promise<ViewConfig> => {
+	const { onCreateViewConfig } = await import('$lib/server/telefuncs/view.telefunc');
+	return onCreateViewConfig(configData);
+};
+
+const onUpdateViewConfig = async (configId: string, configData: ViewConfig): Promise<ViewConfig> => {
+	const { onUpdateViewConfig } = await import('$lib/server/telefuncs/view.telefunc');
+	return onUpdateViewConfig(configId, configData);
+};
+
+const onGetUserViewPreferences = async (): Promise<UserViewPreferences | null> => {
+	const { onGetUserViewPreferences } = await import('$lib/server/telefuncs/view.telefunc');
+	return onGetUserViewPreferences();
+};
+
+const onUpdateUserViewPreferences = async (preferencesData: UserViewPreferences): Promise<UserViewPreferences> => {
+	const { onUpdateUserViewPreferences } = await import('$lib/server/telefuncs/view.telefunc');
+	return onUpdateUserViewPreferences(preferencesData);
+};
+
+const onGetNavigationMenu = async (): Promise<NavigationMenu> => {
+	const { onGetNavigationMenu } = await import('$lib/server/telefuncs/view.telefunc');
+	return onGetNavigationMenu();
+};
+
+const onGetViewStats = async (): Promise<ViewStats> => {
+	const { onGetViewStats } = await import('$lib/server/telefuncs/view.telefunc');
+	return onGetViewStats();
+};
 
 const viewStateQueryKey = ['view-state'];
 const viewConfigsQueryKey = ['view-configs'];

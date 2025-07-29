@@ -3,9 +3,9 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import '../app.css';
 	import { Toaster } from '$lib/components/ui/sonner';
-	import '$lib/stores/themeStore';
+	import { themeStore } from '$lib/stores/themeStore';
 
-	import { useSessions } from '$lib/data/session';
+	// import SessionManager from '$lib/components/SessionManager.svelte';
 	import type { LayoutData } from './$types';
 	import { page } from '$app/stores';
 
@@ -38,30 +38,17 @@
 
 	// The `data` prop is reactive and contains the `user` from the load function.
 	const { data, children } = $props<{ data: LayoutData; children: () => void }>();
-
-	// Initialize session management with TanStack Query
-	const { currentSession, createSession } = useSessions();
-
-	// When the user data changes (e.g., on login/logout),
-	// create or update session accordingly
-	$effect(() => {
-		if (data.user && !currentSession) {
-			// Create new session for logged in user
-			createSession({
-				user_id: data.user.id,
-				session_type: 'user',
-				device_info: {
-					user_agent: browser ? navigator.userAgent : 'server',
-					screen_resolution: browser ? `${screen.width}x${screen.height}` : 'unknown'
-				}
-			}).catch(console.error);
-		}
-	});
 </script>
 
 <!-- Provide TanStack Query client to all components -->
 <QueryClientProvider client={queryClient}>
 	<Toaster />
+	
+	<!-- Session management temporarily disabled
+	{#if browser}
+		<SessionManager user={data.user} />
+	{/if}
+	-->
 
 	{#if $page.data.user}
 		<Sidebar.Provider>

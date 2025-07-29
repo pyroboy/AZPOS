@@ -1,7 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-// import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
-const SUPABASE_URL = process.env.SUPABASE_URL || '';
-const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+import { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } from '$env/static/private';
 
 // Create Supabase client for server-side operations
 export function createSupabaseClient() {

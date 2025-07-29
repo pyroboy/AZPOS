@@ -1,5 +1,6 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
+// Import telefunc functions using proper client-side approach
+const {
 	onCreateSession,
 	onUpdateSession,
 	onGetCurrentSession,
@@ -8,7 +9,7 @@ import {
 	onCleanupExpiredSessions,
 	onGetSessionStats,
 	onGetSessionActivity
-} from '$lib/server/telefuncs/session.telefunc';
+} = await import('$lib/server/telefuncs/session.telefunc');
 import type {
 	SessionState,
 	SessionFilters,

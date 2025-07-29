@@ -193,8 +193,8 @@ export async function onGetProductById(productId: string): Promise<Product | nul
 // Telefunc to create a new product
 export async function onCreateProduct(productData: unknown): Promise<Product> {
 	const { user } = getContext();
-	if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-		throw new Error('Not authorized - admin/manager access required');
+	if (!user || !user.permissions.includes('products:write')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const validatedData = productInputSchema.parse(productData);
@@ -259,8 +259,8 @@ export async function onCreateProduct(productData: unknown): Promise<Product> {
 // Telefunc to update a product
 export async function onUpdateProduct(productId: string, productData: unknown): Promise<Product> {
 	const { user } = getContext();
-	if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-		throw new Error('Not authorized - admin/manager access required');
+	if (!user || !user.permissions.includes('products:write')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const validatedData = productInputSchema.partial().parse(productData);
@@ -398,8 +398,8 @@ export async function onGetProductMeta(): Promise<ProductMeta> {
 // Telefunc for bulk product updates
 export async function onBulkUpdateProducts(updateData: unknown): Promise<Product[]> {
 	const { user } = getContext();
-	if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-		throw new Error('Not authorized - admin/manager access required');
+	if (!user || !user.permissions.includes('products:write')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const validatedData = bulkProductUpdateSchema.parse(updateData);
@@ -453,8 +453,8 @@ export async function onBulkUpdateProducts(updateData: unknown): Promise<Product
 // Telefunc for stock adjustment
 export async function onAdjustStock(adjustmentData: unknown): Promise<Product> {
 	const { user } = getContext();
-	if (!user || (user.role !== 'admin' && user.role !== 'manager')) {
-		throw new Error('Not authorized - admin/manager access required');
+	if (!user || !user.permissions.includes('products:write')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const validatedData = stockAdjustmentSchema.parse(adjustmentData);
@@ -545,8 +545,8 @@ export async function onAdjustStock(adjustmentData: unknown): Promise<Product> {
 // Telefunc to delete a product (soft delete)
 export async function onDeleteProduct(productId: string): Promise<void> {
 	const { user } = getContext();
-	if (!user || user.role !== 'admin') {
-		throw new Error('Not authorized - admin access required');
+	if (!user || !user.permissions.includes('products:delete')) {
+		throw new Error('Not authorized - insufficient permissions');
 	}
 
 	const supabase = createSupabaseClient();

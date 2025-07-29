@@ -57,8 +57,10 @@ const initialUsers: User[] = [
 // Use $state rune instead of writable store
 export const users = $state<User[]>(initialUsers);
 
-// Derived state for active users
-export const activeUsers = $derived(users.filter((u) => u.is_active));
+// Function to get active users (instead of exporting derived state)
+export function getActiveUsers() {
+	return users.filter((u) => u.is_active);
+}
 
 // Export functions that directly mutate the state
 export function deactivateUser(userId: string) {
