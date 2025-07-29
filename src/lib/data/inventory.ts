@@ -12,8 +12,11 @@ import type {
 
 // Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
 const onGetInventoryItems = async (filters?: InventoryFilters): Promise<InventoryItem[]> => {
+	console.log('🚀 [DATA HOOK] Calling telefunc onGetInventoryItems with filters:', filters);
 	const { onGetInventoryItems } = await import('$lib/server/telefuncs/inventory.telefunc');
-	return onGetInventoryItems(filters);
+	const result = await onGetInventoryItems(filters);
+	console.log('✅ [DATA HOOK] Telefunc returned', result.length, 'inventory items');
+	return result;
 };
 
 const onCreateInventoryMovement = async (movementData: CreateInventoryMovement): Promise<InventoryMovement> => {
@@ -31,6 +34,7 @@ const onGetInventoryValuation = async (): Promise<InventoryValuation> => {
 	return onGetInventoryValuation();
 };
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const onCreateStockCount = async (countData: CreateStockCount): Promise<any> => {
 	const { onCreateStockCount } = await import('$lib/server/telefuncs/inventory.telefunc');
 	return onCreateStockCount(countData);
@@ -57,14 +61,24 @@ const inventoryQueryKeys = {
 export function useInventory(filters?: InventoryFilters) {
 	const queryClient = useQueryClient();
 
-	// Query to fetch inventory items with filters
-	const inventoryQuery = createQuery<InventoryItem[]>({
-		queryKey: inventoryQueryKeys.itemsList(filters),
-		queryFn: () => onGetInventoryItems(filters),
-		staleTime: 1000 * 60 * 2, // 2 minutes
-		gcTime: 1000 * 60 * 10, // 10 minutes
-		enabled: browser // Only run on client-side
-	});
+// Query to fetch inventory items with filters
+const inventoryQuery = createQuery<InventoryItem[]>({
+	queryKey: inventoryQueryKeys.itemsList(filters),
+	queryFn: () => {
+		console.log('🔄 [TANSTACK QUERY] Starting inventory items query with filters:', filters);
+		try {
+			const result = onGetInventoryItems(filters);
+			console.log('✅ [TANSTACK QUERY] Inventory items query successful, count:', result.length);
+			return result;
+		} catch (error) {
+			console.error('❌ [TANSTACK QUERY] Inventory items query failed:', error);
+			throw error;
+		}
+	},
+	staleTime: 1000 * 60 * 2, // 2 minutes where data is considered fresh
+	gcTime: 1000 * 60 * 10, // 10 minutes before garbage collection
+	enabled: browser // Only run on client-side
+});
 
 	// Query to fetch inventory valuation
 	const valuationQuery = createQuery<InventoryValuation>({
@@ -120,7 +134,11 @@ export function useInventory(filters?: InventoryFilters) {
 	});
 
 	// Reactive data getters (compatible with both Svelte 4 and 5)
-	const getInventoryItems = () => inventoryQuery.data ?? [];
+	const getInventoryItems = () => {
+		const data = inventoryQuery.data ?? [];
+		console.log('📊 [DATA ACCESS] Getting inventory items, count:', data.length);
+		return data;
+	};
 	const getValuation = () => valuationQuery.data;
 	const getAlerts = () => alertsQuery.data ?? [];
 

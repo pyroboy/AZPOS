@@ -20,12 +20,14 @@ export interface ProductModifier {
 
 // Create Supabase client for server-side operations
 export function createSupabaseClient() {
-	return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
+	const client = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
 		auth: {
 			autoRefreshToken: false,
 			persistSession: false
 		}
 	});
+	console.log('✅ [SUPABASE] New Supabase Connection');
+	return client;
 }
 
 // Type definitions for database tables

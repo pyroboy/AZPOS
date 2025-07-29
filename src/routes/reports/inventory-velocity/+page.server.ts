@@ -8,8 +8,9 @@ import { redirect } from '@sveltejs/kit';
 
 const ALLOWED_ROLES: Role[] = ['admin', 'owner', 'manager'];
 
-/** @type {import('./$types').PageServerLoad} */
-export async function load({ parent }) {
+import type { PageServerLoad } from './$types';
+
+export const load: PageServerLoad = async ({ parent }) => {
 	const { user } = await parent();
 
 	if (!ALLOWED_ROLES.includes(user.role as Role)) {

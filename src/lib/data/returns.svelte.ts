@@ -1,5 +1,6 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 import { browser } from '$app/environment';
+import { SvelteDate } from 'svelte/reactivity';
 import type {
 	EnhancedReturnRecord,
 	NewReturnInput,
@@ -162,28 +163,37 @@ export function useReturns(filters?: ReturnFilters) {
 	const isStatsLoading = $derived(statsQuery.isPending);
 	const isStatsError = $derived(statsQuery.isError);
 
+	// Mutation states
+	const isCreating = $derived(createReturnMutation.isPending);
+	const isUpdating = $derived(updateStatusMutation.isPending);
+	const isDeleting = $derived(deleteReturnMutation.isPending);
+
+	const createError = $derived(createReturnMutation.error);
+	const updateError = $derived(updateStatusMutation.error);
+	const deleteError = $derived(deleteReturnMutation.error);
+
 	return {
 		// Queries
 		returnsQuery,
 		statsQuery,
 
 		// Reactive data
-		returns,
-		stats,
+		get returns() { return returns; },
+		get stats() { return stats; },
 
 		// Filtered data
-		pendingReturns,
-		approvedReturns,
-		rejectedReturns,
-		completedReturns,
-		processingReturns,
+		get pendingReturns() { return pendingReturns; },
+		get approvedReturns() { return approvedReturns; },
+		get rejectedReturns() { return rejectedReturns; },
+		get completedReturns() { return completedReturns; },
+		get processingReturns() { return processingReturns; },
 
 		// Loading states
-		isLoading,
-		isError,
-		error,
-		isStatsLoading,
-		isStatsError,
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
+		get isStatsLoading() { return isStatsLoading; },
+		get isStatsError() { return isStatsError; },
 
 		// Mutations
 		createReturn: createReturnMutation.mutate,
@@ -191,13 +201,13 @@ export function useReturns(filters?: ReturnFilters) {
 		deleteReturn: deleteReturnMutation.mutate,
 
 		// Mutation states
-		isCreating: $derived(createReturnMutation.isPending),
-		isUpdating: $derived(updateStatusMutation.isPending),
-		isDeleting: $derived(deleteReturnMutation.isPending),
+		get isCreating() { return isCreating; },
+		get isUpdating() { return isUpdating; },
+		get isDeleting() { return isDeleting; },
 
-		createError: $derived(createReturnMutation.error),
-		updateError: $derived(updateStatusMutation.error),
-		deleteError: $derived(deleteReturnMutation.error),
+		get createError() { return createError; },
+		get updateError() { return updateError; },
+		get deleteError() { return deleteError; },
 
 		// Utility functions
 		refetch: () => queryClient.invalidateQueries({ queryKey: returnsQueryKeys.lists() }),
@@ -224,10 +234,10 @@ export function useReturn(returnId: string) {
 
 	return {
 		returnQuery,
-		returnData,
-		isLoading,
-		isError,
-		error,
+		get returnData() { return returnData; },
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
 		refetch: () => queryClient.invalidateQueries({ queryKey: returnsQueryKeys.detail(returnId) })
 	};
 }
@@ -253,7 +263,7 @@ export function useOptimisticReturnUpdate() {
 									...returnRecord,
 									status: newStatus,
 									admin_notes: adminNotes || returnRecord.admin_notes,
-									updated_at: new Date().toISOString()
+									updated_at: new SvelteDate().toISOString()
 								}
 							: returnRecord
 					) || []
@@ -268,7 +278,7 @@ export function useOptimisticReturnUpdate() {
 								...oldData,
 								status: newStatus,
 								admin_notes: adminNotes || oldData.admin_notes,
-								updated_at: new Date().toISOString()
+								updated_at: new SvelteDate().toISOString()
 							}
 						: oldData
 			);

@@ -7,9 +7,9 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group';
-	import { usePurchaseOrders } from '$lib/data/purchaseOrder';
+	import { usePurchaseOrders } from '$lib/data/purchaseOrder.svelte';
 	import { useInventory } from '$lib/data/inventory';
-	import { useProductBatches } from '$lib/data/productBatch';
+	import { useProductBatches } from '$lib/data/productBatch.svelte';
 	import { toast } from 'svelte-sonner';
 	import { cn } from '$lib/utils';
 	import * as Table from '$lib/components/ui/table';

@@ -14,11 +14,15 @@ import { createSupabaseClient } from '$lib/server/db';
 
 // Telefunc to get inventory items with filters
 export async function onGetInventoryItems(filters?: InventoryFilters): Promise<InventoryItem[]> {
+	console.log('📦 [TELEFUNC - onGetInventoryItems] Starting inventory items query with filters:', filters);
+	
 	const { user } = getContext();
 	if (!user) throw new Error('Not authenticated');
+	console.log('👤 [TELEFUNC - onGetInventoryItems] User authenticated:', user.id);
 
 	const supabase = createSupabaseClient();
 	const validatedFilters = filters ? inventoryFiltersSchema.parse(filters) : {};
+	console.log('✅ [TELEFUNC - onGetInventoryItems] Validated filters:', validatedFilters);
 
 	let query = supabase.from('inventory_items').select(`
       *,
@@ -84,8 +88,16 @@ export async function onGetInventoryItems(filters?: InventoryFilters): Promise<I
 			query = query.order('updated_at', { ascending: false });
 	}
 
+	console.log('🔍 [TELEFUNC - onGetInventoryItems] Executing Supabase query for inventory items...');
 	const { data: items, error } = await query;
-	if (error) throw error;
+	
+	if (error) {
+		console.error('❌ [TELEFUNC - onGetInventoryItems] Supabase error:', error);
+		throw error;
+	}
+	
+	console.log('✅ [TELEFUNC - onGetInventoryItems] Supabase returned', items?.length || 0, 'inventory items');
+	console.log('📋 [TELEFUNC - onGetInventoryItems] Sample item:', items?.[0] ? { id: items[0].id, product_id: items[0].product_id, quantity_available: items[0].quantity_available } : 'No items');
 
 	return (
 		items?.map((item) => ({

@@ -15,6 +15,8 @@ export async function onGetCategories(filters?: CategoryFilters): Promise<Catego
 	const { user } = getContext();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log('🔍 [TELEFUNC] Fetching categories with filters:', filters);
+
 	const supabase = createSupabaseClient();
 	const validatedFilters = filters ? categoryFiltersSchema.parse(filters) : {};
 
@@ -56,7 +58,17 @@ export async function onGetCategories(filters?: CategoryFilters): Promise<Catego
 	query = query.order(sortBy, { ascending: sortOrder === 'asc' });
 
 	const { data: categories, error } = await query;
-	if (error) throw error;
+
+	console.log('📊 [TELEFUNC] Categories query result:', {
+		categoriesCount: categories?.length || 0,
+		hasError: !!error,
+		errorMessage: error?.message
+	});
+
+	if (error) {
+		console.error('🚨 [TELEFUNC] Categories query error:', error);
+		throw error;
+	}
 
 	return (
 		categories?.map((category) => ({

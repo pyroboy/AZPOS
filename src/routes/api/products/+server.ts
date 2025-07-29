@@ -1,7 +1,8 @@
 import { json } from '@sveltejs/kit';
+import type { RequestEvent, RequestHandler } from '@sveltejs/kit';
 import { parseProducts } from '$lib/utils/productParser';
 
-export async function GET({ url }) {
+export const GET: RequestHandler = async ({ url }: RequestEvent) => {
 	const allProducts = await parseProducts();
 
 	const page = parseInt(url.searchParams.get('page') || '1', 10);

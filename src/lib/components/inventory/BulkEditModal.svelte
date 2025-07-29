@@ -6,6 +6,7 @@
 	import * as Select from '$lib/components/ui/select';
 	import * as Switch from '$lib/components/ui/switch/index.js';
 	import { useProducts } from '$lib/data/product';
+	import { useCategories } from '$lib/data/category.svelte';
 	import { useInventory } from '$lib/data/inventory';
 	import type { Product, BulkProductUpdate } from '$lib/types/product.schema';
 	import type { Category } from '$lib/types/category.schema';

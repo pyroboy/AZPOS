@@ -16,6 +16,7 @@ import type {
  * @returns {Promise<PaginatedProducts>} The result from the telefunc.
  */
 const onGetProducts = async (filters?: ProductFilters): Promise<PaginatedProducts> => {
+	console.log('📡 [CLIENT] Fetching products with filters:', filters);
 	const { onGetProducts } = await import('$lib/server/telefuncs/product.telefunc');
 	return onGetProducts(filters);
 };
@@ -103,13 +104,42 @@ const productQueryKeys = {
 export function useProducts(filters?: ProductFilters) {
 	const queryClient = useQueryClient();
 
+	console.log('🔧 [TANSTACK] Query setup debug:', {
+		browser,
+		filters,
+		queryKey: productQueryKeys.list(filters),
+		environment: typeof window !== 'undefined' ? 'client' : 'server'
+	});
+
 	// Query to fetch paginated products with filters
 	const productsQuery = createQuery<PaginatedProducts>({
 		queryKey: productQueryKeys.list(filters),
-		queryFn: () => onGetProducts(filters),
+		queryFn: async () => {
+			console.log('🔄 [TANSTACK] Starting product query with filters:', filters);
+			try {
+				const result = await onGetProducts(filters);
+				console.log('✅ [TANSTACK] Product query successful. Count:', result.products?.length || 0);
+				return result;
+			} catch (error) {
+				console.error('🚨 [TANSTACK] Product query failed:', error);
+				throw error;
+			}
+		},
 		staleTime: 1000 * 60 * 2, // 2 minutes
 		gcTime: 1000 * 60 * 10, // 10 minutes
-		enabled: browser // Only run on client-side
+		enabled: browser, // Only run on client-side
+		retry: 3,
+		retryDelay: 1000
+	});
+
+	console.log('🔍 [TANSTACK] Query created with state:', {
+		status: productsQuery.status,
+		fetchStatus: productsQuery.fetchStatus,
+		isPending: productsQuery.isPending,
+		isError: productsQuery.isError,
+		isSuccess: productsQuery.isSuccess,
+		data: productsQuery.data,
+		error: productsQuery.error
 	});
 
 	// Query to fetch product meta information

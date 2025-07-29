@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { usePurchaseOrders } from '$lib/data/purchaseOrder';
+	import { usePurchaseOrders } from '$lib/data/purchaseOrder.svelte';
 	import type { PurchaseOrder } from '$lib/types/purchaseOrder.schema';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';

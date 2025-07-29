@@ -1,5 +1,5 @@
 <script lang="ts">
-    import { useReturns } from '$lib/data/returns';
+    import { useReturns } from '$lib/data/returns.svelte';
     import * as Table from '$lib/components/ui/table/index.js';
     import { Badge } from '$lib/components/ui/badge';
     import { Button } from '$lib/components/ui/button';

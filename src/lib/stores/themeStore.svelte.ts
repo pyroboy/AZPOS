@@ -121,11 +121,10 @@ export const themeStore = {
 	getCurrentTheme: () => currentTheme
 };
 
-// Initialize theme on client side with $effect
+// Initialize theme on client side
 if (typeof document !== 'undefined') {
-	$effect(() => {
-		applyThemeToDocument(currentTheme);
-	});
+	// Apply theme initially
+	applyThemeToDocument(currentTheme);
 }
 
 // Export individual reactive values for convenience

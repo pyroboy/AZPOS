@@ -16,6 +16,8 @@ export async function onGetProducts(filters?: ProductFilters): Promise<Paginated
 	const { user } = getContext();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log('🔍 [TELEFUNC] Fetching products with filters:', filters);
+
 	const supabase = createSupabaseClient();
 
 	// Parse and validate filters
@@ -90,7 +92,18 @@ export async function onGetProducts(filters?: ProductFilters): Promise<Paginated
 	query = query.range(offset, offset + limit - 1);
 
 	const { data: products, error, count } = await query;
-	if (error) throw error;
+
+	console.log('📊 [TELEFUNC] Products query result:', {
+		productsCount: products?.length || 0,
+		totalCount: count,
+		hasError: !!error,
+		errorMessage: error?.message
+	});
+
+	if (error) {
+		console.error('🚨 [TELEFUNC] Products query error:', error);
+		throw error;
+	}
 
 	const totalPages = Math.ceil((count || 0) / limit);
 

@@ -2,8 +2,11 @@ import { createSupabaseClient } from '$lib/server/db';
 import type { PageServerLoad } from './$types';
 
 export const load: PageServerLoad = async ({ locals }) => {
+	console.log('🏠 [SERVER] Inventory page server load started');
+	
 	// Ensure user is authenticated
 	if (!locals.user) {
+		console.log('🚫 [SERVER] No authenticated user found');
 		return {
 			products: {
 				products: [],
@@ -12,8 +15,25 @@ export const load: PageServerLoad = async ({ locals }) => {
 		};
 	}
 
+	console.log('👤 [SERVER] Authenticated user:', locals.user.id);
 	const supabase = createSupabaseClient();
 
+	console.log('🔍 [SERVER] Starting Supabase query for products...');
+	
+	// First, let's check if there are ANY products in the database
+	const { data: allProducts, error: allError, count: allCount } = await supabase
+		.from('products')
+		.select('id, name, is_active, is_archived', { count: 'exact' })
+		.limit(5);
+	
+	console.log('🔍 [SERVER] All products check:', {
+		allProductsCount: allProducts?.length || 0,
+		totalInDb: allCount,
+		first5Products: allProducts?.map(p => ({ id: p.id, name: p.name, is_active: p.is_active, is_archived: p.is_archived })),
+		allError: allError?.message
+	});
+	
+	// Now run the filtered query
 	// Load active products for initial render using direct Supabase call
 	const { data: products, error, count } = await supabase
 		.from('products')
@@ -29,9 +49,22 @@ export const load: PageServerLoad = async ({ locals }) => {
 		.eq('is_archived', false)
 		.order('name', { ascending: true })
 		.limit(50); // Limit initial load for performance
+	
+	console.log('🔍 [SERVER] Filtered query filters applied:', {
+		is_active: true,
+		is_archived: false,
+		limit: 50
+	});
+
+	console.log('📊 [SERVER] Supabase query results:', {
+		productsCount: products?.length || 0,
+		totalCount: count,
+		hasError: !!error,
+		errorMessage: error?.message
+	});
 
 	if (error) {
-		console.error('Error loading products:', error);
+		console.error('🚨 [SERVER] Error loading products:', error);
 		return {
 			products: {
 				products: [],
@@ -41,6 +74,7 @@ export const load: PageServerLoad = async ({ locals }) => {
 	}
 
 	// Transform to match expected format
+	console.log('🔄 [SERVER] Transforming products data...');
 	const transformedProducts = products?.map((product) => ({
 		id: product.id,
 		name: product.name,
@@ -71,7 +105,9 @@ export const load: PageServerLoad = async ({ locals }) => {
 		updated_by: product.updated_by
 	})) || [];
 
-	return {
+	console.log('✅ [SERVER] Products transformation complete. Count:', transformedProducts.length);
+
+	const result = {
 		products: {
 			products: transformedProducts,
 			pagination: {
@@ -83,4 +119,12 @@ export const load: PageServerLoad = async ({ locals }) => {
 			}
 		}
 	};
+
+	console.log('🎯 [SERVER] Final result prepared:', {
+		productsCount: result.products.products.length,
+		total: result.products.pagination.total,
+		totalPages: result.products.pagination.total_pages
+	});
+
+	return result;
 };

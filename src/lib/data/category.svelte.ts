@@ -186,6 +186,15 @@ export function useCategories(filters?: CategoryFilters) {
 	const isTreeLoading = $derived(treeQuery.isPending);
 	const isStatsLoading = $derived(statsQuery.isPending);
 
+	// Mutation states
+	const isCreating = $derived(createCategoryMutation.isPending);
+	const isUpdating = $derived(updateCategoryMutation.isPending);
+	const isMoving = $derived(moveCategoryMutation.isPending);
+
+	const createError = $derived(createCategoryMutation.error);
+	const updateError = $derived(updateCategoryMutation.error);
+	const moveError = $derived(moveCategoryMutation.error);
+
 	return {
 		// Queries
 		categoriesQuery,
@@ -193,39 +202,39 @@ export function useCategories(filters?: CategoryFilters) {
 		statsQuery,
 
 		// Reactive data
-		categories,
-		categoryTree,
-		stats,
+		get categories() { return categories; },
+		get categoryTree() { return categoryTree; },
+		get stats() { return stats; },
 
 		// Filtered data
-		activeCategories,
-		rootCategories,
-		categoriesWithProducts,
+		get activeCategories() { return activeCategories; },
+		get rootCategories() { return rootCategories; },
+		get categoriesWithProducts() { return categoriesWithProducts; },
 
 		// Utility maps
-		categoryMap,
-		categoryNameMap,
+		get categoryMap() { return categoryMap; },
+		get categoryNameMap() { return categoryNameMap; },
 
 		// Loading states
-		isLoading,
-		isError,
-		error,
-		isTreeLoading,
-		isStatsLoading,
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
+		get isTreeLoading() { return isTreeLoading; },
+		get isStatsLoading() { return isStatsLoading; },
 
 		// Mutations
 		createCategory: createCategoryMutation.mutate,
 		updateCategory: updateCategoryMutation.mutate,
-		moveCategory: moveCategoryMutation.mutate,
+		moveCategory: updateCategoryMutation.mutate,
 
 		// Mutation states
-		isCreating: $derived(createCategoryMutation.isPending),
-		isUpdating: $derived(updateCategoryMutation.isPending),
-		isMoving: $derived(moveCategoryMutation.isPending),
+		get isCreating() { return isCreating; },
+		get isUpdating() { return isUpdating; },
+		get isMoving() { return isMoving; },
 
-		createError: $derived(createCategoryMutation.error),
-		updateError: $derived(updateCategoryMutation.error),
-		moveError: $derived(moveCategoryMutation.error),
+		get createError() { return createError; },
+		get updateError() { return updateError; },
+		get moveError() { return moveError; },
 
 		// Utility functions
 		refetch: () => queryClient.invalidateQueries({ queryKey: categoryQueryKeys.lists() }),

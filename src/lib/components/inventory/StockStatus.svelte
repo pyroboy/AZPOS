@@ -15,11 +15,63 @@
 	import { SORT_OPTIONS, STOCK_STATUS_FILTERS } from '$lib/constants/inventory';
 	import type { Product } from '$lib/types/product.schema';
 
-	// Get data using TanStack Query hooks
-	const productsHook = useProducts();
-	const products = $derived(productsHook.products());
-	const isProductsLoading = $derived(productsHook.isLoading());
-	const { inventoryItems } = useInventory();
+// Import page data
+import { page } from '$app/stores';
+
+// TEMPORARY: Use server-side data directly while we debug TanStack Query
+const serverProducts = $derived(() => {
+	const products = $page.data?.products?.products || [];
+	console.log('📊 [TEMP] Using server-side products directly:', products.length);
+	return products;
+});
+
+const products = $derived(() => {
+	const data = serverProducts();
+	console.log('🎯 [STOCK STATUS] Products derived (server data), count:', data.length);
+	return data;
+});
+
+const isProductsLoading = $derived(() => {
+	// Since we're using server data, never loading on client
+	return false;
+});
+
+// Keep the original TanStack Query code for comparison
+const productsHook = useProducts();
+
+// Add comprehensive debugging
+$effect(() => {
+	console.log('🔍 [STOCK STATUS] TanStack Query vs Server Data:', {
+		tanstackQuery: {
+			status: productsHook.productsQuery.status,
+			fetchStatus: productsHook.productsQuery.fetchStatus,
+			isPending: productsHook.productsQuery.isPending,
+			isError: productsHook.productsQuery.isError,
+			isSuccess: productsHook.productsQuery.isSuccess,
+			data: productsHook.productsQuery.data,
+			error: productsHook.productsQuery.error
+		},
+		tanstackProducts: productsHook.products().length,
+		serverProducts: serverProducts().length,
+		pageData: $page.data?.products
+	});
+});
+
+const inventoryHook = useInventory();
+const { inventoryItems } = inventoryHook;
+	
+	// Log when queries change state
+	$effect(() => {
+		console.log('📦 [STOCK STATUS] Inventory items accessed, count:', inventoryItems().length);
+		console.log('⏳ [STOCK STATUS] Is products loading:', isProductsLoading());
+		console.log('🔍 [STOCK STATUS] Inventory query status:', {
+			isPending: inventoryHook.inventoryQuery.isPending,
+			isError: inventoryHook.inventoryQuery.isError,
+			isSuccess: inventoryHook.inventoryQuery.isSuccess,
+			fetchStatus: inventoryHook.inventoryQuery.fetchStatus,
+			status: inventoryHook.inventoryQuery.status
+		});
+	});
 	const { updateViewState, getFilterState, getSortState, getSelectionState } = useView();
 
 	// Local state for filters and selections
@@ -32,13 +84,14 @@
 	let viewMode = $state<'card' | 'table'>('card');
 
 	// Get categories from products (derived)
-	const categories = $derived([
-		...new Set(products.map((p: Product) => p.category_id).filter(Boolean))
+	const categories = $derived(() => [
+		...new Set(products().map((p: Product) => p.category_id).filter(Boolean))
 	]);
 
 	// Filtered products based on current filters
 	const filteredProducts = $derived(() => {
-		let filtered = products;
+		let filtered = products();
+		console.log('🔄 [DEBUG] filteredProducts computing, products:', filtered.length);
 
 		// Search filter
 		if (searchTerm.trim()) {
@@ -65,10 +118,10 @@
 							(p.stock_quantity || 0) > 0 && (p.stock_quantity || 0) < (p.min_stock_level || 10)
 					);
 					break;
-				case 'out_of_stock':
+			case 'out_of_stock':
 					filtered = filtered.filter((p: Product) => (p.stock_quantity || 0) === 0);
 					break;
-				case 'in_stock':
+			case 'in_stock':
 					filtered = filtered.filter((p: Product) => (p.stock_quantity || 0) > 0);
 					break;
 			}
@@ -108,10 +161,19 @@
 	});
 
 	// Items to reorder count
-	const itemsToReorderCount = $derived(
-		filteredProducts().filter((p: Product) => (p.stock_quantity || 0) < (p.min_stock_level || 10))
-			.length
-	);
+	const itemsToReorderCount = $derived(() => {
+		try {
+			const filtered = filteredProducts();
+			if (!Array.isArray(filtered)) {
+				console.error('🚨 [ERROR] filteredProducts() is not an array:', filtered);
+				return 0;
+			}
+			return filtered.filter((p: Product) => (p.stock_quantity || 0) < (p.min_stock_level || 10)).length;
+		} catch (error) {
+			console.error('⚠️ [ERROR] Error in itemsToReorderCount:', error);
+			return 0;
+		}
+	});
 
 	// Helper functions
 	function toggleCategory(categoryId: string) {
@@ -207,7 +269,7 @@
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			<div class="flex items-center gap-2 flex-wrap">
 				<p class="text-sm font-medium">Categories:</p>
-				{#each categories as category}
+				{#each categories() as category}
 					<Button
 						variant={activeCategories.includes(category as string) ? 'default' : 'outline'}
 						size="sm"
@@ -224,7 +286,7 @@
 				{/if}
 			</div>
 
-			{#if itemsToReorderCount > 0}
+			{#if itemsToReorderCount() > 0}
 				<button
 					onclick={() => goto('/inventory/reorder')}
 					class="flex items-center gap-2 rounded-full bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning-foreground transition-colors hover:bg-warning/20"
@@ -233,8 +295,8 @@
 						<span class="relative inline-flex h-3 w-3 rounded-full bg-warning"></span>
 					</div>
 					<span>
-						{itemsToReorderCount}
-						{itemsToReorderCount === 1 ? 'item' : 'items'} to reorder
+						{itemsToReorderCount()}
+						{itemsToReorderCount() === 1 ? 'item' : 'items'} to reorder
 					</span>
 				</button>
 			{/if}
@@ -242,7 +304,7 @@
 	</div>
 
 	<!-- Product Display -->
-	{#if isProductsLoading}
+	{#if isProductsLoading()}
 		<div
 			class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center"
 		>

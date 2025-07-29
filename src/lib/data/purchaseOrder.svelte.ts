@@ -1,77 +1,6 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-
-// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
-/**
- * A wrapper for the onGetPurchaseOrders telefunc to avoid SSR import issues.
- * @param {PurchaseOrderFilters} filters - The parameters for the telefunc.
- * @returns {Promise<PaginatedPurchaseOrders>} The result from the telefunc.
- */
-const onGetPurchaseOrders = async (filters?: PurchaseOrderFilters): Promise<PaginatedPurchaseOrders> => {
-	const { onGetPurchaseOrders } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
-	return onGetPurchaseOrders(filters);
-};
-
-/**
- * A wrapper for the onGetPurchaseOrderById telefunc to avoid SSR import issues.
- * @param {string} id - The parameters for the telefunc.
- * @returns {Promise<PurchaseOrder>} The result from the telefunc.
- */
-const onGetPurchaseOrderById = async (id: string): Promise<PurchaseOrder | null> => {
-	const { onGetPurchaseOrderById } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
-	return onGetPurchaseOrderById(id);
-};
-
-/**
- * A wrapper for the onCreatePurchaseOrder telefunc to avoid SSR import issues.
- * @param {CreatePurchaseOrder} poData - The parameters for the telefunc.
- * @returns {Promise<PurchaseOrder>} The result from the telefunc.
- */
-const onCreatePurchaseOrder = async (poData: CreatePurchaseOrder): Promise<PurchaseOrder> => {
-	const { onCreatePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
-	return onCreatePurchaseOrder(poData);
-};
-
-/**
- * A wrapper for the onUpdatePurchaseOrder telefunc to avoid SSR import issues.
- * @param {string} poId - The parameters for the telefunc.
- * @param {UpdatePurchaseOrder} poData - The parameters for the telefunc.
- * @returns {Promise<PurchaseOrder>} The result from the telefunc.
- */
-const onUpdatePurchaseOrder = async (poId: string, poData: UpdatePurchaseOrder): Promise<PurchaseOrder> => {
-	const { onUpdatePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
-	return onUpdatePurchaseOrder(poId, poData);
-};
-
-/**
- * A wrapper for the onApprovePurchaseOrder telefunc to avoid SSR import issues.
- * @param {ApprovePurchaseOrder} approvalData - The parameters for the telefunc.
- * @returns {Promise<PurchaseOrder>} The result from the telefunc.
- */
-const onApprovePurchaseOrder = async (approvalData: ApprovePurchaseOrder): Promise<PurchaseOrder> => {
-	const { onApprovePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
-	return onApprovePurchaseOrder(approvalData);
-};
-
-/**
- * A wrapper for the onReceiveItems telefunc to avoid SSR import issues.
- * @param {ReceiveItems} receiveData - The parameters for the telefunc.
- * @returns {Promise<PurchaseOrder>} The result from the telefunc.
- */
-const onReceiveItems = async (receiveData: ReceiveItems): Promise<PurchaseOrder> => {
-	const { onReceiveItems } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
-	return onReceiveItems(receiveData);
-};
-
-/**
- * A wrapper for the onGetPurchaseOrderStats telefunc to avoid SSR import issues.
- * @param {any} params - The parameters for the telefunc.
- * @returns {Promise<PurchaseOrderStats>} The result from the telefunc.
- */
-const onGetPurchaseOrderStats = async (): Promise<PurchaseOrderStats> => {
-	const { onGetPurchaseOrderStats } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
-	return onGetPurchaseOrderStats();
-};
-
+import { browser } from '$app/environment';
+import { SvelteDate } from 'svelte/reactivity';
 import type {
 	PurchaseOrder,
 	CreatePurchaseOrder,
@@ -82,6 +11,54 @@ import type {
 	ApprovePurchaseOrder,
 	ReceiveItems
 } from '$lib/types/purchaseOrder.schema';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetPurchaseOrders telefunc to avoid SSR import issues.
+ * @param {PurchaseOrderFilters} filters - The parameters for the telefunc.
+ * @returns {Promise<PaginatedPurchaseOrders>} The result from the telefunc.
+ */
+const onGetPurchaseOrders = async (filters?: PurchaseOrderFilters): Promise<PaginatedPurchaseOrders> => {
+	if (!browser) throw new Error('This function should only be used in a browser environment');
+	const { onGetPurchaseOrders } = await import('$lib/server/telefuncs/purchaseOrder.telefunc');
+	return onGetPurchaseOrders(filters);
+};
+
+const onGetPurchaseOrderById = async (id: string): Promise<PurchaseOrder | null> => {
+	if (!browser) throw new Error('This function should only be used in a browser environment');
+	const { onGetPurchaseOrderById } = await import('$lib/server/telefuncs/purchaseOrder.telefunc');
+	return onGetPurchaseOrderById(id);
+};
+
+const onCreatePurchaseOrder = async (poData: CreatePurchaseOrder): Promise<PurchaseOrder> => {
+	if (!browser) throw new Error('This function should only be used in a browser environment');
+	const { onCreatePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc');
+	return onCreatePurchaseOrder(poData);
+};
+
+const onUpdatePurchaseOrder = async (poId: string, poData: UpdatePurchaseOrder): Promise<PurchaseOrder> => {
+	if (!browser) throw new Error('This function should only be used in a browser environment');
+	const { onUpdatePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc');
+	return onUpdatePurchaseOrder(poId, poData);
+};
+
+const onApprovePurchaseOrder = async (approvalData: ApprovePurchaseOrder): Promise<PurchaseOrder> => {
+	if (!browser) throw new Error('This function should only be used in a browser environment');
+	const { onApprovePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc');
+	return onApprovePurchaseOrder(approvalData);
+};
+
+const onReceiveItems = async (receiveData: ReceiveItems): Promise<PurchaseOrder> => {
+	if (!browser) throw new Error('This function should only be used in a browser environment');
+	const { onReceiveItems } = await import('$lib/server/telefuncs/purchaseOrder.telefunc');
+	return onReceiveItems(receiveData);
+};
+
+const onGetPurchaseOrderStats = async (): Promise<PurchaseOrderStats> => {
+	if (!browser) throw new Error('This function should only be used in a browser environment');
+	const { onGetPurchaseOrderStats } = await import('$lib/server/telefuncs/purchaseOrder.telefunc');
+	return onGetPurchaseOrderStats();
+};
 
 // Query keys for consistent cache management
 const purchaseOrderQueryKeys = {
@@ -101,7 +78,8 @@ export function usePurchaseOrders(filters?: PurchaseOrderFilters) {
 		queryKey: purchaseOrderQueryKeys.list(filters),
 		queryFn: () => onGetPurchaseOrders(filters),
 		staleTime: 1000 * 60 * 2, // 2 minutes
-		gcTime: 1000 * 60 * 10 // 10 minutes
+		gcTime: 1000 * 60 * 10, // 10 minutes
+		enabled: browser
 	});
 
 	// Query to fetch purchase order statistics
@@ -109,7 +87,8 @@ export function usePurchaseOrders(filters?: PurchaseOrderFilters) {
 		queryKey: purchaseOrderQueryKeys.stats(),
 		queryFn: onGetPurchaseOrderStats,
 		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 15 // 15 minutes
+		gcTime: 1000 * 60 * 15, // 15 minutes
+		enabled: browser
 	});
 
 	// Mutation to create a new purchase order
@@ -237,7 +216,9 @@ export function usePurchaseOrders(filters?: PurchaseOrderFilters) {
 	const stats = $derived(statsQuery.data);
 
 	// Derived filtered states
-	const draftOrders = $derived(purchaseOrders.filter((po: PurchaseOrder) => po.status === 'draft'));
+	const draftOrders = $derived(
+		purchaseOrders.filter((po: PurchaseOrder) => po.status === 'draft')
+	);
 	const pendingOrders = $derived(
 		purchaseOrders.filter((po: PurchaseOrder) => po.status === 'pending')
 	);
@@ -265,53 +246,64 @@ export function usePurchaseOrders(filters?: PurchaseOrderFilters) {
 	const isStatsLoading = $derived(statsQuery.isPending);
 	const isStatsError = $derived(statsQuery.isError);
 
-	return {
-		// Queries
-		purchaseOrdersQuery,
-		statsQuery,
+	// Mutation states
+	const isCreating = $derived(createPurchaseOrderMutation.isPending);
+	const isUpdating = $derived(updatePurchaseOrderMutation.isPending);
+	const isApproving = $derived(approvePurchaseOrderMutation.isPending);
+	const isReceiving = $derived(receiveItemsMutation.isPending);
 
-		// Reactive data
-		purchaseOrders,
-		pagination,
-		stats,
+	const createError = $derived(createPurchaseOrderMutation.error);
+	const updateError = $derived(updatePurchaseOrderMutation.error);
+	const approveError = $derived(approvePurchaseOrderMutation.error);
+	const receiveError = $derived(receiveItemsMutation.error);
 
-		// Filtered data
-		draftOrders,
-		pendingOrders,
-		approvedOrders,
-		orderedOrders,
-		partiallyReceivedOrders,
-		receivedOrders,
-		cancelledOrders,
+return {
+        // Queries
+        purchaseOrdersQuery,
+        statsQuery,
 
-		// Loading states
-		isLoading,
-		isError,
-		error,
-		isStatsLoading,
-		isStatsError,
+        // Reactive data
+        get purchaseOrders() { return purchaseOrders; },
+        get pagination() { return pagination; },
+        get stats() { return stats; },
 
-		// Mutations
-		createPurchaseOrder: createPurchaseOrderMutation.mutate,
-		updatePurchaseOrder: updatePurchaseOrderMutation.mutate,
-		approvePurchaseOrder: approvePurchaseOrderMutation.mutate,
-		receiveItems: receiveItemsMutation.mutate,
+        // Filtered data
+        get draftOrders() { return draftOrders; },
+        get pendingOrders() { return pendingOrders; },
+        get approvedOrders() { return approvedOrders; },
+        get orderedOrders() { return orderedOrders; },
+        get partiallyReceivedOrders() { return partiallyReceivedOrders; },
+        get receivedOrders() { return receivedOrders; },
+        get cancelledOrders() { return cancelledOrders; },
 
-		// Mutation states
-		isCreating: $derived(createPurchaseOrderMutation.isPending),
-		isUpdating: $derived(updatePurchaseOrderMutation.isPending),
-		isApproving: $derived(approvePurchaseOrderMutation.isPending),
-		isReceiving: $derived(receiveItemsMutation.isPending),
+        // Loading states
+        get isLoading() { return isLoading; },
+        get isError() { return isError; },
+        get error() { return error; },
+        get isStatsLoading() { return isStatsLoading; },
+        get isStatsError() { return isStatsError; },
 
-		createError: $derived(createPurchaseOrderMutation.error),
-		updateError: $derived(updatePurchaseOrderMutation.error),
-		approveError: $derived(approvePurchaseOrderMutation.error),
-		receiveError: $derived(receiveItemsMutation.error),
+        // Mutations
+        createPurchaseOrder: createPurchaseOrderMutation.mutate,
+        updatePurchaseOrder: updatePurchaseOrderMutation.mutate,
+        approvePurchaseOrder: approvePurchaseOrderMutation.mutate,
+        receiveItems: receiveItemsMutation.mutate,
 
-		// Utility functions
-		refetch: () => queryClient.invalidateQueries({ queryKey: purchaseOrderQueryKeys.lists() }),
-		refetchStats: () => queryClient.invalidateQueries({ queryKey: purchaseOrderQueryKeys.stats() })
-	};
+        // Mutation states
+        get isCreating() { return isCreating; },
+        get isUpdating() { return isUpdating; },
+        get isApproving() { return isApproving; },
+        get isReceiving() { return isReceiving; },
+
+        get createError() { return createError; },
+        get updateError() { return updateError; },
+        get approveError() { return approveError; },
+        get receiveError() { return receiveError; },
+
+        // Utility functions
+        refetch: () => queryClient.invalidateQueries({ queryKey: purchaseOrderQueryKeys.lists() }),
+        refetchStats: () => queryClient.invalidateQueries({ queryKey: purchaseOrderQueryKeys.stats() })
+    };
 }
 
 // Hook for fetching a single purchase order by ID
@@ -323,7 +315,7 @@ export function usePurchaseOrder(poId: string) {
 		queryFn: () => onGetPurchaseOrderById(poId),
 		staleTime: 1000 * 60 * 5, // 5 minutes
 		gcTime: 1000 * 60 * 15, // 15 minutes
-		enabled: !!poId
+		enabled: browser && !!poId
 	});
 
 	const purchaseOrder = $derived(purchaseOrderQuery.data);
@@ -333,10 +325,10 @@ export function usePurchaseOrder(poId: string) {
 
 	return {
 		purchaseOrderQuery,
-		purchaseOrder,
-		isLoading,
-		isError,
-		error,
+		get purchaseOrder() { return purchaseOrder; },
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
 		refetch: () => queryClient.invalidateQueries({ queryKey: purchaseOrderQueryKeys.detail(poId) })
 	};
 }
@@ -357,7 +349,7 @@ export function useOptimisticPurchaseOrderUpdate() {
 						...oldData,
 						purchase_orders: oldData.purchase_orders.map((po) =>
 							po.id === poId
-								? { ...po, status: newStatus, updated_at: new Date().toISOString() }
+								? { ...po, status: newStatus, updated_at: new SvelteDate().toISOString() }
 								: po
 						)
 					};
@@ -369,7 +361,7 @@ export function useOptimisticPurchaseOrderUpdate() {
 				{ queryKey: purchaseOrderQueryKeys.details() },
 				(oldData) =>
 					oldData?.id === poId
-						? { ...oldData, status: newStatus, updated_at: new Date().toISOString() }
+						? { ...oldData, status: newStatus, updated_at: new SvelteDate().toISOString() }
 						: oldData
 			);
 		},
@@ -400,7 +392,7 @@ export function useOptimisticPurchaseOrderUpdate() {
 								return item;
 							});
 
-							return { ...po, items: updatedItems, updated_at: new Date().toISOString() };
+							return { ...po, items: updatedItems, updated_at: new SvelteDate().toISOString() };
 						})
 					};
 				}

@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useReturns } from '$lib/data/returns';
+	import { useReturns } from '$lib/data/returns.svelte';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
 	import { Button } from '$lib/components/ui/button';

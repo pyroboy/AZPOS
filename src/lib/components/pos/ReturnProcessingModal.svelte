@@ -17,7 +17,7 @@
 
 	// Import TanStack Query hooks according to Component Integration Guide
 	import { useTransactions } from '$lib/data/transaction';
-	import { useReturns } from '$lib/data/returns';
+	import { useReturns } from '$lib/data/returns.svelte';
 	import { useProducts } from '$lib/data/product';
 	import { useSessions } from '$lib/data/session';
 	import type { Transaction, TransactionItem } from '$lib/types/transaction.schema';

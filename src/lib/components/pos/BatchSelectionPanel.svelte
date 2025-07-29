@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { Product, ProductBatch } from '$lib/types';
-	import { useProductBatchesByProduct } from '$lib/data/productBatch';
+	import { useProductBatchesByProduct } from '$lib/data/productBatch.svelte';
 	import {
 		Sheet,
 		SheetContent,

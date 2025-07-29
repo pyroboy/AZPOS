@@ -238,27 +238,37 @@ export function useSuppliers(filters?: SupplierFilters) {
 	const isStatsLoading = $derived(statsQuery.isPending);
 	const isStatsError = $derived(statsQuery.isError);
 
+	// Mutation loading states
+	const isCreating = $derived(createSupplierMutation.isPending);
+	const isUpdating = $derived(updateSupplierMutation.isPending);
+	const isDeleting = $derived(deleteSupplierMutation.isPending);
+
+	// Mutation error states
+	const createError = $derived(createSupplierMutation.error);
+	const updateError = $derived(updateSupplierMutation.error);
+	const deleteError = $derived(deleteSupplierMutation.error);
+
 	return {
 		// Queries
 		suppliersQuery,
 		statsQuery,
 
 		// Reactive data
-		suppliers,
-		pagination,
-		stats,
+		get suppliers() { return suppliers; },
+		get pagination() { return pagination; },
+		get stats() { return stats; },
 
 		// Filtered data
-		activeSuppliers,
-		inactiveSuppliers,
-		suppliersWithProducts,
+		get activeSuppliers() { return activeSuppliers; },
+		get inactiveSuppliers() { return inactiveSuppliers; },
+		get suppliersWithProducts() { return suppliersWithProducts; },
 
 		// Loading states
-		isLoading,
-		isError,
-		error,
-		isStatsLoading,
-		isStatsError,
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
+		get isStatsLoading() { return isStatsLoading; },
+		get isStatsError() { return isStatsError; },
 
 		// Mutations
 		createSupplier: createSupplierMutation.mutate,
@@ -266,13 +276,14 @@ export function useSuppliers(filters?: SupplierFilters) {
 		deleteSupplier: deleteSupplierMutation.mutate,
 
 		// Mutation states
-		isCreating: $derived(createSupplierMutation.isPending),
-		isUpdating: $derived(updateSupplierMutation.isPending),
-		isDeleting: $derived(deleteSupplierMutation.isPending),
+		get isCreating() { return isCreating; },
+		get isUpdating() { return isUpdating; },
+		get isDeleting() { return isDeleting; },
 
-		createError: $derived(createSupplierMutation.error),
-		updateError: $derived(updateSupplierMutation.error),
-		deleteError: $derived(deleteSupplierMutation.error),
+		// Mutation errors
+		get createError() { return createError; },
+		get updateError() { return updateError; },
+		get deleteError() { return deleteError; },
 
 		// Utility functions
 		refetch: () => queryClient.invalidateQueries({ queryKey: supplierQueryKeys.lists() }),
@@ -299,10 +310,10 @@ export function useSupplier(supplierId: string) {
 
 	return {
 		supplierQuery,
-		supplier,
-		isLoading,
-		isError,
-		error,
+		get supplier() { return supplier; },
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
 		refetch: () => queryClient.invalidateQueries({ queryKey: supplierQueryKeys.detail(supplierId) })
 	};
 }
@@ -326,10 +337,10 @@ export function useSupplierPerformance(supplierId: string, period: 'month' | 'qu
 
 	return {
 		performanceQuery,
-		performance,
-		isLoading,
-		isError,
-		error,
+		get performance() { return performance; },
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
 		refetch: () =>
 			queryClient.invalidateQueries({
 				queryKey: supplierQueryKeys.performance(supplierId, period)
@@ -356,10 +367,10 @@ export function useSupplierProducts(supplierId: string) {
 
 	return {
 		productsQuery,
-		products,
-		isLoading,
-		isError,
-		error,
+		get products() { return products; },
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
 		refetch: () =>
 			queryClient.invalidateQueries({ queryKey: supplierQueryKeys.products(supplierId) })
 	};

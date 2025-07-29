@@ -1,38 +1,39 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
+import { SvelteDate } from 'svelte/reactivity';
 
 // Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
 const onGetProductBatches = async (filters?: ProductBatchFilters): Promise<PaginatedProductBatches> => {
-	const { onGetProductBatches } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	const { onGetProductBatches } = await import('$lib/server/telefuncs/productBatch.telefunc');
 	return onGetProductBatches(filters);
 };
 
 const onGetProductBatchById = async (batchId: string): Promise<ProductBatch | null> => {
-	const { onGetProductBatchById } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	const { onGetProductBatchById } = await import('$lib/server/telefuncs/productBatch.telefunc');
 	return onGetProductBatchById(batchId);
 };
 
 const onCreateProductBatch = async (batchData: ProductBatchInput): Promise<ProductBatch> => {
-	const { onCreateProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	const { onCreateProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc');
 	return onCreateProductBatch(batchData);
 };
 
 const onUpdateProductBatch = async (batchId: string, batchData: Partial<ProductBatchInput>): Promise<ProductBatch> => {
-	const { onUpdateProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	const { onUpdateProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc');
 	return onUpdateProductBatch(batchId, batchData);
 };
 
 const onDeleteProductBatch = async (batchId: string): Promise<void> => {
-	const { onDeleteProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	const { onDeleteProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc');
 	return onDeleteProductBatch(batchId);
 };
 
 const onGetBatchesByProduct = async (productId: string): Promise<ProductBatch[]> => {
-	const { onGetBatchesByProduct } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	const { onGetBatchesByProduct } = await import('$lib/server/telefuncs/productBatch.telefunc');
 	return onGetBatchesByProduct(productId);
 };
 
 const onGetExpiringBatches = async (): Promise<ProductBatch[]> => {
-	const { onGetExpiringBatches } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	const { onGetExpiringBatches } = await import('$lib/server/telefuncs/productBatch.telefunc');
 	return onGetExpiringBatches();
 };
 import type {
@@ -187,16 +188,16 @@ export function useProductBatches(filters?: ProductBatchFilters) {
 	const expiredBatches = $derived(
 		batches.filter((b: ProductBatch) => {
 			if (!b.expiration_date) return false;
-			return new Date(b.expiration_date) < new Date();
+			return new SvelteDate(b.expiration_date) < new SvelteDate();
 		})
 	);
 	const nearExpiryBatches = $derived(
 		batches.filter((b: ProductBatch) => {
 			if (!b.expiration_date) return false;
-			const expiryDate = new Date(b.expiration_date);
-			const thirtyDaysFromNow = new Date();
+			const expiryDate = new SvelteDate(b.expiration_date);
+			const thirtyDaysFromNow = new SvelteDate();
 			thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
-			return expiryDate < thirtyDaysFromNow && expiryDate >= new Date();
+			return expiryDate < thirtyDaysFromNow && expiryDate >= new SvelteDate();
 		})
 	);
 
@@ -208,47 +209,56 @@ export function useProductBatches(filters?: ProductBatchFilters) {
 	const isExpiringLoading = $derived(expiringBatchesQuery.isPending);
 	const isExpiringError = $derived(expiringBatchesQuery.isError);
 
-	return {
-		// Queries
-		batchesQuery,
-		expiringBatchesQuery,
+	// Mutation states
+	const isCreating = $derived(createBatchMutation.isPending);
+	const isUpdating = $derived(updateBatchMutation.isPending);
+	const isDeleting = $derived(deleteBatchMutation.isPending);
 
-		// Reactive data
-		batches,
-		pagination,
-		expiringBatches,
+	const createError = $derived(createBatchMutation.error);
+	const updateError = $derived(updateBatchMutation.error);
+	const deleteError = $derived(deleteBatchMutation.error);
 
-		// Filtered data
-		activeBatches,
-		expiredBatches,
-		nearExpiryBatches,
+return {
+        // Queries
+        batchesQuery,
+        expiringBatchesQuery,
 
-		// Loading states
-		isLoading,
-		isError,
-		error,
-		isExpiringLoading,
-		isExpiringError,
+        // Reactive data
+        get batches() { return batches; },
+        get pagination() { return pagination; },
+        get expiringBatches() { return expiringBatches; },
 
-		// Mutations
-		createBatch: createBatchMutation.mutate,
-		updateBatch: updateBatchMutation.mutate,
-		deleteBatch: deleteBatchMutation.mutate,
+        // Filtered data
+        get activeBatches() { return activeBatches; },
+        get expiredBatches() { return expiredBatches; },
+        get nearExpiryBatches() { return nearExpiryBatches; },
 
-		// Mutation states
-		isCreating: $derived(createBatchMutation.isPending),
-		isUpdating: $derived(updateBatchMutation.isPending),
-		isDeleting: $derived(deleteBatchMutation.isPending),
+        // Loading states
+        get isLoading() { return isLoading; },
+        get isError() { return isError; },
+        get error() { return error; },
+        get isExpiringLoading() { return isExpiringLoading; },
+        get isExpiringError() { return isExpiringError; },
 
-		createError: $derived(createBatchMutation.error),
-		updateError: $derived(updateBatchMutation.error),
-		deleteError: $derived(deleteBatchMutation.error),
+        // Mutations
+        createBatch: createBatchMutation.mutate,
+        updateBatch: updateBatchMutation.mutate,
+        deleteBatch: deleteBatchMutation.mutate,
 
-		// Utility functions
-		refetch: () => queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.lists() }),
-		refetchExpiring: () =>
-			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() })
-	};
+        // Mutation states
+        get isCreating() { return isCreating; },
+        get isUpdating() { return isUpdating; },
+        get isDeleting() { return isDeleting; },
+
+        get createError() { return createError; },
+        get updateError() { return updateError; },
+        get deleteError() { return deleteError; },
+
+        // Utility functions
+        refetch: () => queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.lists() }),
+        refetchExpiring: () =>
+            queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.expiring() })
+    };
 }
 
 // Hook for fetching a single product batch by ID
@@ -270,10 +280,10 @@ export function useProductBatch(batchId: string) {
 
 	return {
 		batchQuery,
-		batch,
-		isLoading,
-		isError,
-		error,
+		get batch() { return batch; },
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
 		refetch: () =>
 			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.detail(batchId) })
 	};
@@ -298,10 +308,10 @@ export function useProductBatchesByProduct(productId: string) {
 
 	return {
 		batchesQuery,
-		batches,
-		isLoading,
-		isError,
-		error,
+		get batches() { return batches; },
+		get isLoading() { return isLoading; },
+		get isError() { return isError; },
+		get error() { return error; },
 		refetch: () =>
 			queryClient.invalidateQueries({ queryKey: productBatchQueryKeys.byProduct(productId) })
 	};
@@ -323,7 +333,7 @@ export function useOptimisticBatchUpdate() {
 						...oldData,
 						batches: oldData.batches.map((batch) =>
 							batch.id === batchId
-								? { ...batch, quantity_on_hand: newQuantity, updated_at: new Date().toISOString() }
+								? { ...batch, quantity_on_hand: newQuantity, updated_at: new SvelteDate().toISOString() }
 								: batch
 						)
 					};
@@ -335,7 +345,7 @@ export function useOptimisticBatchUpdate() {
 				{ queryKey: productBatchQueryKeys.details() },
 				(oldData) =>
 					oldData?.id === batchId
-						? { ...oldData, quantity_on_hand: newQuantity, updated_at: new Date().toISOString() }
+						? { ...oldData, quantity_on_hand: newQuantity, updated_at: new SvelteDate().toISOString() }
 						: oldData
 			);
 		}

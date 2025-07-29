@@ -16,6 +16,8 @@ export async function onGetSuppliers(filters?: SupplierFilters): Promise<Paginat
 	const { user } = getContext();
 	if (!user) throw new Error('Not authenticated');
 
+	console.log('🔍 [TELEFUNC] Fetching suppliers with filters:', filters);
+
 	const supabase = createSupabaseClient();
 	const validatedFilters = filters ? supplierFiltersSchema.parse(filters) : {};
 
@@ -72,7 +74,18 @@ export async function onGetSuppliers(filters?: SupplierFilters): Promise<Paginat
 	query = query.range(offset, offset + limit - 1);
 
 	const { data: suppliers, error, count } = await query;
-	if (error) throw error;
+
+	console.log('📊 [TELEFUNC] Suppliers query result:', {
+		suppliersCount: suppliers?.length || 0,
+		totalCount: count,
+		hasError: !!error,
+		errorMessage: error?.message
+	});
+
+	if (error) {
+		console.error('🚨 [TELEFUNC] Suppliers query error:', error);
+		throw error;
+	}
 
 	const totalPages = Math.ceil((count || 0) / limit);
 

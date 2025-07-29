@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { EnhancedReturnRecord } from '$lib/types/returns.schema';
-	import { useReturns } from '$lib/data/returns';
+	import { useReturns } from '$lib/data/returns.svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';

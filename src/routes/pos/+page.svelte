@@ -12,7 +12,7 @@
 	import { usePayments } from '$lib/data/payment';
 	import { useReceipts } from '$lib/data/receipt';
 	import { useModifiers } from '$lib/data/modifier';
-	import { useProductBatches } from '$lib/data/productBatch';
+	import { useProductBatches } from '$lib/data/productBatch.svelte';
 	import { currency } from '$lib/utils/currency';
 	import { v4 as uuidv4 } from 'uuid';
 	// Auth pattern
