@@ -3,7 +3,7 @@
 	import AppSidebar from '$lib/components/app-sidebar.svelte';
 	import '../app.css';
 	import { Toaster } from '$lib/components/ui/sonner';
-	import { themeStore } from '$lib/stores/themeStore';
+	import { themeStore } from '$lib/stores/themeStore.svelte';
 
 	// import SessionManager from '$lib/components/SessionManager.svelte';
 	import type { LayoutData } from './$types';
