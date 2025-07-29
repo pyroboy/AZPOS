@@ -53,8 +53,8 @@ export async function onLogin(loginData: unknown): Promise<AuthSession> {
 		// Log failed login attempt
 		await supabase.from('auth_activities').insert({
 			action: 'failed_login',
-			ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
-			user_agent: getContext().request?.headers?.['user-agent'],
+			ip_address: getContext().request?.headers?.get('x-forwarded-for') || 'unknown',
+			user_agent: getContext().request?.headers?.get('user-agent'),
 			success: false,
 			error_message: authError?.message || 'Invalid credentials',
 			created_at: new Date().toISOString()
@@ -91,8 +91,8 @@ export async function onLogin(loginData: unknown): Promise<AuthSession> {
 	await supabase.from('auth_activities').insert({
 		user_id: user.id,
 		action: 'login',
-		ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
-		user_agent: getContext().request?.headers?.['user-agent'],
+		ip_address: getContext().request?.headers?.get('x-forwarded-for') || 'unknown',
+		user_agent: getContext().request?.headers?.get('user-agent'),
 		success: true,
 		created_at: new Date().toISOString()
 	});
@@ -175,8 +175,8 @@ export async function onRegister(registerData: unknown): Promise<AuthSession> {
 	await supabase.from('auth_activities').insert({
 		user_id: user.id,
 		action: 'register',
-		ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
-		user_agent: getContext().request?.headers?.['user-agent'],
+		ip_address: getContext().request?.headers?.get('x-forwarded-for') || 'unknown',
+		user_agent: getContext().request?.headers?.get('user-agent'),
 		success: true,
 		created_at: new Date().toISOString()
 	});
@@ -217,8 +217,8 @@ export async function onLogout(): Promise<{ success: boolean }> {
 	await supabase.from('auth_activities').insert({
 		user_id: user.id,
 		action: 'logout',
-		ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
-		user_agent: getContext().request?.headers?.['user-agent'],
+		ip_address: getContext().request?.headers?.get('x-forwarded-for') || 'unknown',
+		user_agent: getContext().request?.headers?.get('user-agent'),
 		success: true,
 		created_at: new Date().toISOString()
 	});
@@ -528,8 +528,8 @@ export async function onLoginWithPin(pinData: unknown): Promise<AuthSession> {
 		// Log failed PIN login attempt
 		await supabase.from('auth_activities').insert({
 			action: 'failed_pin_login',
-			ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
-			user_agent: getContext().request?.headers?.['user-agent'],
+			ip_address: getContext().request?.headers?.get('x-forwarded-for') || 'unknown',
+			user_agent: getContext().request?.headers?.get('user-agent'),
 			success: false,
 			error_message: 'No staff users with PINs found',
 			created_at: new Date().toISOString()
@@ -550,8 +550,8 @@ export async function onLoginWithPin(pinData: unknown): Promise<AuthSession> {
 		// Log failed PIN login attempt
 		await supabase.from('auth_activities').insert({
 			action: 'failed_pin_login',
-			ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
-			user_agent: getContext().request?.headers?.['user-agent'],
+			ip_address: getContext().request?.headers?.get('x-forwarded-for') || 'unknown',
+			user_agent: getContext().request?.headers?.get('user-agent'),
 			success: false,
 			error_message: 'Invalid PIN',
 			created_at: new Date().toISOString()
@@ -572,8 +572,8 @@ export async function onLoginWithPin(pinData: unknown): Promise<AuthSession> {
 	await supabase.from('auth_activities').insert({
 		user_id: authenticatedUser.id,
 		action: 'pin_login',
-		ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
-		user_agent: getContext().request?.headers?.['user-agent'],
+		ip_address: getContext().request?.headers?.get('x-forwarded-for') || 'unknown',
+		user_agent: getContext().request?.headers?.get('user-agent'),
 		success: true,
 		created_at: new Date().toISOString()
 	});
@@ -634,8 +634,8 @@ export async function onToggleStaffMode(): Promise<{ isStaffMode: boolean; user:
 	await supabase.from('auth_activities').insert({
 		user_id: user.id,
 		action: 'staff_mode_toggle',
-		ip_address: getContext().request?.headers?.['x-forwarded-for'] || 'unknown',
-		user_agent: getContext().request?.headers?.['user-agent'],
+		ip_address: getContext().request?.headers?.get('x-forwarded-for') || 'unknown',
+		user_agent: getContext().request?.headers?.get('user-agent'),
 		success: true,
 		created_at: new Date().toISOString()
 	});

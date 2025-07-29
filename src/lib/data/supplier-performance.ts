@@ -1,9 +1,38 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetSupplierPerformanceReport,
-	onGetSupplierPerformanceDetail,
-	onExportSupplierPerformanceReport
-} from '$lib/server/telefuncs/supplier-performance.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetSupplierPerformanceReport telefunc to avoid SSR import issues.
+ * @param {SupplierPerformanceFilters} filters - The parameters for the telefunc.
+ * @returns {Promise<SupplierPerformanceReport>} The result from the telefunc.
+ */
+const onGetSupplierPerformanceReport = async (filters?: SupplierPerformanceFilters): Promise<SupplierPerformanceReport> => {
+	const { onGetSupplierPerformanceReport } = await import('$lib/server/telefuncs/supplier-performance.telefunc.js');
+	return onGetSupplierPerformanceReport(filters);
+};
+
+/**
+ * A wrapper for the onGetSupplierPerformanceDetail telefunc to avoid SSR import issues.
+ * @param {string} supplierId - The parameters for the telefunc.
+ * @param {string} period - The parameters for the telefunc.
+ * @returns {Promise<SupplierPerformanceDetail>} The result from the telefunc.
+ */
+const onGetSupplierPerformanceDetail = async (supplierId: string, period: 'month' | 'quarter' | 'year'): Promise<SupplierPerformanceDetail> => {
+	const { onGetSupplierPerformanceDetail } = await import('$lib/server/telefuncs/supplier-performance.telefunc.js');
+	return onGetSupplierPerformanceDetail(supplierId, period);
+};
+
+/**
+ * A wrapper for the onExportSupplierPerformanceReport telefunc to avoid SSR import issues.
+ * @param {SupplierPerformanceFilters} filters - The parameters for the telefunc.
+ * @param {string} format - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onExportSupplierPerformanceReport = async (filters?: SupplierPerformanceFilters, format?: 'csv' | 'xlsx'): Promise<any> => {
+	const { onExportSupplierPerformanceReport } = await import('$lib/server/telefuncs/supplier-performance.telefunc.js');
+	return onExportSupplierPerformanceReport(filters, format);
+};
+
 import type {
 	SupplierPerformanceReport,
 	SupplierPerformanceFilters,

@@ -7,11 +7,7 @@ import tailwindcss from '@tailwindcss/vite';
 export default defineConfig({
 	plugins: [
 		tailwindcss(),
-		telefunc({
-			// Configure telefunc for ESM compatibility
-			outDir: '.telefunc',
-			transformImports: true
-		}),
+		telefunc(),
 		sveltekit()
 	]
 });

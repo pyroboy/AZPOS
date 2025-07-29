@@ -1,13 +1,67 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 import { browser } from '$app/environment';
-import {
-	onGetTransactions,
-	onGetTransaction,
-	onCreateTransaction,
-	onProcessRefund,
-	onGetTransactionStats,
-	onGenerateReceipt
-} from '$lib/server/telefuncs/transaction.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetTransactions telefunc to avoid SSR import issues.
+ * @param {TransactionFilters} filters - The parameters for the telefunc.
+ * @returns {Promise<PaginatedTransactions>} The result from the telefunc.
+ */
+const onGetTransactions = async (filters: TransactionFilters): Promise<PaginatedTransactions> => {
+	const { onGetTransactions } = await import('$lib/server/telefuncs/transaction.telefunc.js');
+	return onGetTransactions(filters);
+};
+
+/**
+ * A wrapper for the onGetTransaction telefunc to avoid SSR import issues.
+ * @param {string} transactionId - The parameters for the telefunc.
+ * @returns {Promise<Transaction>} The result from the telefunc.
+ */
+const onGetTransaction = async (transactionId: string): Promise<Transaction> => {
+	const { onGetTransaction } = await import('$lib/server/telefuncs/transaction.telefunc.js');
+	return onGetTransaction(transactionId);
+};
+
+/**
+ * A wrapper for the onCreateTransaction telefunc to avoid SSR import issues.
+ * @param {CreateTransaction} transactionData - The parameters for the telefunc.
+ * @returns {Promise<Transaction>} The result from the telefunc.
+ */
+const onCreateTransaction = async (transactionData: CreateTransaction): Promise<Transaction> => {
+	const { onCreateTransaction } = await import('$lib/server/telefuncs/transaction.telefunc.js');
+	return onCreateTransaction(transactionData);
+};
+
+/**
+ * A wrapper for the onProcessRefund telefunc to avoid SSR import issues.
+ * @param {RefundRequest} refundData - The parameters for the telefunc.
+ * @returns {Promise<Transaction>} The result from the telefunc.
+ */
+const onProcessRefund = async (refundData: RefundRequest): Promise<Transaction> => {
+	const { onProcessRefund } = await import('$lib/server/telefuncs/transaction.telefunc.js');
+	return onProcessRefund(refundData);
+};
+
+/**
+ * A wrapper for the onGetTransactionStats telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<TransactionStats>} The result from the telefunc.
+ */
+const onGetTransactionStats = async (): Promise<TransactionStats> => {
+	const { onGetTransactionStats } = await import('$lib/server/telefuncs/transaction.telefunc.js');
+	return onGetTransactionStats();
+};
+
+/**
+ * A wrapper for the onGenerateReceipt telefunc to avoid SSR import issues.
+ * @param {string} transactionId - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onGenerateReceipt = async (transactionId: string): Promise<any> => {
+	const { onGenerateReceipt } = await import('$lib/server/telefuncs/transaction.telefunc.js');
+	return onGenerateReceipt(transactionId);
+};
+
 import type {
 	Transaction,
 	CreateTransaction,

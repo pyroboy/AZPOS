@@ -1,13 +1,77 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetPurchaseOrders,
-	onGetPurchaseOrderById,
-	onCreatePurchaseOrder,
-	onUpdatePurchaseOrder,
-	onApprovePurchaseOrder,
-	onReceiveItems,
-	onGetPurchaseOrderStats
-} from '$lib/server/telefuncs/purchaseOrder.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetPurchaseOrders telefunc to avoid SSR import issues.
+ * @param {PurchaseOrderFilters} filters - The parameters for the telefunc.
+ * @returns {Promise<PaginatedPurchaseOrders>} The result from the telefunc.
+ */
+const onGetPurchaseOrders = async (filters?: PurchaseOrderFilters): Promise<PaginatedPurchaseOrders> => {
+	const { onGetPurchaseOrders } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
+	return onGetPurchaseOrders(filters);
+};
+
+/**
+ * A wrapper for the onGetPurchaseOrderById telefunc to avoid SSR import issues.
+ * @param {string} id - The parameters for the telefunc.
+ * @returns {Promise<PurchaseOrder>} The result from the telefunc.
+ */
+const onGetPurchaseOrderById = async (id: string): Promise<PurchaseOrder | null> => {
+	const { onGetPurchaseOrderById } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
+	return onGetPurchaseOrderById(id);
+};
+
+/**
+ * A wrapper for the onCreatePurchaseOrder telefunc to avoid SSR import issues.
+ * @param {CreatePurchaseOrder} poData - The parameters for the telefunc.
+ * @returns {Promise<PurchaseOrder>} The result from the telefunc.
+ */
+const onCreatePurchaseOrder = async (poData: CreatePurchaseOrder): Promise<PurchaseOrder> => {
+	const { onCreatePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
+	return onCreatePurchaseOrder(poData);
+};
+
+/**
+ * A wrapper for the onUpdatePurchaseOrder telefunc to avoid SSR import issues.
+ * @param {string} poId - The parameters for the telefunc.
+ * @param {UpdatePurchaseOrder} poData - The parameters for the telefunc.
+ * @returns {Promise<PurchaseOrder>} The result from the telefunc.
+ */
+const onUpdatePurchaseOrder = async (poId: string, poData: UpdatePurchaseOrder): Promise<PurchaseOrder> => {
+	const { onUpdatePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
+	return onUpdatePurchaseOrder(poId, poData);
+};
+
+/**
+ * A wrapper for the onApprovePurchaseOrder telefunc to avoid SSR import issues.
+ * @param {ApprovePurchaseOrder} approvalData - The parameters for the telefunc.
+ * @returns {Promise<PurchaseOrder>} The result from the telefunc.
+ */
+const onApprovePurchaseOrder = async (approvalData: ApprovePurchaseOrder): Promise<PurchaseOrder> => {
+	const { onApprovePurchaseOrder } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
+	return onApprovePurchaseOrder(approvalData);
+};
+
+/**
+ * A wrapper for the onReceiveItems telefunc to avoid SSR import issues.
+ * @param {ReceiveItems} receiveData - The parameters for the telefunc.
+ * @returns {Promise<PurchaseOrder>} The result from the telefunc.
+ */
+const onReceiveItems = async (receiveData: ReceiveItems): Promise<PurchaseOrder> => {
+	const { onReceiveItems } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
+	return onReceiveItems(receiveData);
+};
+
+/**
+ * A wrapper for the onGetPurchaseOrderStats telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<PurchaseOrderStats>} The result from the telefunc.
+ */
+const onGetPurchaseOrderStats = async (): Promise<PurchaseOrderStats> => {
+	const { onGetPurchaseOrderStats } = await import('$lib/server/telefuncs/purchaseOrder.telefunc.js');
+	return onGetPurchaseOrderStats();
+};
+
 import type {
 	PurchaseOrder,
 	CreatePurchaseOrder,

@@ -25,7 +25,7 @@ const onRegister = async (registerData: Register): Promise<AuthSession> => {
 	return onRegister(registerData);
 };
 
-const onLogout = async (): Promise<void> => {
+const onLogout = async (): Promise<{success: boolean}> => {
 	const { onLogout } = await import('$lib/server/telefuncs/auth.telefunc');
 	return onLogout();
 };
@@ -40,17 +40,17 @@ const onUpdateProfile = async (profileData: ProfileUpdate): Promise<AuthUser> =>
 	return onUpdateProfile(profileData);
 };
 
-const onChangePassword = async (passwordData: ChangePassword): Promise<void> => {
+const onChangePassword = async (passwordData: ChangePassword): Promise<{success: boolean}> => {
 	const { onChangePassword } = await import('$lib/server/telefuncs/auth.telefunc');
 	return onChangePassword(passwordData);
 };
 
-const onRequestPasswordReset = async (resetData: PasswordResetRequest): Promise<void> => {
+const onRequestPasswordReset = async (resetData: PasswordResetRequest): Promise<{success: boolean}> => {
 	const { onRequestPasswordReset } = await import('$lib/server/telefuncs/auth.telefunc');
 	return onRequestPasswordReset(resetData);
 };
 
-const onVerifyEmail = async (verificationData: EmailVerification): Promise<void> => {
+const onVerifyEmail = async (verificationData: EmailVerification): Promise<{success: boolean}> => {
 	const { onVerifyEmail } = await import('$lib/server/telefuncs/auth.telefunc');
 	return onVerifyEmail(verificationData);
 };
@@ -60,9 +60,9 @@ const onGetAuthStats = async (): Promise<AuthStats> => {
 	return onGetAuthStats();
 };
 
-const onGetUserActivity = async (): Promise<AuthActivity[]> => {
+const onGetUserActivity = async (userId?: string, limit: number = 50): Promise<AuthActivity[]> => {
 	const { onGetUserActivity } = await import('$lib/server/telefuncs/auth.telefunc');
-	return onGetUserActivity();
+	return onGetUserActivity(userId, limit);
 };
 
 const onLoginWithPin = async (pinData: PinLogin): Promise<AuthSession> => {
@@ -70,7 +70,7 @@ const onLoginWithPin = async (pinData: PinLogin): Promise<AuthSession> => {
 	return onLoginWithPin(pinData);
 };
 
-const onToggleStaffMode = async (): Promise<void> => {
+const onToggleStaffMode = async (): Promise<{isStaffMode: boolean; user: AuthUser}> => {
 	const { onToggleStaffMode } = await import('$lib/server/telefuncs/auth.telefunc');
 	return onToggleStaffMode();
 };

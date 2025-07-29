@@ -343,7 +343,12 @@ export async function onMoveCategory(moveData: unknown): Promise<Category> {
 	}
 
 	// Update category
-	const updatePayload: any = {
+	const updatePayload: {
+		parent_id?: string | null;
+		sort_order?: number;
+		updated_by: string;
+		updated_at: string;
+	} = {
 		parent_id: validatedData.new_parent_id,
 		updated_by: user.id,
 		updated_at: new Date().toISOString()

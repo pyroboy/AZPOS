@@ -1,11 +1,30 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetModifiers,
-	onCreateModifier,
-	onUpdateModifier,
-	onValidateModifierSelection,
-	onGetModifierStats
-} from '$lib/server/telefuncs/modifier.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGetModifiers = async (filters?: ModifierFilters): Promise<Modifier[]> => {
+	const { onGetModifiers } = await import('$lib/server/telefuncs/modifier.telefunc');
+	return onGetModifiers(filters);
+};
+
+const onCreateModifier = async (modifierData: ModifierInput): Promise<Modifier> => {
+	const { onCreateModifier } = await import('$lib/server/telefuncs/modifier.telefunc');
+	return onCreateModifier(modifierData);
+};
+
+const onUpdateModifier = async (id: string, data: ModifierInput): Promise<Modifier> => {
+	const { onUpdateModifier } = await import('$lib/server/telefuncs/modifier.telefunc');
+	return onUpdateModifier(id, data);
+};
+
+const onValidateModifierSelection = async (validationData: ValidateModifierSelection): Promise<any> => {
+	const { onValidateModifierSelection } = await import('$lib/server/telefuncs/modifier.telefunc');
+	return onValidateModifierSelection(validationData);
+};
+
+const onGetModifierStats = async (): Promise<ModifierStats> => {
+	const { onGetModifierStats } = await import('$lib/server/telefuncs/modifier.telefunc');
+	return onGetModifierStats();
+};
 import type {
 	Modifier,
 	ModifierInput,

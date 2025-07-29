@@ -1,25 +1,4 @@
-import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-
-// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
-const onGetSalesReport = async (filters: SalesReportFilters): PromisePaginatedSalesReport =e => {
-const { onGetSalesReport } = await import('$lib/server/telefuncs/sales.telefunc.js');
-return onGetSalesReport(filters);
-};
-
-const onGetSalesStats = async (date_from?: string, date_to?: string): PromiseSalesStats =e => {
-const { onGetSalesStats } = await import('$lib/server/telefuncs/sales.telefunc.js');
-return onGetSalesStats(date_from, date_to);
-};
-
-const onGetSalesSummary = async (period: 'today' | 'week' | 'month' | 'year' | 'custom', customFrom?: string, customTo?: string): PromiseSalesSummary =e => {
-const { onGetSalesSummary } = await import('$lib/server/telefuncs/sales.telefunc.js');
-return onGetSalesSummary(period, customFrom, customTo);
-};
-
-const onGetProductPerformance = async (dateFrom?: string, dateTo?: string, limit: number = 50): PromiseProductPerformance[] =e => {
-const { onGetProductPerformance } = await import('$lib/server/telefuncs/sales.telefunc.js');
-return onGetProductPerformance(dateFrom, dateTo, limit);
-};
+import { createQuery, useQueryClient } from '@tanstack/svelte-query';
 import type {
 	SalesItem,
 	SalesReportFilters,
@@ -28,6 +7,51 @@ import type {
 	SalesSummary,
 	ProductPerformance
 } from '$lib/types/sales.schema';
+
+/**
+ * A wrapper for the onGetSalesReport telefunc to avoid SSR import issues.
+ * @param {SalesReportFilters} filters - The filters for the sales report.
+ * @returns {Promise<PaginatedSalesReport>} The result from the telefunc.
+ */
+const onGetSalesReport = async (filters: SalesReportFilters): Promise<PaginatedSalesReport> => {
+	const { onGetSalesReport } = await import('$lib/server/telefuncs/sales.telefunc.js')
+	return onGetSalesReport(filters)
+}
+
+/**
+ * A wrapper for the onGetSalesStats telefunc to avoid SSR import issues.
+ * @param {string} date_from - The start date for the stats.
+ * @param {string} date_to - The end date for the stats.
+ * @returns {Promise<SalesStats>} The result from the telefunc.
+ */
+const onGetSalesStats = async (date_from?: string, date_to?: string): Promise<SalesStats> => {
+	const { onGetSalesStats } = await import('$lib/server/telefuncs/sales.telefunc.js')
+	return onGetSalesStats(date_from, date_to)
+}
+
+/**
+ * A wrapper for the onGetSalesSummary telefunc to avoid SSR import issues.
+ * @param {string} period - The period for the summary.
+ * @param {string} customFrom - Custom start date.
+ * @param {string} customTo - Custom end date.
+ * @returns {Promise<SalesSummary>} The result from the telefunc.
+ */
+const onGetSalesSummary = async (period: 'today' | 'week' | 'month' | 'year' | 'custom', customFrom?: string, customTo?: string): Promise<SalesSummary> => {
+	const { onGetSalesSummary } = await import('$lib/server/telefuncs/sales.telefunc.js')
+	return onGetSalesSummary(period, customFrom, customTo)
+}
+
+/**
+ * A wrapper for the onGetProductPerformance telefunc to avoid SSR import issues.
+ * @param {string} dateFrom - The start date for product performance.
+ * @param {string} dateTo - The end date for product performance.
+ * @param {number} limit - The limit for results.
+ * @returns {Promise<ProductPerformance[]>} The result from the telefunc.
+ */
+const onGetProductPerformance = async (dateFrom?: string, dateTo?: string, limit: number = 50): Promise<ProductPerformance[]> => {
+	const { onGetProductPerformance } = await import('$lib/server/telefuncs/sales.telefunc.js')
+	return onGetProductPerformance(dateFrom, dateTo, limit)
+}
 
 const salesQueryKey = ['sales'];
 const salesStatsQueryKey = ['sales-stats'];
@@ -289,7 +313,7 @@ export function useSalesReports() {
 			];
 			const csvContent = [
 				headers.join(','),
-					...salesItems.map((sale: any) =>
+					...salesItems.map((sale: SalesItem) =>
 					[
 						new Date(sale.sale_date).toLocaleDateString(),
 						`"${sale.product_name}"`,

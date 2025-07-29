@@ -1,9 +1,20 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGenerateReceipt,
-	onGetReceipts,
-	onGetReceiptStats
-} from '$lib/server/telefuncs/receipt.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+const onGenerateReceipt = async (receiptData: ReceiptGeneration): Promise<GeneratedReceipt> => {
+	const { onGenerateReceipt } = await import('$lib/server/telefuncs/receipt.telefunc');
+	return onGenerateReceipt(receiptData);
+};
+
+const onGetReceipts = async (filters: ReceiptFilters): Promise<PaginatedReceipts> => {
+	const { onGetReceipts } = await import('$lib/server/telefuncs/receipt.telefunc');
+	return onGetReceipts(filters);
+};
+
+const onGetReceiptStats = async (): Promise<ReceiptStats> => {
+	const { onGetReceiptStats } = await import('$lib/server/telefuncs/receipt.telefunc');
+	return onGetReceiptStats();
+};
 import type {
 	GeneratedReceipt,
 	ReceiptGeneration,

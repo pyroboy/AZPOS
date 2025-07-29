@@ -1,45 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-
-// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
-const onGetGroceryCart = async (): Promise<GroceryCartWithItems> => {
-	const { onGetGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
-	return onGetGroceryCart();
-};
-
-const onAddToGroceryCart = async (itemData: GroceryCartItemInput): Promise<void> => {
-	const { onAddToGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
-	return onAddToGroceryCart(itemData);
-};
-
-const onUpdateGroceryCartItem = async (itemData: GroceryCartItemUpdate): Promise<void> => {
-	const { onUpdateGroceryCartItem } = await import('$lib/server/telefuncs/groceryCart.telefunc');
-	return onUpdateGroceryCartItem(itemData);
-};
-
-const onRemoveFromGroceryCart = async (itemId: string): Promise<void> => {
-	const { onRemoveFromGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
-	return onRemoveFromGroceryCart(itemId);
-};
-
-const onUpdateGroceryCart = async (cartData: GroceryCartInput): Promise<void> => {
-	const { onUpdateGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
-	return onUpdateGroceryCart(cartData);
-};
-
-const onClearGroceryCart = async (): Promise<void> => {
-	const { onClearGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
-	return onClearGroceryCart();
-};
-
-const onGetDeliveryTimeSlots = async (date?: string): Promise<DeliveryTimeSlot[]> => {
-	const { onGetDeliveryTimeSlots } = await import('$lib/server/telefuncs/groceryCart.telefunc');
-	return onGetDeliveryTimeSlots(date);
-};
-
-const onCalculateDeliveryFee = async (data: { subtotal: number; is_express?: boolean }): Promise<any> => {
-	const { onCalculateDeliveryFee } = await import('$lib/server/telefuncs/groceryCart.telefunc');
-	return onCalculateDeliveryFee(data);
-};
+import { browser } from '$app/environment';
 import type {
 	GroceryCart,
 	GroceryCartWithItems,
@@ -49,7 +9,84 @@ import type {
 	GroceryCartInput,
 	DeliveryTimeSlot
 } from '$lib/types/groceryCart.schema';
-import { browser } from '$app/environment';
+
+/**
+ * A wrapper for the onGetGroceryCart telefunc to avoid SSR import issues.
+ * @returns {Promise<GroceryCartWithItems>} The result from the telefunc.
+ */
+const onGetGroceryCart = async (): Promise<GroceryCartWithItems> => {
+	const { onGetGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onGetGroceryCart();
+};
+
+/**
+ * A wrapper for the onAddToGroceryCart telefunc to avoid SSR import issues.
+ * @param {GroceryCartItemInput} itemData - The item data to add to cart.
+ * @returns {Promise<void>} The result from the telefunc.
+ */
+const onAddToGroceryCart = async (itemData: GroceryCartItemInput): Promise<any> => {
+	const { onAddToGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onAddToGroceryCart(itemData);
+};
+
+/**
+ * A wrapper for the onUpdateGroceryCartItem telefunc to avoid SSR import issues.
+ * @param {GroceryCartItemUpdate} itemData - The item data to update.
+ * @returns {Promise<void>} The result from the telefunc.
+ */
+const onUpdateGroceryCartItem = async (itemData: GroceryCartItemUpdate): Promise<any> => {
+	const { onUpdateGroceryCartItem } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onUpdateGroceryCartItem(itemData);
+};
+
+/**
+ * A wrapper for the onRemoveFromGroceryCart telefunc to avoid SSR import issues.
+ * @param {string} itemId - The item ID to remove.
+ * @returns {Promise<void>} The result from the telefunc.
+ */
+const onRemoveFromGroceryCart = async (itemId: string): Promise<void> => {
+	const { onRemoveFromGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onRemoveFromGroceryCart(itemId);
+};
+
+/**
+ * A wrapper for the onUpdateGroceryCart telefunc to avoid SSR import issues.
+ * @param {GroceryCartInput} cartData - The cart data to update.
+ * @returns {Promise<void>} The result from the telefunc.
+ */
+const onUpdateGroceryCart = async (cartData: GroceryCartInput): Promise<any> => {
+	const { onUpdateGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onUpdateGroceryCart(cartData);
+};
+
+/**
+ * A wrapper for the onClearGroceryCart telefunc to avoid SSR import issues.
+ * @returns {Promise<void>} The result from the telefunc.
+ */
+const onClearGroceryCart = async (): Promise<void> => {
+	const { onClearGroceryCart } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onClearGroceryCart();
+};
+
+/**
+ * A wrapper for the onGetDeliveryTimeSlots telefunc to avoid SSR import issues.
+ * @param {string} date - The date to get time slots for.
+ * @returns {Promise<DeliveryTimeSlot[]>} The result from the telefunc.
+ */
+const onGetDeliveryTimeSlots = async (date?: string): Promise<DeliveryTimeSlot[]> => {
+	const { onGetDeliveryTimeSlots } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onGetDeliveryTimeSlots(date);
+};
+
+/**
+ * A wrapper for the onCalculateDeliveryFee telefunc to avoid SSR import issues.
+ * @param {any} data - The data for calculating delivery fee.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onCalculateDeliveryFee = async (data: { subtotal: number; is_express?: boolean }): Promise<any> => {
+	const { onCalculateDeliveryFee } = await import('$lib/server/telefuncs/groceryCart.telefunc');
+	return onCalculateDeliveryFee(data);
+};
 
 const groceryCartQueryKey = ['groceryCart'];
 const deliveryTimeSlotsQueryKey = ['deliveryTimeSlots'];

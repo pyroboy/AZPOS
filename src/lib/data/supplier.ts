@@ -1,14 +1,88 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetSuppliers,
-	onGetSupplierById,
-	onCreateSupplier,
-	onUpdateSupplier,
-	onGetSupplierStats,
-	onGetSupplierPerformance,
-	onGetSupplierProducts,
-	onDeleteSupplier
-} from '$lib/server/telefuncs/supplier.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetSuppliers telefunc to avoid SSR import issues.
+ * @param {SupplierFilters} filters - The parameters for the telefunc.
+ * @returns {Promise<PaginatedSuppliers>} The result from the telefunc.
+ */
+const onGetSuppliers = async (filters?: SupplierFilters): Promise<PaginatedSuppliers> => {
+	const { onGetSuppliers } = await import('$lib/server/telefuncs/supplier.telefunc.js');
+	return onGetSuppliers(filters);
+};
+
+/**
+ * A wrapper for the onGetSupplierById telefunc to avoid SSR import issues.
+ * @param {string} id - The parameters for the telefunc.
+ * @returns {Promise<Supplier>} The result from the telefunc.
+ */
+const onGetSupplierById = async (id: string): Promise<Supplier | null> => {
+	const { onGetSupplierById } = await import('$lib/server/telefuncs/supplier.telefunc.js');
+	return onGetSupplierById(id);
+};
+
+/**
+ * A wrapper for the onCreateSupplier telefunc to avoid SSR import issues.
+ * @param {SupplierInput} supplierData - The parameters for the telefunc.
+ * @returns {Promise<Supplier>} The result from the telefunc.
+ */
+const onCreateSupplier = async (supplierData: SupplierInput): Promise<Supplier> => {
+	const { onCreateSupplier } = await import('$lib/server/telefuncs/supplier.telefunc.js');
+	return onCreateSupplier(supplierData);
+};
+
+/**
+ * A wrapper for the onUpdateSupplier telefunc to avoid SSR import issues.
+ * @param {string} supplierId - The parameters for the telefunc.
+ * @param {Partial<SupplierInput>} supplierData - The parameters for the telefunc.
+ * @returns {Promise<Supplier>} The result from the telefunc.
+ */
+const onUpdateSupplier = async (supplierId: string, supplierData: Partial<SupplierInput>): Promise<Supplier> => {
+	const { onUpdateSupplier } = await import('$lib/server/telefuncs/supplier.telefunc.js');
+	return onUpdateSupplier(supplierId, supplierData);
+};
+
+/**
+ * A wrapper for the onGetSupplierStats telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<SupplierStats>} The result from the telefunc.
+ */
+const onGetSupplierStats = async (): Promise<SupplierStats> => {
+	const { onGetSupplierStats } = await import('$lib/server/telefuncs/supplier.telefunc.js');
+	return onGetSupplierStats();
+};
+
+/**
+ * A wrapper for the onGetSupplierPerformance telefunc to avoid SSR import issues.
+ * @param {string} id - The parameters for the telefunc.
+ * @param {string} period - The parameters for the telefunc.
+ * @returns {Promise<SupplierPerformance>} The result from the telefunc.
+ */
+const onGetSupplierPerformance = async (id: string, period: 'month' | 'quarter' | 'year'): Promise<SupplierPerformance> => {
+	const { onGetSupplierPerformance } = await import('$lib/server/telefuncs/supplier.telefunc.js');
+	return onGetSupplierPerformance(id, period);
+};
+
+/**
+ * A wrapper for the onGetSupplierProducts telefunc to avoid SSR import issues.
+ * @param {string} id - The parameters for the telefunc.
+ * @returns {Promise<SupplierProduct[]>} The result from the telefunc.
+ */
+const onGetSupplierProducts = async (id: string): Promise<SupplierProduct[]> => {
+	const { onGetSupplierProducts } = await import('$lib/server/telefuncs/supplier.telefunc.js');
+	return onGetSupplierProducts(id);
+};
+
+/**
+ * A wrapper for the onDeleteSupplier telefunc to avoid SSR import issues.
+ * @param {string} supplierId - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onDeleteSupplier = async (supplierId: string): Promise<any> => {
+	const { onDeleteSupplier } = await import('$lib/server/telefuncs/supplier.telefunc.js');
+	return onDeleteSupplier(supplierId);
+};
+
 import type {
 	Supplier,
 	SupplierInput,

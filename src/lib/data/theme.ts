@@ -1,17 +1,117 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetCurrentTheme,
-	onGetThemes,
-	onCreateCustomTheme,
-	onUpdateTheme,
-	onDeleteTheme,
-	onGetUserThemePreferences,
-	onUpdateUserThemePreferences,
-	onExportTheme,
-	onImportTheme,
-	onGetThemeStats,
-	onValidateTheme
-} from '$lib/server/telefuncs/theme.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetCurrentTheme telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<ThemeConfig>} The result from the telefunc.
+ */
+const onGetCurrentTheme = async (): Promise<ThemeConfig> => {
+	const { onGetCurrentTheme } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onGetCurrentTheme();
+};
+
+/**
+ * A wrapper for the onGetThemes telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<ThemeConfig[]>} The result from the telefunc.
+ */
+const onGetThemes = async (): Promise<ThemeConfig[]> => {
+	const { onGetThemes } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onGetThemes();
+};
+
+/**
+ * A wrapper for the onCreateCustomTheme telefunc to avoid SSR import issues.
+ * @param {ThemeCustomization} themeData - The parameters for the telefunc.
+ * @returns {Promise<ThemeConfig>} The result from the telefunc.
+ */
+const onCreateCustomTheme = async (themeData: ThemeCustomization): Promise<ThemeConfig> => {
+	const { onCreateCustomTheme } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onCreateCustomTheme(themeData);
+};
+
+/**
+ * A wrapper for the onUpdateTheme telefunc to avoid SSR import issues.
+ * @param {string} themeId - The parameters for the telefunc.
+ * @param {ThemeCustomization} themeData - The parameters for the telefunc.
+ * @returns {Promise<ThemeConfig>} The result from the telefunc.
+ */
+const onUpdateTheme = async (themeId: string, themeData: ThemeCustomization): Promise<ThemeConfig> => {
+	const { onUpdateTheme } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onUpdateTheme(themeId, themeData);
+};
+
+/**
+ * A wrapper for the onDeleteTheme telefunc to avoid SSR import issues.
+ * @param {string} themeId - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onDeleteTheme = async (themeId: string): Promise<any> => {
+	const { onDeleteTheme } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onDeleteTheme(themeId);
+};
+
+/**
+ * A wrapper for the onGetUserThemePreferences telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<UserThemePreferences>} The result from the telefunc.
+ */
+const onGetUserThemePreferences = async (): Promise<UserThemePreferences | null> => {
+	const { onGetUserThemePreferences } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onGetUserThemePreferences();
+};
+
+/**
+ * A wrapper for the onUpdateUserThemePreferences telefunc to avoid SSR import issues.
+ * @param {UserThemePreferences} preferencesData - The parameters for the telefunc.
+ * @returns {Promise<UserThemePreferences>} The result from the telefunc.
+ */
+const onUpdateUserThemePreferences = async (preferencesData: UserThemePreferences): Promise<UserThemePreferences> => {
+	const { onUpdateUserThemePreferences } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onUpdateUserThemePreferences(preferencesData);
+};
+
+/**
+ * A wrapper for the onExportTheme telefunc to avoid SSR import issues.
+ * @param {string} themeId - The parameters for the telefunc.
+ * @returns {Promise<ThemeExport>} The result from the telefunc.
+ */
+const onExportTheme = async (themeId: string): Promise<ThemeExport> => {
+	const { onExportTheme } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onExportTheme(themeId);
+};
+
+/**
+ * A wrapper for the onImportTheme telefunc to avoid SSR import issues.
+ * @param {ThemeExport} themeExportData - The parameters for the telefunc.
+ * @returns {Promise<ThemeConfig>} The result from the telefunc.
+ */
+const onImportTheme = async (themeExportData: ThemeExport): Promise<ThemeConfig> => {
+	const { onImportTheme } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onImportTheme(themeExportData);
+};
+
+/**
+ * A wrapper for the onGetThemeStats telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<ThemeStats>} The result from the telefunc.
+ */
+const onGetThemeStats = async (): Promise<ThemeStats> => {
+	const { onGetThemeStats } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onGetThemeStats();
+};
+
+/**
+ * A wrapper for the onValidateTheme telefunc to avoid SSR import issues.
+ * @param {ThemeCustomization} themeData - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onValidateTheme = async (themeData: ThemeCustomization): Promise<any> => {
+	const { onValidateTheme } = await import('$lib/server/telefuncs/theme.telefunc.js');
+	return onValidateTheme(themeData);
+};
+
 import type {
 	ThemeConfig,
 	ThemeCustomization,

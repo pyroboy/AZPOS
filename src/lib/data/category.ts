@@ -1,42 +1,73 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 import { browser } from '$app/environment';
 
-// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
-const onGetCategories = async (filters?: CategoryFilters): Promise<Category[]> => {
-  const { onGetCategories } = await import('$lib/server/telefuncs/category.telefunc');
-  return onGetCategories(filters);
-};
-
-const onGetCategoryTree = async (): Promise<CategoryTree[]> => {
-  const { onGetCategoryTree } = await import('$lib/server/telefuncs/category.telefunc');
-  return onGetCategoryTree();
-};
-
-const onCreateCategory = async (categoryData: unknown): Promise<Category> => {
-  const { onCreateCategory } = await import('$lib/server/telefuncs/category.telefunc');
-  return onCreateCategory(categoryData);
-};
-
-const onUpdateCategory = async (categoryId: string, categoryData: unknown): Promise<Category> => {
-  const { onUpdateCategory } = await import('$lib/server/telefuncs/category.telefunc');
-  return onUpdateCategory(categoryId, categoryData);
-};
-
-const onGetCategoryStats = async (): Promise<CategoryStats> => {
-  const { onGetCategoryStats } = await import('$lib/server/telefuncs/category.telefunc');
-  return onGetCategoryStats();
-};
-
-const onMoveCategory = async (moveData: unknown): Promise<void> => {
-  const { onMoveCategory } = await import('$lib/server/telefuncs/category.telefunc');
-  return onMoveCategory(moveData);
-};
 import type {
 	Category,
 	CategoryTree,
 	CategoryFilters,
-	CategoryStats
+	CategoryInput,
+	CategoryStats,
+	MoveCategory
 } from '$lib/types/category.schema';
+
+/**
+ * A wrapper for the onGetCategories telefunc to avoid SSR import issues.
+ * @param {CategoryFilters} filters - The filters for getting categories.
+ * @returns {Promise<Category[]>} The result from the telefunc.
+ */
+const onGetCategories = async (filters?: CategoryFilters): Promise<Category[]> => {
+	const { onGetCategories } = await import('$lib/server/telefuncs/category.telefunc');
+	return onGetCategories(filters);
+};
+
+/**
+ * A wrapper for the onGetCategoryTree telefunc to avoid SSR import issues.
+ * @returns {Promise<CategoryTree[]>} The result from the telefunc.
+ */
+const onGetCategoryTree = async (): Promise<CategoryTree[]> => {
+	const { onGetCategoryTree } = await import('$lib/server/telefuncs/category.telefunc');
+	return onGetCategoryTree();
+};
+
+/**
+ * A wrapper for the onCreateCategory telefunc to avoid SSR import issues.
+ * @param {CategoryInput} categoryData - The category data for creation.
+ * @returns {Promise<Category>} The result from the telefunc.
+ */
+const onCreateCategory = async (categoryData: CategoryInput): Promise<Category> => {
+	const { onCreateCategory } = await import('$lib/server/telefuncs/category.telefunc');
+	return onCreateCategory(categoryData);
+};
+
+/**
+ * A wrapper for the onUpdateCategory telefunc to avoid SSR import issues.
+ * @param {string} categoryId - The category ID to update.
+ * @param {Partial<CategoryInput>} categoryData - The category data for update.
+ * @returns {Promise<Category>} The result from the telefunc.
+ */
+const onUpdateCategory = async (categoryId: string, categoryData: Partial<CategoryInput>): Promise<Category> => {
+	const { onUpdateCategory } = await import('$lib/server/telefuncs/category.telefunc');
+	return onUpdateCategory(categoryId, categoryData);
+};
+
+/**
+ * A wrapper for the onGetCategoryStats telefunc to avoid SSR import issues.
+ * @returns {Promise<CategoryStats>} The result from the telefunc.
+ */
+const onGetCategoryStats = async (): Promise<CategoryStats> => {
+	const { onGetCategoryStats } = await import('$lib/server/telefuncs/category.telefunc');
+	return onGetCategoryStats();
+};
+
+/**
+ * A wrapper for the onMoveCategory telefunc to avoid SSR import issues.
+ * @param {MoveCategory} moveData - The move data for category.
+ * @returns {Promise<Category>} The result from the telefunc.
+ */
+const onMoveCategory = async (moveData: MoveCategory): Promise<Category> => {
+	const { onMoveCategory } = await import('$lib/server/telefuncs/category.telefunc');
+	return onMoveCategory(moveData);
+};
 
 // Query keys for consistent cache management
 const categoryQueryKeys = {
@@ -79,7 +110,7 @@ export function useCategories(filters?: CategoryFilters) {
 
 	// Mutation to create a new category
 	const createCategoryMutation = createMutation({
-		mutationFn: (categoryData: unknown) => onCreateCategory(categoryData),
+		mutationFn: (categoryData: CategoryInput) => onCreateCategory(categoryData),
 		onSuccess: (newCategory) => {
 			// Invalidate and refetch categories
 			queryClient.invalidateQueries({ queryKey: categoryQueryKeys.lists() });
@@ -98,7 +129,7 @@ export function useCategories(filters?: CategoryFilters) {
 
 	// Mutation to update a category
 	const updateCategoryMutation = createMutation({
-		mutationFn: ({ categoryId, categoryData }: { categoryId: string; categoryData: unknown }) =>
+		mutationFn: ({ categoryId, categoryData }: { categoryId: string; categoryData: Partial<CategoryInput> }) =>
 			onUpdateCategory(categoryId, categoryData),
 		onSuccess: (updatedCategory) => {
 			// Update the specific category in all relevant queries
@@ -121,7 +152,7 @@ export function useCategories(filters?: CategoryFilters) {
 
 	// Mutation to move a category
 	const moveCategoryMutation = createMutation({
-		mutationFn: (moveData: unknown) => onMoveCategory(moveData),
+		mutationFn: (moveData: MoveCategory) => onMoveCategory(moveData),
 		onSuccess: () => {
 			// Moving changes hierarchy, so invalidate all cached data
 			queryClient.invalidateQueries({ queryKey: categoryQueryKeys.all });

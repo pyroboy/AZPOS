@@ -1,13 +1,78 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetUsers,
-	onGetUser,
-	onCreateUser,
-	onUpdateUser,
-	onChangePassword,
-	onGetUserStats,
-	onGetUserActivity
-} from '$lib/server/telefuncs/user.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetUsers telefunc to avoid SSR import issues.
+ * @param {UserFilters} filters - The parameters for the telefunc.
+ * @returns {Promise<PaginatedUsers>} The result from the telefunc.
+ */
+const onGetUsers = async (filters: UserFilters): Promise<PaginatedUsers> => {
+	const { onGetUsers } = await import('$lib/server/telefuncs/user.telefunc.js');
+	return onGetUsers(filters);
+};
+
+/**
+ * A wrapper for the onGetUser telefunc to avoid SSR import issues.
+ * @param {string} userId - The parameters for the telefunc.
+ * @returns {Promise<User>} The result from the telefunc.
+ */
+const onGetUser = async (userId: string): Promise<User> => {
+	const { onGetUser } = await import('$lib/server/telefuncs/user.telefunc.js');
+	return onGetUser(userId);
+};
+
+/**
+ * A wrapper for the onCreateUser telefunc to avoid SSR import issues.
+ * @param {UserInput} userData - The parameters for the telefunc.
+ * @returns {Promise<User>} The result from the telefunc.
+ */
+const onCreateUser = async (userData: UserInput): Promise<User> => {
+	const { onCreateUser } = await import('$lib/server/telefuncs/user.telefunc.js');
+	return onCreateUser(userData);
+};
+
+/**
+ * A wrapper for the onUpdateUser telefunc to avoid SSR import issues.
+ * @param {string} id - The parameters for the telefunc.
+ * @param {UserInput} data - The parameters for the telefunc.
+ * @returns {Promise<User>} The result from the telefunc.
+ */
+const onUpdateUser = async (id: string, data: UserInput): Promise<User> => {
+	const { onUpdateUser } = await import('$lib/server/telefuncs/user.telefunc.js');
+	return onUpdateUser(id, data);
+};
+
+/**
+ * A wrapper for the onChangePassword telefunc to avoid SSR import issues.
+ * @param {ChangePassword} passwordData - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onChangePassword = async (passwordData: ChangePassword): Promise<any> => {
+	const { onChangePassword } = await import('$lib/server/telefuncs/user.telefunc.js');
+	return onChangePassword(passwordData);
+};
+
+/**
+ * A wrapper for the onGetUserStats telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<UserStats>} The result from the telefunc.
+ */
+const onGetUserStats = async (): Promise<UserStats> => {
+	const { onGetUserStats } = await import('$lib/server/telefuncs/user.telefunc.js');
+	return onGetUserStats();
+};
+
+/**
+ * A wrapper for the onGetUserActivity telefunc to avoid SSR import issues.
+ * @param {string} userId - The parameters for the telefunc.
+ * @param {number} limit - The parameters for the telefunc.
+ * @returns {Promise<UserActivity[]>} The result from the telefunc.
+ */
+const onGetUserActivity = async (userId?: string, limit?: number): Promise<UserActivity[]> => {
+	const { onGetUserActivity } = await import('$lib/server/telefuncs/user.telefunc.js');
+	return onGetUserActivity(userId, limit);
+};
+
 import type {
 	User,
 	UserInput,

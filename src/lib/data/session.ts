@@ -34,7 +34,7 @@ const onEndSession = async (sessionId: string): Promise<void> => {
 	return onEndSession(sessionId);
 };
 
-const onCleanupExpiredSessions = async (): Promise<number> => {
+const onCleanupExpiredSessions = async (): Promise<{ cleaned_count: number }> => {
 	const { onCleanupExpiredSessions } = await import('$lib/server/telefuncs/session.telefunc');
 	return onCleanupExpiredSessions();
 };

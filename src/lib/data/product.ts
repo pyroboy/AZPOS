@@ -10,42 +10,81 @@ import type {
 	StockAdjustment
 } from '$lib/types/product.schema';
 
-// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetProducts telefunc to avoid SSR import issues.
+ * @param {ProductFilters} filters - The filters for getting products.
+ * @returns {Promise<PaginatedProducts>} The result from the telefunc.
+ */
 const onGetProducts = async (filters?: ProductFilters): Promise<PaginatedProducts> => {
 	const { onGetProducts } = await import('$lib/server/telefuncs/product.telefunc');
 	return onGetProducts(filters);
 };
 
+/**
+ * A wrapper for the onGetProductById telefunc to avoid SSR import issues.
+ * @param {string} productId - The product ID to retrieve.
+ * @returns {Promise<Product | null>} The result from the telefunc.
+ */
 const onGetProductById = async (productId: string): Promise<Product | null> => {
 	const { onGetProductById } = await import('$lib/server/telefuncs/product.telefunc');
 	return onGetProductById(productId);
 };
 
+/**
+ * A wrapper for the onCreateProduct telefunc to avoid SSR import issues.
+ * @param {ProductInput} productData - The product data for creation.
+ * @returns {Promise<Product>} The result from the telefunc.
+ */
 const onCreateProduct = async (productData: ProductInput): Promise<Product> => {
 	const { onCreateProduct } = await import('$lib/server/telefuncs/product.telefunc');
 	return onCreateProduct(productData);
 };
 
+/**
+ * A wrapper for the onUpdateProduct telefunc to avoid SSR import issues.
+ * @param {string} productId - The product ID to update.
+ * @param {Partial<ProductInput>} productData - The product data for update.
+ * @returns {Promise<Product>} The result from the telefunc.
+ */
 const onUpdateProduct = async (productId: string, productData: Partial<ProductInput>): Promise<Product> => {
 	const { onUpdateProduct } = await import('$lib/server/telefuncs/product.telefunc');
 	return onUpdateProduct(productId, productData);
 };
 
+/**
+ * A wrapper for the onGetProductMeta telefunc to avoid SSR import issues.
+ * @returns {Promise<ProductMeta>} The result from the telefunc.
+ */
 const onGetProductMeta = async (): Promise<ProductMeta> => {
 	const { onGetProductMeta } = await import('$lib/server/telefuncs/product.telefunc');
 	return onGetProductMeta();
 };
 
+/**
+ * A wrapper for the onBulkUpdateProducts telefunc to avoid SSR import issues.
+ * @param {BulkProductUpdate} updateData - The bulk update data.
+ * @returns {Promise<Product[]>} The result from the telefunc.
+ */
 const onBulkUpdateProducts = async (updateData: BulkProductUpdate): Promise<Product[]> => {
 	const { onBulkUpdateProducts } = await import('$lib/server/telefuncs/product.telefunc');
 	return onBulkUpdateProducts(updateData);
 };
 
+/**
+ * A wrapper for the onAdjustStock telefunc to avoid SSR import issues.
+ * @param {StockAdjustment} adjustmentData - The stock adjustment data.
+ * @returns {Promise<Product>} The result from the telefunc.
+ */
 const onAdjustStock = async (adjustmentData: StockAdjustment): Promise<Product> => {
 	const { onAdjustStock } = await import('$lib/server/telefuncs/product.telefunc');
 	return onAdjustStock(adjustmentData);
 };
 
+/**
+ * A wrapper for the onDeleteProduct telefunc to avoid SSR import issues.
+ * @param {string} productId - The product ID to delete.
+ * @returns {Promise<void>} The result from the telefunc.
+ */
 const onDeleteProduct = async (productId: string): Promise<void> => {
 	const { onDeleteProduct } = await import('$lib/server/telefuncs/product.telefunc');
 	return onDeleteProduct(productId);

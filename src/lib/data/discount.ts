@@ -1,25 +1,4 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-
-// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
-const onGetDiscounts = async (filters: DiscountFilters): Promise<PaginatedDiscounts> => {
-	const { onGetDiscounts } = await import('$lib/server/telefuncs/discount.telefunc');
-	return onGetDiscounts(filters);
-};
-
-const onCreateDiscount = async (discountData: DiscountInput): Promise<any> => {
-	const { onCreateDiscount } = await import('$lib/server/telefuncs/discount.telefunc');
-	return onCreateDiscount(discountData);
-};
-
-const onValidateDiscount = async (validationData: ValidateDiscount): Promise<any> => {
-	const { onValidateDiscount } = await import('$lib/server/telefuncs/discount.telefunc');
-	return onValidateDiscount(validationData);
-};
-
-const onGetDiscountStats = async (): Promise<DiscountStats> => {
-	const { onGetDiscountStats } = await import('$lib/server/telefuncs/discount.telefunc');
-	return onGetDiscountStats();
-};
 import type {
 	DiscountInput,
 	DiscountFilters,
@@ -27,6 +6,45 @@ import type {
 	DiscountStats,
 	ValidateDiscount
 } from '$lib/types/discount.schema';
+
+/**
+ * A wrapper for the onGetDiscounts telefunc to avoid SSR import issues.
+ * @param {DiscountFilters} filters - The filters for getting discounts.
+ * @returns {Promise<PaginatedDiscounts>} The result from the telefunc.
+ */
+const onGetDiscounts = async (filters: DiscountFilters): Promise<PaginatedDiscounts> => {
+	const { onGetDiscounts } = await import('$lib/server/telefuncs/discount.telefunc');
+	return onGetDiscounts(filters);
+};
+
+/**
+ * A wrapper for the onCreateDiscount telefunc to avoid SSR import issues.
+ * @param {DiscountInput} discountData - The discount data for creation.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onCreateDiscount = async (discountData: DiscountInput): Promise<any> => {
+	const { onCreateDiscount } = await import('$lib/server/telefuncs/discount.telefunc');
+	return onCreateDiscount(discountData);
+};
+
+/**
+ * A wrapper for the onValidateDiscount telefunc to avoid SSR import issues.
+ * @param {ValidateDiscount} validationData - The validation data for discount.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onValidateDiscount = async (validationData: ValidateDiscount): Promise<any> => {
+	const { onValidateDiscount } = await import('$lib/server/telefuncs/discount.telefunc');
+	return onValidateDiscount(validationData);
+};
+
+/**
+ * A wrapper for the onGetDiscountStats telefunc to avoid SSR import issues.
+ * @returns {Promise<DiscountStats>} The result from the telefunc.
+ */
+const onGetDiscountStats = async (): Promise<DiscountStats> => {
+	const { onGetDiscountStats } = await import('$lib/server/telefuncs/discount.telefunc');
+	return onGetDiscountStats();
+};
 
 const discountsQueryKey = ['discounts'];
 const discountStatsQueryKey = ['discount-stats'];

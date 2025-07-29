@@ -1,39 +1,39 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 
 // Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
-const onGetProductBatches = async (filters?: ProductBatchFilters): PromisePaginatedProductBatches =e => {
-const { onGetProductBatches } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
-return onGetProductBatches(filters);
+const onGetProductBatches = async (filters?: ProductBatchFilters): Promise<PaginatedProductBatches> => {
+	const { onGetProductBatches } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	return onGetProductBatches(filters);
 };
 
-const onGetProductBatchById = async (batchId: string): PromiseProductBatch | null =e => {
-const { onGetProductBatchById } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
-return onGetProductBatchById(batchId);
+const onGetProductBatchById = async (batchId: string): Promise<ProductBatch | null> => {
+	const { onGetProductBatchById } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	return onGetProductBatchById(batchId);
 };
 
-const onCreateProductBatch = async (batchData: ProductBatchInput): PromiseProductBatch =e => {
-const { onCreateProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
-return onCreateProductBatch(batchData);
+const onCreateProductBatch = async (batchData: ProductBatchInput): Promise<ProductBatch> => {
+	const { onCreateProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	return onCreateProductBatch(batchData);
 };
 
-const onUpdateProductBatch = async (batchId: string, batchData: Partial<ProductBatchInput>): PromiseProductBatch =e => {
-const { onUpdateProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
-return onUpdateProductBatch(batchId, batchData);
+const onUpdateProductBatch = async (batchId: string, batchData: Partial<ProductBatchInput>): Promise<ProductBatch> => {
+	const { onUpdateProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	return onUpdateProductBatch(batchId, batchData);
 };
 
-const onDeleteProductBatch = async (batchId: string): Promisevoid =e => {
-const { onDeleteProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
-return onDeleteProductBatch(batchId);
+const onDeleteProductBatch = async (batchId: string): Promise<void> => {
+	const { onDeleteProductBatch } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	return onDeleteProductBatch(batchId);
 };
 
-const onGetBatchesByProduct = async (productId: string): PromiseProductBatch[] =e => {
-const { onGetBatchesByProduct } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
-return onGetBatchesByProduct(productId);
+const onGetBatchesByProduct = async (productId: string): Promise<ProductBatch[]> => {
+	const { onGetBatchesByProduct } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	return onGetBatchesByProduct(productId);
 };
 
-const onGetExpiringBatches = async (): PromiseProductBatch[] =e => {
-const { onGetExpiringBatches } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
-return onGetExpiringBatches();
+const onGetExpiringBatches = async (): Promise<ProductBatch[]> => {
+	const { onGetExpiringBatches } = await import('$lib/server/telefuncs/productBatch.telefunc.js');
+	return onGetExpiringBatches();
 };
 import type {
 	ProductBatch,

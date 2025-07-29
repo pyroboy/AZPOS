@@ -1,14 +1,87 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-import {
-	onGetSettings,
-	onUpdateSettings,
-	onResetSettings,
-	onCreateSettingsBackup,
-	onRestoreSettingsBackup,
-	onGetSettingsBackups,
-	onDeleteSettingsBackup,
-	onValidateSettings
-} from '$lib/server/telefuncs/settings.telefunc.js';
+
+// Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
+/**
+ * A wrapper for the onGetSettings telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<Settings>} The result from the telefunc.
+ */
+const onGetSettings = async (): Promise<Settings> => {
+	const { onGetSettings } = await import('$lib/server/telefuncs/settings.telefunc.js');
+	return onGetSettings();
+};
+
+/**
+ * A wrapper for the onUpdateSettings telefunc to avoid SSR import issues.
+ * @param {SettingsUpdate} settingsData - The parameters for the telefunc.
+ * @returns {Promise<Settings>} The result from the telefunc.
+ */
+const onUpdateSettings = async (settingsData: SettingsUpdate): Promise<Settings> => {
+	const { onUpdateSettings } = await import('$lib/server/telefuncs/settings.telefunc.js');
+	return onUpdateSettings(settingsData);
+};
+
+/**
+ * A wrapper for the onResetSettings telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<Settings>} The result from the telefunc.
+ */
+const onResetSettings = async (): Promise<Settings> => {
+	const { onResetSettings } = await import('$lib/server/telefuncs/settings.telefunc.js');
+	return onResetSettings();
+};
+
+/**
+ * A wrapper for the onCreateSettingsBackup telefunc to avoid SSR import issues.
+ * @param {string} name - The parameters for the telefunc.
+ * @param {string} description - The parameters for the telefunc.
+ * @returns {Promise<SettingsBackup>} The result from the telefunc.
+ */
+const onCreateSettingsBackup = async (name: string, description?: string): Promise<SettingsBackup> => {
+	const { onCreateSettingsBackup } = await import('$lib/server/telefuncs/settings.telefunc.js');
+	return onCreateSettingsBackup(name, description);
+};
+
+/**
+ * A wrapper for the onRestoreSettingsBackup telefunc to avoid SSR import issues.
+ * @param {string} backupId - The parameters for the telefunc.
+ * @returns {Promise<Settings>} The result from the telefunc.
+ */
+const onRestoreSettingsBackup = async (backupId: string): Promise<Settings> => {
+	const { onRestoreSettingsBackup } = await import('$lib/server/telefuncs/settings.telefunc.js');
+	return onRestoreSettingsBackup(backupId);
+};
+
+/**
+ * A wrapper for the onGetSettingsBackups telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<SettingsBackup[]>} The result from the telefunc.
+ */
+const onGetSettingsBackups = async (): Promise<SettingsBackup[]> => {
+	const { onGetSettingsBackups } = await import('$lib/server/telefuncs/settings.telefunc.js');
+	return onGetSettingsBackups();
+};
+
+/**
+ * A wrapper for the onDeleteSettingsBackup telefunc to avoid SSR import issues.
+ * @param {string} backupId - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onDeleteSettingsBackup = async (backupId: string): Promise<any> => {
+	const { onDeleteSettingsBackup } = await import('$lib/server/telefuncs/settings.telefunc.js');
+	return onDeleteSettingsBackup(backupId);
+};
+
+/**
+ * A wrapper for the onValidateSettings telefunc to avoid SSR import issues.
+ * @param {SettingsUpdate} settingsData - The parameters for the telefunc.
+ * @returns {Promise<any>} The result from the telefunc.
+ */
+const onValidateSettings = async (settingsData: SettingsUpdate): Promise<any> => {
+	const { onValidateSettings } = await import('$lib/server/telefuncs/settings.telefunc.js');
+	return onValidateSettings(settingsData);
+};
+
 import type { Settings, SettingsUpdate, SettingsBackup } from '$lib/types/settings.schema';
 
 const settingsQueryKey = ['settings'];

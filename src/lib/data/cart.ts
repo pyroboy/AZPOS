@@ -6,7 +6,7 @@ const onGetCart = async (sessionId: string): Promise<CartState> => {
 	return onGetCart(sessionId);
 };
 
-const onAddCartItem = async (itemData: AddCartItemInput, sessionId: string): Promise<void> => {
+const onAddCartItem = async (itemData: AddCartItemInput, sessionId: string): Promise<EnhancedCartItem> => {
 	const { onAddCartItem } = await import('$lib/server/telefuncs/cart.telefunc');
 	return onAddCartItem(itemData, sessionId);
 };

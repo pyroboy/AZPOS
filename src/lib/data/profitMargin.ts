@@ -1,20 +1,39 @@
 import { createQuery, useQueryClient } from '@tanstack/svelte-query';
 
 // Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
-const onGetProfitMarginReport = async (): PromiseProfitMarginReport =e => {
-const { onGetProfitMarginReport } = await import('$lib/server/telefuncs/profitMargin.telefunc');
-return onGetProfitMarginReport();
+/**
+ * A wrapper for the onGetProfitMarginReport telefunc to avoid SSR import issues.
+ * @param {any} params - The parameters for the telefunc.
+ * @returns {Promise<ProfitMarginReport>} The result from the telefunc.
+ */
+const onGetProfitMarginReport = async (): Promise<ProfitMarginReport> => {
+	const { onGetProfitMarginReport } = await import('$lib/server/telefuncs/profitMargin.telefunc');
+	return onGetProfitMarginReport();
 };
 
-const onGetProfitMarginReportByDateRange = async (startDate: string, endDate: string): PromiseProfitMarginReport =e => {
-const { onGetProfitMarginReportByDateRange } = await import('$lib/server/telefuncs/profitMargin.telefunc');
-return onGetProfitMarginReportByDateRange(startDate, endDate);
+/**
+ * A wrapper for the onGetProfitMarginReportByDateRange telefunc to avoid SSR import issues.
+ * @param {string} startDate - The parameters for the telefunc.
+ * @param {string} endDate - The parameters for the telefunc.
+ * @returns {Promise<ProfitMarginReport>} The result from the telefunc.
+ */
+const onGetProfitMarginReportByDateRange = async (startDate: string, endDate: string): Promise<ProfitMarginReport> => {
+	const { onGetProfitMarginReportByDateRange } = await import('$lib/server/telefuncs/profitMargin.telefunc');
+	return onGetProfitMarginReportByDateRange(startDate, endDate);
 };
 
-const onGetProductProfitMargin = async (productId: string): PromiseProfitMarginReport =e => {
-const { onGetProductProfitMargin } = await import('$lib/server/telefuncs/profitMargin.telefunc');
-return onGetProductProfitMargin(productId);
+/**
+ * A wrapper for the onGetProductProfitMargin telefunc to avoid SSR import issues.
+ * @param {string} productId - The parameters for the telefunc.
+ * @returns {Promise<ProfitMarginReport>} The result from the telefunc.
+ */
+const onGetProductProfitMargin = async (productId: string): Promise<ProfitMarginReport> => {
+	const { onGetProductProfitMargin } = await import('$lib/server/telefuncs/profitMargin.telefunc');
+	return onGetProductProfitMargin(productId);
 };
+
+// Import types
+type ProfitMarginReport = any; // TODO: Import proper type from schema
 
 // Query keys for consistent cache management
 const profitMarginQueryKeys = {

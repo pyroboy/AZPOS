@@ -13,6 +13,13 @@
 	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
 	import { browser } from '$app/environment';
 
+	// Configure Telefunc client-side
+	if (browser) {
+		import('telefunc/client').then(({ config }) => {
+			config.telefuncUrl = '/_telefunc';
+		});
+	}
+
 	// Create QueryClient instance
 	const queryClient = new QueryClient({
 		defaultOptions: {
