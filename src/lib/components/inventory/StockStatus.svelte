@@ -16,7 +16,9 @@
 	import type { Product } from '$lib/types/product.schema';
 
 	// Get data using TanStack Query hooks
-	const { products, isLoading: isProductsLoading } = useProducts();
+	const productsHook = useProducts();
+	const products = $derived(productsHook.products());
+	const isProductsLoading = $derived(productsHook.isLoading());
 	const { inventoryItems } = useInventory();
 	const { updateViewState, getFilterState, getSortState, getSelectionState } = useView();
 

@@ -268,51 +268,64 @@ export function useProducts(filters?: ProductFilters) {
 		}
 	});
 
-	// Derived reactive state using Svelte 5 runes
-	const products = $derived(productsQuery.data?.products ?? []);
-	const pagination = $derived(productsQuery.data?.pagination);
-	const meta = $derived(metaQuery.data);
+	// Reactive data getters (compatible with both Svelte 4 and 5)
+	const getProducts = () => productsQuery.data?.products ?? [];
+	const getPagination = () => productsQuery.data?.pagination;
+	const getMeta = () => metaQuery.data;
 
-	// Derived filtered states
-	const activeProducts = $derived(products.filter((p: Product) => p.is_active && !p.is_archived));
-	const archivedProducts = $derived(products.filter((p: Product) => p.is_archived));
-	const bundleProducts = $derived(products.filter((p: Product) => p.is_bundle));
-	const lowStockProducts = $derived(
-		products.filter((p: Product) => p.min_stock_level && p.stock_quantity < p.min_stock_level)
-	);
-	const outOfStockProducts = $derived(products.filter((p: Product) => p.stock_quantity === 0));
+	// Filtered state getters
+	const getActiveProducts = () => {
+		const products = getProducts();
+		return products.filter((p: Product) => p.is_active && !p.is_archived);
+	};
+	const getArchivedProducts = () => {
+		const products = getProducts();
+		return products.filter((p: Product) => p.is_archived);
+	};
+	const getBundleProducts = () => {
+		const products = getProducts();
+		return products.filter((p: Product) => p.is_bundle);
+	};
+	const getLowStockProducts = () => {
+		const products = getProducts();
+		return products.filter((p: Product) => p.min_stock_level && p.stock_quantity < p.min_stock_level);
+	};
+	const getOutOfStockProducts = () => {
+		const products = getProducts();
+		return products.filter((p: Product) => p.stock_quantity === 0);
+	};
 
-	// Loading and error states
-	const isLoading = $derived(productsQuery.isPending);
-	const isError = $derived(productsQuery.isError);
-	const error = $derived(productsQuery.error);
+	// Loading and error state getters
+	const getIsLoading = () => productsQuery.isPending;
+	const getIsError = () => productsQuery.isError;
+	const getError = () => productsQuery.error;
 
-	const isMetaLoading = $derived(metaQuery.isPending);
-	const isMetaError = $derived(metaQuery.isError);
+	const getIsMetaLoading = () => metaQuery.isPending;
+	const getIsMetaError = () => metaQuery.isError;
 
 	return {
 		// Queries
 		productsQuery,
 		metaQuery,
 
-		// Reactive data
-		products,
-		pagination,
-		meta,
+		// Reactive data getters
+		products: getProducts,
+		pagination: getPagination,
+		meta: getMeta,
 
-		// Filtered data
-		activeProducts,
-		archivedProducts,
-		bundleProducts,
-		lowStockProducts,
-		outOfStockProducts,
+		// Filtered data getters
+		activeProducts: getActiveProducts,
+		archivedProducts: getArchivedProducts,
+		bundleProducts: getBundleProducts,
+		lowStockProducts: getLowStockProducts,
+		outOfStockProducts: getOutOfStockProducts,
 
-		// Loading states
-		isLoading,
-		isError,
-		error,
-		isMetaLoading,
-		isMetaError,
+		// Loading state getters
+		isLoading: getIsLoading,
+		isError: getIsError,
+		error: getError,
+		isMetaLoading: getIsMetaLoading,
+		isMetaError: getIsMetaError,
 
 		// Mutations
 		createProduct: createProductMutation.mutate,
@@ -321,18 +334,18 @@ export function useProducts(filters?: ProductFilters) {
 		adjustStock: adjustStockMutation.mutate,
 		deleteProduct: deleteProductMutation.mutate,
 
-		// Mutation states
-		isCreating: $derived(createProductMutation.isPending),
-		isUpdating: $derived(updateProductMutation.isPending),
-		isBulkUpdating: $derived(bulkUpdateMutation.isPending),
-		isAdjustingStock: $derived(adjustStockMutation.isPending),
-		isDeleting: $derived(deleteProductMutation.isPending),
+		// Mutation state getters
+		isCreating: () => createProductMutation.isPending,
+		isUpdating: () => updateProductMutation.isPending,
+		isBulkUpdating: () => bulkUpdateMutation.isPending,
+		isAdjustingStock: () => adjustStockMutation.isPending,
+		isDeleting: () => deleteProductMutation.isPending,
 
-		createError: $derived(createProductMutation.error),
-		updateError: $derived(updateProductMutation.error),
-		bulkUpdateError: $derived(bulkUpdateMutation.error),
-		adjustStockError: $derived(adjustStockMutation.error),
-		deleteError: $derived(deleteProductMutation.error),
+		createError: () => createProductMutation.error,
+		updateError: () => updateProductMutation.error,
+		bulkUpdateError: () => bulkUpdateMutation.error,
+		adjustStockError: () => adjustStockMutation.error,
+		deleteError: () => deleteProductMutation.error,
 
 		// Utility functions
 		refetch: () => queryClient.invalidateQueries({ queryKey: productQueryKeys.lists() }),
@@ -352,17 +365,18 @@ export function useProduct(productId: string) {
 		enabled: browser && !!productId // Only run on client-side
 	});
 
-	const product = $derived(productQuery.data);
-	const isLoading = $derived(productQuery.isPending);
-	const isError = $derived(productQuery.isError);
-	const error = $derived(productQuery.error);
+	// Reactive data getters
+	const getProduct = () => productQuery.data;
+	const getIsLoading = () => productQuery.isPending;
+	const getIsError = () => productQuery.isError;
+	const getError = () => productQuery.error;
 
 	return {
 		productQuery,
-		product,
-		isLoading,
-		isError,
-		error,
+		product: getProduct,
+		isLoading: getIsLoading,
+		isError: getIsError,
+		error: getError,
 		refetch: () => queryClient.invalidateQueries({ queryKey: productQueryKeys.detail(productId) })
 	};
 }
@@ -424,18 +438,5 @@ export function useOptimisticProductUpdate() {
 	};
 }
 
-// Hook for product search with debouncing
-export function useProductSearch(searchTerm: string, debounceMs: number = 300) {
-	let debouncedSearchTerm = $state(searchTerm);
-
-	// Debounce search term
-	$effect(() => {
-		const timer = setTimeout(() => {
-			debouncedSearchTerm = searchTerm;
-		}, debounceMs);
-
-		return () => clearTimeout(timer);
-	});
-
-	return useProducts({ search: debouncedSearchTerm });
-}
+// Note: Product search with debouncing should be implemented in Svelte components
+// using $derived and $effect runes, as they can only be used in .svelte files

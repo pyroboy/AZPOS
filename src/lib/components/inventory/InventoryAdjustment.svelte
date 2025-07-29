@@ -19,7 +19,7 @@
 	let selectedProductIds = $state(new Set<string>());
 
 	const filteredProducts = $derived(
-		inventoryItems.filter((item: InventoryItem) => {
+		inventoryItems().filter((item: InventoryItem) => {
 			const search = searchTerm.toLowerCase();
 			// Note: inventory items may need product info joined
 			// This is a simplified version - you may need to adjust based on your data structure
@@ -60,7 +60,7 @@
 	}
 
 	function openBulkAdjustModal() {
-		const selected = inventoryItems.filter((item: InventoryItem) =>
+		const selected = inventoryItems().filter((item: InventoryItem) =>
 			selectedProductIds.has(item.id)
 		);
 		selectedProductsForModal = selected.length > 0 ? selected : null;

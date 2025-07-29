@@ -32,32 +32,34 @@ let categories = $derived.by(() => {
 
 	const { cart, cartTotals, addItem, isAddingItem } = useGroceryCart();
 
-	// Filtered products using $derived
-	const filteredProducts = $derived.by(() => {
-		if (!activeProducts) return [];
+	// Filtered products using $derived - returns a function
+	const filteredProducts = $derived(() => {
+		return () => {
+			if (!activeProducts) return [];
 
-		let filtered = activeProducts;
+			let filtered = activeProducts;
 
-		// Filter by search query
-		if (searchQuery.trim()) {
-			const query = searchQuery.toLowerCase();
-		filtered = filtered.filter(
-			(product: any) =>
-				product.name.toLowerCase().includes(query) ||
-					product.description?.toLowerCase().includes(query) ||
-					product.sku.toLowerCase().includes(query)
-			);
-		}
+			// Filter by search query
+			if (searchQuery.trim()) {
+				const query = searchQuery.toLowerCase();
+			filtered = filtered.filter(
+				(product: any) =>
+					product.name.toLowerCase().includes(query) ||
+						product.description?.toLowerCase().includes(query) ||
+						product.sku.toLowerCase().includes(query)
+				);
+			}
 
-// Filter by category using derived categories
-if (selectedCategory !== 'all') {
-    const categoryIds = categories.map((cat: any) => cat.id);
-    if (categoryIds.includes(selectedCategory)) {
-        filtered = filtered.filter((product: any) => product.category_id === selectedCategory);
-    }
-}
+			// Filter by category using derived categories
+			if (selectedCategory !== 'all') {
+				const categoryIds = categories.map((cat: any) => cat.id);
+				if (categoryIds.includes(selectedCategory)) {
+					filtered = filtered.filter((product: any) => product.category_id === selectedCategory);
+				}
+			}
 
-		return filtered;
+			return filtered;
+		};
 	});
 
 	// Handle add to cart with grocery cart model
@@ -194,7 +196,7 @@ if (selectedCategory !== 'all') {
 
 			<!-- Products Grid -->
 			{#if !isLoading && !error}
-				{#if filteredProducts.length === 0}
+				{#if filteredProducts().length === 0}
 					<div class="text-center py-12">
 						<div class="text-lg font-semibold mb-2">No products found</div>
 						<p class="text-muted-foreground mb-4">
@@ -211,7 +213,7 @@ if (selectedCategory !== 'all') {
 					</div>
 				{:else}
 					<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{#each filteredProducts as product (product.id)}
+						{#each filteredProducts() as product (product.id)}
 							<ProductCard {product} onAddToCart={addToCart} />
 						{/each}
 					</div>

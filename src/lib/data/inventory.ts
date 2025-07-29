@@ -119,47 +119,51 @@ export function useInventory(filters?: InventoryFilters) {
 		}
 	});
 
-	// Derived reactive state using Svelte 5 runes
-	const inventoryItems = $derived(inventoryQuery.data ?? []);
-	const valuation = $derived(valuationQuery.data);
-	const alerts = $derived(alertsQuery.data ?? []);
+	// Reactive data getters (compatible with both Svelte 4 and 5)
+	const getInventoryItems = () => inventoryQuery.data ?? [];
+	const getValuation = () => valuationQuery.data;
+	const getAlerts = () => alertsQuery.data ?? [];
 
-	// Derived filtered states
-	const lowStockItems = $derived(
-		inventoryItems.filter((item: InventoryItem) => {
+	// Derived filtered states as getter functions
+	const getLowStockItems = () => {
+		const inventoryItems = getInventoryItems();
+		return inventoryItems.filter((item: InventoryItem) => {
 			// Assuming we have product info with min_stock_level
 			return item.quantity_available > 0 && item.quantity_available < 10; // Placeholder logic
-		})
-	);
+		});
+	};
 
-	const outOfStockItems = $derived(
-		inventoryItems.filter((item: InventoryItem) => item.quantity_available === 0)
-	);
+	const getOutOfStockItems = () => {
+		const inventoryItems = getInventoryItems();
+		return inventoryItems.filter((item: InventoryItem) => item.quantity_available === 0);
+	};
 
-	const expiredItems = $derived(
-		inventoryItems.filter((item: InventoryItem) => {
+	const getExpiredItems = () => {
+		const inventoryItems = getInventoryItems();
+		return inventoryItems.filter((item: InventoryItem) => {
 			if (!item.expiry_date) return false;
 			return new Date(item.expiry_date) < new Date();
-		})
-	);
+		});
+	};
 
-	const expiringSoonItems = $derived(
-		inventoryItems.filter((item: InventoryItem) => {
+	const getExpiringSoonItems = () => {
+		const inventoryItems = getInventoryItems();
+		return inventoryItems.filter((item: InventoryItem) => {
 			if (!item.expiry_date) return false;
 			const expiryDate = new Date(item.expiry_date);
 			const thirtyDaysFromNow = new Date();
 			thirtyDaysFromNow.setDate(thirtyDaysFromNow.getDate() + 30);
 			return expiryDate < thirtyDaysFromNow && expiryDate >= new Date();
-		})
-	);
+		});
+	};
 
-	// Loading and error states
-	const isLoading = $derived(inventoryQuery.isPending);
-	const isError = $derived(inventoryQuery.isError);
-	const error = $derived(inventoryQuery.error);
+	// Loading and error state getters
+	const getIsLoading = () => inventoryQuery.isPending;
+	const getIsError = () => inventoryQuery.isError;
+	const getError = () => inventoryQuery.error;
 
-	const isValuationLoading = $derived(valuationQuery.isPending);
-	const isAlertsLoading = $derived(alertsQuery.isPending);
+	const getIsValuationLoading = () => valuationQuery.isPending;
+	const getIsAlertsLoading = () => alertsQuery.isPending;
 
 	return {
 		// Queries
@@ -167,34 +171,34 @@ export function useInventory(filters?: InventoryFilters) {
 		valuationQuery,
 		alertsQuery,
 
-		// Reactive data
-		inventoryItems,
-		valuation,
-		alerts,
+		// Reactive data getters
+		inventoryItems: getInventoryItems,
+		valuation: getValuation,
+		alerts: getAlerts,
 
-		// Filtered data
-		lowStockItems,
-		outOfStockItems,
-		expiredItems,
-		expiringSoonItems,
+		// Filtered data getters
+		lowStockItems: getLowStockItems,
+		outOfStockItems: getOutOfStockItems,
+		expiredItems: getExpiredItems,
+		expiringSoonItems: getExpiringSoonItems,
 
-		// Loading states
-		isLoading,
-		isError,
-		error,
-		isValuationLoading,
-		isAlertsLoading,
+		// Loading state getters
+		isLoading: getIsLoading,
+		isError: getIsError,
+		error: getError,
+		isValuationLoading: getIsValuationLoading,
+		isAlertsLoading: getIsAlertsLoading,
 
 		// Mutations
 		createMovement: createMovementMutation.mutate,
 		createStockCount: createStockCountMutation.mutate,
 
-		// Mutation states
-		isCreatingMovement: $derived(createMovementMutation.isPending),
-		isCreatingStockCount: $derived(createStockCountMutation.isPending),
+		// Mutation state getters
+		isCreatingMovement: () => createMovementMutation.isPending,
+		isCreatingStockCount: () => createStockCountMutation.isPending,
 
-		createMovementError: $derived(createMovementMutation.error),
-		createStockCountError: $derived(createStockCountMutation.error),
+		createMovementError: () => createMovementMutation.error,
+		createStockCountError: () => createStockCountMutation.error,
 
 		// Utility functions
 		refetch: () => queryClient.invalidateQueries({ queryKey: inventoryQueryKeys.items() }),
@@ -216,17 +220,17 @@ export function useInventoryMovements(productId?: string, locationId?: string) {
 		enabled: browser && !!(productId || locationId) // Only run on client-side and if we have filters
 	});
 
-	const movements = $derived(movementsQuery.data ?? []);
-	const isLoading = $derived(movementsQuery.isPending);
-	const isError = $derived(movementsQuery.isError);
-	const error = $derived(movementsQuery.error);
+	const getMovements = () => movementsQuery.data ?? [];
+	const getIsLoading = () => movementsQuery.isPending;
+	const getIsError = () => movementsQuery.isError;
+	const getError = () => movementsQuery.error;
 
 	return {
 		movementsQuery,
-		movements,
-		isLoading,
-		isError,
-		error,
+		movements: getMovements,
+		isLoading: getIsLoading,
+		isError: getIsError,
+		error: getError,
 		refetch: () =>
 			queryClient.invalidateQueries({
 				queryKey: inventoryQueryKeys.movementsList(productId, locationId)

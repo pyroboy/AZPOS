@@ -148,37 +148,39 @@ export function useView() {
 		}
 	});
 
-	// Derived reactive state
-	const viewState = $derived(viewStateQuery.data);
-	const viewConfigs = $derived(viewConfigsQuery.data || []);
-	const userPreferences = $derived(userPreferencesQuery.data);
-	const navigationMenu = $derived(navigationMenuQuery.data);
-	const stats = $derived(statsQuery.data);
+	// Reactive data getters
+	const getViewState = () => viewStateQuery.data;
+	const getViewConfigs = () => viewConfigsQuery.data || [];
+	const getUserPreferences = () => userPreferencesQuery.data;
+	const getNavigationMenu = () => navigationMenuQuery.data;
+	const getStats = () => statsQuery.data;
 
-	// Current view properties
-	const currentRoute = $derived(viewState?.current_view || '/');
-	const currentViewId = $derived(viewState?.current_view || 'dashboard');
-	const sidebarCollapsed = $derived(viewState?.sidebar?.is_collapsed || false);
-	const activeModal = $derived(viewState?.modals?.active_modals?.[0] || null);
-	const breadcrumbs = $derived(viewState?.breadcrumbs || []);
-	const pageTitle = $derived('AZPOS');
-	const metaDescription = $derived('AZPOS - Point of Sale System');
+	// Current view property getters
+	const getCurrentRoute = () => getViewState()?.current_view || '/';
+	const getCurrentViewId = () => getViewState()?.current_view || 'dashboard';
+	const getSidebarCollapsed = () => getViewState()?.sidebar?.is_collapsed || false;
+	const getActiveModal = () => getViewState()?.modals?.active_modals?.[0] || null;
+	const getBreadcrumbs = () => getViewState()?.breadcrumbs || [];
+	const getPageTitle = () => 'AZPOS';
+	const getMetaDescription = () => 'AZPOS - Point of Sale System';
 
-	// Current view config
-	const currentViewConfig = $derived(
-		viewConfigs.find((config: ViewConfig) => config.id === currentViewId) ||
-			viewConfigs.find((config: ViewConfig) => config.is_active)
-	);
+	// Current view config getter
+	const getCurrentViewConfig = () => {
+		const configs = getViewConfigs();
+		const viewId = getCurrentViewId();
+		return configs.find((config: ViewConfig) => config.id === viewId) ||
+			configs.find((config: ViewConfig) => config.is_active);
+	};
 
-	// View categories
-	const systemViews = $derived(viewConfigs.filter((config: ViewConfig) => config.is_active));
-	const customViews = $derived(viewConfigs.filter((config: ViewConfig) => !config.is_active));
+	// View category getters
+	const getSystemViews = () => getViewConfigs().filter((config: ViewConfig) => config.is_active);
+	const getCustomViews = () => getViewConfigs().filter((config: ViewConfig) => !config.is_active);
 
-	// Navigation items
-	const mainMenu = $derived(navigationMenu?.main_menu || []);
-	const quickActions = $derived(navigationMenu?.quick_actions || []);
-	const userMenu = $derived(navigationMenu?.user_menu || []);
-	const footerLinks = $derived(navigationMenu?.footer_links || []);
+	// Navigation item getters
+	const getMainMenu = () => getNavigationMenu()?.main_menu || [];
+	const getQuickActions = () => getNavigationMenu()?.quick_actions || [];
+	const getUserMenu = () => getNavigationMenu()?.user_menu || [];
+	const getFooterLinks = () => getNavigationMenu()?.footer_links || [];
 
 	// View state operations
 	function updateViewState(stateData: Partial<ViewState>) {
@@ -207,14 +209,17 @@ export function useView() {
 	}
 
 	function toggleSidebar() {
-		return updateViewState({ sidebar: { ...viewState?.sidebar, is_collapsed: !sidebarCollapsed } });
+		const viewState = getViewState();
+		return updateViewState({ sidebar: { ...viewState?.sidebar, is_collapsed: !getSidebarCollapsed() } });
 	}
 
 	function setSidebarCollapsed(collapsed: boolean) {
+		const viewState = getViewState();
 		return updateViewState({ sidebar: { ...viewState?.sidebar, is_collapsed: collapsed } });
 	}
 
 	function setActiveModal(modalId: string | null) {
+		const viewState = getViewState();
 		const activeModals = modalId ? [modalId] : [];
 		return updateViewState({ modals: { ...viewState?.modals, active_modals: activeModals } });
 	}
@@ -224,83 +229,98 @@ export function useView() {
 	}
 
 	function setPageTitle(title: string) {
-		return updateViewState({ breadcrumbs: [{ label: title, path: currentRoute }] });
+		return updateViewState({ breadcrumbs: [{ label: title, path: getCurrentRoute() }] });
 	}
 
 	function setMetaDescription(): void {
+		const viewState = getViewState();
 		// Store in breadcrumbs or another appropriate field
 		updateViewState({ breadcrumbs: viewState?.breadcrumbs || [] });
 	}
 
 	function updateLoadingState(): void {
+		const viewState = getViewState();
 		// Store loading state in view state (not part of schema, but for functionality)
 		updateViewState({ current_view: viewState?.current_view || '' });
 	}
 
 	function updateErrorState(): void {
+		const viewState = getViewState();
 		// Store error state in view state (not part of schema, but for functionality)
 		updateViewState({ current_view: viewState?.current_view || '' });
 	}
 
 	function updateFormState(): void {
+		const viewState = getViewState();
 		// Store form state in view state (not part of schema, but for functionality)
 		updateViewState({ current_view: viewState?.current_view || '' });
 	}
 
 	function updateSelectionState(): void {
+		const viewState = getViewState();
 		// Store selection state in view state (not part of schema, but for functionality)
 		updateViewState({ current_view: viewState?.current_view || '' });
 	}
 
 	function updateFilterState(key: string, filters: unknown) {
+		const viewState = getViewState();
 		const activeFilters = { ...viewState?.filters?.active_filters, [key]: filters };
 		return updateViewState({ filters: { ...viewState?.filters, active_filters: activeFilters } });
 	}
 
 	function updateSortState(): void {
+		const viewState = getViewState();
 		updateViewState({ sorting: { ...viewState?.sorting } });
 	}
 
 	function updatePaginationState(): void {
+		const viewState = getViewState();
 		updateViewState({ layout: { ...viewState?.layout, list_page_size: 20 } });
 	}
 
 	// State getters
 	function getLoadingState(key: string): boolean {
+		const viewState = getViewState();
 		return viewState?.loading_states?.[key] || false;
 	}
 
 	function getErrorState(key: string): string | null {
+		const viewState = getViewState();
 		return viewState?.error_states?.[key] || null;
 	}
 
 	function getFormState(key: string): unknown {
+		const viewState = getViewState();
 		return viewState?.form_states?.[key];
 	}
 
 	function getSelectionState(key: string): unknown {
+		const viewState = getViewState();
 		return viewState?.selection_states?.[key];
 	}
 
 	function getFilterState(key: string): unknown {
+		const viewState = getViewState();
 		return viewState?.filter_states?.[key];
 	}
 
 	function getSortState(key: string): unknown {
+		const viewState = getViewState();
 		return viewState?.sort_states?.[key];
 	}
 
 	function getPaginationState(key: string): unknown {
+		const viewState = getViewState();
 		return viewState?.pagination_states?.[key];
 	}
 
 	// View helpers
 	function getViewConfigById(viewId: string): ViewConfig | undefined {
-		return viewConfigs.find((config: ViewConfig) => config.id === viewId);
+		return getViewConfigs().find((config: ViewConfig) => config.id === viewId);
 	}
 
 	function isCurrentView(viewId: string): boolean {
-		return currentViewId === viewId;
+		return getCurrentViewId() === viewId;
 	}
 
 	function canEditViewConfig(config: ViewConfig): boolean {
@@ -315,50 +335,53 @@ export function useView() {
 	}
 
 	function shouldShowWidget(): boolean {
-		const config = currentViewConfig;
+		const config = getCurrentViewConfig();
 		return config?.layout_config?.sidebar_enabled || false;
 	}
 
 	function shouldShowSidebar(): boolean {
-		const config = currentViewConfig;
+		const config = getCurrentViewConfig();
 		return config?.layout_config?.sidebar_enabled !== false;
 	}
 
 	function shouldShowHeader(): boolean {
-		const config = currentViewConfig;
+		const config = getCurrentViewConfig();
 		return config?.layout_config?.header_enabled !== false;
 	}
 
 	function shouldShowFooter(): boolean {
-		const config = currentViewConfig;
+		const config = getCurrentViewConfig();
 		return config?.layout_config?.footer_enabled !== false;
 	}
 
 	function shouldShowBreadcrumbs(): boolean {
-		const config = currentViewConfig;
+		const config = getCurrentViewConfig();
 		return config?.layout_config?.breadcrumbs_enabled !== false;
 	}
 
 	function shouldShowSearch(): boolean {
-		const config = currentViewConfig;
+		const config = getCurrentViewConfig();
 		return config?.layout_config?.search_enabled !== false;
 	}
 
 	function shouldShowNotifications(): boolean {
+		const viewState = getViewState();
 		return viewState?.notifications?.show_notifications !== false;
 	}
 
 	function shouldShowQuickActions(): boolean {
-		const config = currentViewConfig;
+		const config = getCurrentViewConfig();
 		return config?.is_active !== false;
 	}
 
 	// Layout helpers
 	function getLayoutType(): string {
+		const viewState = getViewState();
 		return viewState?.layout?.density || 'comfortable';
 	}
 
 	function getGridColumns(): number {
+		const viewState = getViewState();
 		return viewState?.layout?.grid_columns || 4;
 	}
 
@@ -378,6 +401,7 @@ export function useView() {
 	// Navigation helpers
 	function getMainMenuItems() {
 		type MenuItemWithSort = { sort_order?: number };
+		const mainMenu = getMainMenu();
 		return mainMenu.sort(
 			(a: MenuItemWithSort, b: MenuItemWithSort) => (a.sort_order || 0) - (b.sort_order || 0)
 		);
@@ -385,6 +409,7 @@ export function useView() {
 
 	function getQuickActionItems() {
 		type MenuItemWithSort = { sort_order?: number };
+		const quickActions = getQuickActions();
 		return quickActions.sort(
 			(a: MenuItemWithSort, b: MenuItemWithSort) => (a.sort_order || 0) - (b.sort_order || 0)
 		);
@@ -392,6 +417,7 @@ export function useView() {
 
 	function getUserMenuItems() {
 		type MenuItemWithSort = { sort_order?: number };
+		const userMenu = getUserMenu();
 		return userMenu.sort(
 			(a: MenuItemWithSort, b: MenuItemWithSort) => (a.sort_order || 0) - (b.sort_order || 0)
 		);
@@ -399,6 +425,7 @@ export function useView() {
 
 	function getFooterLinkItems() {
 		type MenuItemWithSort = { sort_order?: number };
+		const footerLinks = getFooterLinks();
 		return footerLinks.sort(
 			(a: MenuItemWithSort, b: MenuItemWithSort) => (a.sort_order || 0) - (b.sort_order || 0)
 		);
@@ -412,32 +439,32 @@ export function useView() {
 		navigationMenuQuery,
 		statsQuery,
 
-		// Reactive data
-		viewState,
-		viewConfigs,
-		userPreferences,
-		navigationMenu,
-		stats,
+		// Reactive data getters
+		viewState: getViewState,
+		viewConfigs: getViewConfigs,
+		userPreferences: getUserPreferences,
+		navigationMenu: getNavigationMenu,
+		stats: getStats,
 
-		// Current view properties
-		currentRoute,
-		currentViewId,
-		sidebarCollapsed,
-		activeModal,
-		breadcrumbs,
-		pageTitle,
-		metaDescription,
-		currentViewConfig,
+		// Current view property getters
+		currentRoute: getCurrentRoute,
+		currentViewId: getCurrentViewId,
+		sidebarCollapsed: getSidebarCollapsed,
+		activeModal: getActiveModal,
+		breadcrumbs: getBreadcrumbs,
+		pageTitle: getPageTitle,
+		metaDescription: getMetaDescription,
+		currentViewConfig: getCurrentViewConfig,
 
-		// View categories
-		systemViews,
-		customViews,
+		// View category getters
+		systemViews: getSystemViews,
+		customViews: getCustomViews,
 
-		// Navigation items
-		mainMenu,
-		quickActions,
-		userMenu,
-		footerLinks,
+		// Navigation item getters
+		mainMenu: getMainMenu,
+		quickActions: getQuickActions,
+		userMenu: getUserMenu,
+		footerLinks: getFooterLinks,
 
 		// View state operations
 		updateViewState,
@@ -499,22 +526,22 @@ export function useView() {
 		getUserMenuItems,
 		getFooterLinkItems,
 
-		// Mutation states
-		updateViewStateStatus: $derived(updateViewStateMutation.status),
-		createViewConfigStatus: $derived(createViewConfigMutation.status),
-		updateViewConfigStatus: $derived(updateViewConfigMutation.status),
-		updatePreferencesStatus: $derived(updatePreferencesMutation.status),
+		// Mutation state getters
+		updateViewStateStatus: () => updateViewStateMutation.status,
+		createViewConfigStatus: () => createViewConfigMutation.status,
+		updateViewConfigStatus: () => updateViewConfigMutation.status,
+		updatePreferencesStatus: () => updatePreferencesMutation.status,
 
-		// Loading states
-		isLoading: $derived(viewStateQuery.isPending),
-		isConfigsLoading: $derived(viewConfigsQuery.isPending),
-		isPreferencesLoading: $derived(userPreferencesQuery.isPending),
-		isNavigationLoading: $derived(navigationMenuQuery.isPending),
-		isError: $derived(viewStateQuery.isError),
-		error: $derived(viewStateQuery.error),
+		// Loading state getters
+		isLoading: () => viewStateQuery.isPending,
+		isConfigsLoading: () => viewConfigsQuery.isPending,
+		isPreferencesLoading: () => userPreferencesQuery.isPending,
+		isNavigationLoading: () => navigationMenuQuery.isPending,
+		isError: () => viewStateQuery.isError,
+		error: () => viewStateQuery.error,
 
-		// Stats loading
-		isStatsLoading: $derived(statsQuery.isPending),
-		statsError: $derived(statsQuery.error)
+		// Stats loading getters
+		isStatsLoading: () => statsQuery.isPending,
+		statsError: () => statsQuery.error
 	};
 }
