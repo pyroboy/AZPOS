@@ -140,7 +140,7 @@
 	);
 
 	const getProduct = (productId: string): Product | undefined =>
-		products.find((p: Product) => p.id === productId);
+		products().find((p: Product) => p.id === productId);
 </script>
 
 <Dialog bind:open>

@@ -35,15 +35,15 @@ let categories = $derived.by(() => {
 	// Filtered products using $derived - returns a function
 	const filteredProducts = $derived(() => {
 		return () => {
-			if (!activeProducts) return [];
+		if (!activeProducts) return [];
 
-			let filtered = activeProducts;
+		let filtered = activeProducts();
 
-			// Filter by search query
-			if (searchQuery.trim()) {
-				const query = searchQuery.toLowerCase();
-			filtered = filtered.filter(
-				(product: any) =>
+		// Filter by search query
+		if (searchQuery.trim()) {
+			const query = searchQuery.toLowerCase();
+		filtered = filtered.filter(
+			(product: any) =>
 					product.name.toLowerCase().includes(query) ||
 						product.description?.toLowerCase().includes(query) ||
 						product.sku.toLowerCase().includes(query)
@@ -172,8 +172,8 @@ let categories = $derived.by(() => {
 				<!-- Category filtering temporarily disabled for core functionality -->
 			</div>
 
-			<!-- Loading State -->
-			{#if isLoading}
+		<!-- Loading State -->
+		{#if isLoading()}
 				<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 					{#each Array(8) as _}
 						<div class="animate-pulse">
@@ -213,7 +213,7 @@ let categories = $derived.by(() => {
 					</div>
 				{:else}
 					<div class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-						{#each filteredProducts() as product (product.id)}
+			{#each filteredProducts()() as product (product.id)}
 							<ProductCard {product} onAddToCart={addToCart} />
 						{/each}
 					</div>

@@ -31,7 +31,7 @@ import { Checkbox } from '$lib/components/ui/checkbox';
 
 	const isBulkMode = $derived(productList && productList.length > 0);
 
-const productWithStock = $derived(inventory.inventoryItems.find((p: any) => p.id === product?.id));
+const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.id === product?.id));
 	const existingBatches = $derived(productWithStock?.batches ?? []);
 	const currentStock = $derived(productWithStock?.stock ?? 0);
 

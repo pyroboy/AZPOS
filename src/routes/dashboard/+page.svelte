@@ -7,7 +7,9 @@
 
 	// Data hooks for context
 	import { useInventory } from '$lib/data/inventory';
-	import { settings } from '$lib/stores/settingsStore.svelte';
+	// TODO: Replace with proper settings management hook
+	// import { settings } from '$lib/stores/settingsStore.svelte';
+	const settings = {};
 
 	// Initialize data hook
 	const inventory = useInventory();

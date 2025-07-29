@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useSuppliers } from '$lib/data/supplier';
+	import { useSuppliers } from '$lib/data/supplier.svelte';
 	import type { Supplier } from '$lib/types/supplier.schema';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';

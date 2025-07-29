@@ -11,12 +11,12 @@ import type { Product } from '$lib/types';
 
 	// Reactive state for low-stock products
 	const lowStockProducts = $derived(
-		inventory.inventoryItems.filter((p: any) => p.quantity_available < (p.min_stock_level ?? 10)).slice(0, 5)
+		inventory.inventoryItems().filter((p: any) => p.quantity_available < (p.min_stock_level ?? 10)).slice(0, 5)
 	);
 
 	// Reactive state for near-expiry products (expiring in the next 90 days)
 	const nearExpiryProducts = $derived(
-		inventory.inventoryItems
+		inventory.inventoryItems()
 			.filter((item: any) => {
 				if (!item.expiry_date) return false;
 				const expiryDate = new Date(item.expiry_date);

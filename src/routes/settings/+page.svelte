@@ -1,20 +1,24 @@
 <script lang="ts">
-	import { theme } from '$lib/stores/themeStore.svelte';
+import { themeStore } from '$lib/stores/themeStore.svelte';
 	import { Label } from '$lib/components/ui/label';
 	import { Switch } from '$lib/components/ui/switch';
 	import { browser } from '$app/environment';
 
-	const isDarkMode = $derived.by(() => {
-		if (!browser) return false; // Default to false on server
-		if (theme.theme === 'system') {
-			return window.matchMedia('(prefers-color-scheme: dark)').matches;
-		}
-		return theme.theme === 'dark';
-	});
-
-	function toggleTheme(checked: boolean) {
-		theme.setTheme(checked ? 'dark' : 'light');
+const isDarkMode = $derived.by(() => {
+	if (!browser) return false; // Default to false on server
+	if (themeStore.current.type === 'auto') {
+		return window.matchMedia('(prefers-color-scheme: dark)').matches;
 	}
+	return themeStore.current.type === 'dark';
+});
+
+function toggleTheme(checked: boolean) {
+	const newTheme = {
+		...themeStore.current,
+		type: checked ? 'dark' as const : 'light' as const
+	};
+	themeStore.setTheme(newTheme);
+}
 </script>
 
 <div class="p-8">

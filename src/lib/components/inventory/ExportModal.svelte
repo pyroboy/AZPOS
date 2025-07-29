@@ -23,8 +23,8 @@
 	const { activeProducts } = useProducts();
 	const { inventoryItems } = useInventory();
 
-	const allProducts = $derived(activeProducts.filter((p: Product) => !p.is_archived));
-	const allBatches = $derived(inventoryItems); // Using inventory items as batch equivalents
+	const allProducts = $derived(activeProducts().filter((p: Product) => !p.is_archived));
+	const allBatches = $derived(inventoryItems()); // Using inventory items as batch equivalents
 
 	function closeModal() {
 		isOpen = false;

@@ -42,7 +42,13 @@
 
 	// Initialize hooks
 	const cart = useGroceryCart();
-	const { product, isLoading, isError, error } = useProduct($page.params.id);
+	const productHook = useProduct($page.params.id);
+
+	// Reactive product data
+	let product = $derived(productHook.product());
+	let isLoading = $derived(productHook.isLoading());
+	let isError = $derived(productHook.isError());
+	let error = $derived(productHook.error());
 
 	// Reactive state using Svelte 5 runes
 	let quantity = $state<number>(1);

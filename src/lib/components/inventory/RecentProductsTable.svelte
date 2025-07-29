@@ -9,7 +9,7 @@
 
 	// Sort once by internal created_at DESC and take the first 10 rows.
 	const recentProducts = $derived(
-		products
+		products()
 			.slice() // Create a shallow copy to avoid mutating the original
 			.sort((a: Product, b: Product) => {
 				const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
@@ -31,14 +31,14 @@
 		</Table.Row>
 	</Table.Header>
 	<Table.Body>
-		{#if isLoading}
+		{#if isLoading()}
 			<Table.Row>
 				<Table.Cell colspan={5} class="text-center">Loading products...</Table.Cell>
 			</Table.Row>
-		{:else if isError}
+		{:else if isError()}
 			<Table.Row>
 				<Table.Cell colspan={5} class="text-center text-red-500">
-					Error loading products: {error?.message || 'Unknown error'}
+					Error loading products: {error()?.message || 'Unknown error'}
 				</Table.Cell>
 			</Table.Row>
 		{:else if recentProducts.length > 0}

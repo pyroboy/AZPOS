@@ -121,11 +121,11 @@
 	// --- Derived State - Using TanStack Query data ---
 	const categories = $derived([
 		'All',
-		...new Set(inventoryItems.map((p: any) => p.product?.category_id).filter((c: any): c is string => !!c))
+		...new Set(inventoryItems().map((p: any) => p.product?.category_id).filter((c: any): c is string => !!c))
 	] as string[]);
 
 	const filteredProducts = $derived(
-		inventoryItems.filter((item: any) => {
+		inventoryItems().filter((item: any) => {
 			const product = item.product;
 			if (!product || product.is_archived) return false;
 			const matchesCategory = activeCategory === 'All' || product.category_id === activeCategory;
@@ -489,7 +489,7 @@ function handleReceiptClose() {
 			</div>
 		{:else if $inventoryQuery.isError}
 			<div class="flex items-center justify-center h-64 text-red-500">
-				<div>Error loading products: {inventoryError?.message}</div>
+				<div>Error loading products: {inventoryError()?.message}</div>
 			</div>
 		{:else}
 			<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto pr-2 h-full">

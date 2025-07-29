@@ -38,9 +38,9 @@
 	const selectedProductsCount = $derived(productIds.length);
 
 	// Get selected products for preview
-	const selectedProducts = $derived(products.filter((p: Product) => productIds.includes(p.id)));
+	const selectedProducts = $derived(products().filter((p: Product) => productIds.includes(p.id)));
 	const selectedInventoryItems = $derived(
-		inventoryItems.filter((item: InventoryItem) => productIds.includes(item.product_id))
+		inventoryItems().filter((item: InventoryItem) => productIds.includes(item.product_id))
 	);
 
 	$effect(() => {
@@ -119,7 +119,7 @@
 				<Label for="category_id" class="text-right">Category</Label>
 				<div class="col-span-3">
 					<Select.Root type="single" bind:value={category_id}>
-						<Select.Trigger class="w-full" disabled={isBulkUpdating}>
+						<Select.Trigger class="w-full" disabled={isBulkUpdating()}>
 							{selectedCategoryLabel || 'Select category...'}
 						</Select.Trigger>
 						<Select.Content>
@@ -139,7 +139,7 @@
 					class="col-span-3"
 					placeholder="e.g. 20"
 					min="0"
-					disabled={isBulkUpdating}
+					disabled={isBulkUpdating()}
 				/>
 			</div>
 			<div class="grid grid-cols-4 items-center gap-4">
@@ -152,9 +152,9 @@
 							? 'indeterminate'
 							: requiresBatchTracking === 'yes'
 								? 'checked'
-								: 'unchecked'}
-						disabled={isBulkUpdating}
-						onCheckedChange={(checked) => {
+							: 'unchecked'}
+					disabled={isBulkUpdating()}
+					onCheckedChange={(checked) => {
 							requiresBatchTracking = checked ? 'yes' : 'no';
 						}}
 					/>
@@ -178,7 +178,7 @@
 						placeholder="e.g. 29.99"
 						step="0.01"
 						min="0"
-						disabled={isBulkUpdating}
+						disabled={isBulkUpdating()}
 					/>
 				</div>
 			</div>
@@ -186,18 +186,18 @@
 
 		{#if bulkUpdateError}
 			<div class="text-red-500 text-sm mb-4 px-4">
-				<strong>Error:</strong>
-				{bulkUpdateError.message || 'Failed to update products'}
-			</div>
+			<strong>Error:</strong>
+			{bulkUpdateError()?.message || 'Failed to update products'}
+		</div>
 		{/if}
 
 		<Dialog.Footer>
-			<Button variant="outline" onclick={() => (open = false)} disabled={isBulkUpdating}>
-				Cancel
-			</Button>
-			<Button onclick={handleSubmit} disabled={isBulkUpdating || selectedProductsCount === 0}>
-				{#if isBulkUpdating}
-					<div class="flex items-center space-x-2">
+		<Button variant="outline" onclick={() => (open = false)} disabled={isBulkUpdating()}>
+			Cancel
+		</Button>
+		<Button onclick={handleSubmit} disabled={isBulkUpdating() || selectedProductsCount === 0}>
+			{#if isBulkUpdating()}
+				<div class="flex items-center space-x-2">
 						<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
 						<span>Updating...</span>
 					</div>

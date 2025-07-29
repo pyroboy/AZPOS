@@ -10,7 +10,7 @@
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-	import { useSuppliers } from '$lib/data/supplier';
+	import { useSuppliers } from '$lib/data/supplier.svelte';
 	import type { Supplier, SupplierInput } from '$lib/types/supplier.schema';
 
 	let {

@@ -21,11 +21,11 @@
 	const salesData = $derived(() => {
 		if (isLoading) return [];
 
-		const allAdjustments = inventory.inventoryItems;
-		const allProducts: Product[] = products.products;
+	const allAdjustments = inventory.inventoryItems();
+	const allProducts: Product[] = products.products();
 
-		return allAdjustments
-			.filter(
+	return allAdjustments
+		.filter(
 				(adj: InventoryAdjustment) =>
 					adj.adjustment_type === 'subtract' && adj.reason.startsWith('Sale')
 			)
@@ -62,12 +62,12 @@
 				return;
 			}
 
-			// Check if hooks have data
-			if (!inventory.inventoryItems || !products.products) {
-				error = 'Required data is not available.';
-				isLoading = false;
-				return;
-			}
+		// Check if hooks have data
+		if (!inventory.inventoryItems() || !products.products()) {
+			error = 'Required data is not available.';
+			isLoading = false;
+			return;
+		}
 
 			isLoading = false;
 		}, 300);

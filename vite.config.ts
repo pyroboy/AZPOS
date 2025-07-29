@@ -9,5 +9,12 @@ export default defineConfig({
 		tailwindcss(),
 		telefunc(),
 		sveltekit()
-	]
+	],
+	optimizeDeps: {
+		include: ['telefunc/client']
+	},
+	define: {
+		// Ensure telefunc client is available in browser
+		__TELEFUNC_CLIENT__: true
+	}
 });

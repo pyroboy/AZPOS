@@ -5,7 +5,7 @@
 	import { productSchema } from '$lib/schemas/models';
 	import type { Product, Supplier } from '$lib/schemas/models';
 	import { useProducts } from '$lib/data/product';
-	import { useSuppliers } from '$lib/data/supplier';
+	import { useSuppliers } from '$lib/data/supplier.svelte';
 	import { useCategories } from '$lib/data/category';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
@@ -49,7 +49,7 @@
 			const lowerCaseSearch = bundleSearchTerm.toLowerCase();
 			const selectedIds = new Set(selectedComponents.map((c) => c.id));
 
-			return products
+		return products()
 				.filter(
 					(p: Product) =>
 						!selectedIds.has(p.id) &&
@@ -121,7 +121,7 @@
 			return;
 		}
 		skuStatus = 'checking';
-		const isTaken = products.some((p: Product) => p.sku.toLowerCase() === sku.toLowerCase());
+		const isTaken = products().some((p: Product) => p.sku.toLowerCase() === sku.toLowerCase());
 		setTimeout(() => {
 			// Simulate network latency
 			skuStatus = isTaken ? 'taken' : 'available';

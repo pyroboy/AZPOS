@@ -1,7 +1,10 @@
 <!-- Agent: agent_coder | File: RoleGuard.svelte | Last Updated: 2025-07-28T10:41:46+08:00 -->
 <script lang="ts">
 	import { useAuth } from '$lib/data/auth';
-	import type { UserRole } from '$lib/stores/authStore.svelte';
+import type { AuthUser } from '$lib/types/auth.schema';
+
+// Define UserRole type inline since it's not exported from auth hook
+type UserRole = AuthUser['role'];
 
 	// Initialize auth hook
 	const auth = useAuth();

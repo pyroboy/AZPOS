@@ -73,8 +73,8 @@
 				(results.data as Record<string, unknown>[]).forEach(
 					(row: Record<string, unknown>, index: number) => {
 						const errors: string[] = [];
-						const product = allProducts.find(
-							(p: { id: string; name: string }) =>
+					const product = allProducts().find(
+						(p: { id: string; name: string }) =>
 								p.id === row.product_id || p.name === row.product_name
 						);
 
@@ -287,10 +287,10 @@
 			{#if validRows.length > 0}
 				<Button
 					onclick={processImport}
-					disabled={isProcessing || isCreatingMovement}
+					disabled={isProcessing || isCreatingMovement()}
 					class="flex items-center gap-2"
 				>
-					{#if isProcessing || isCreatingMovement}
+					{#if isProcessing || isCreatingMovement()}
 						Processing...
 					{:else}
 						<Upload class="h-4 w-4" />

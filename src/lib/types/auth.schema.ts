@@ -219,6 +219,7 @@ export const sessionManagementSchema = z.object({
 });
 
 // Export inferred types
+export type UserRole = 'guest' | 'cashier' | 'pharmacist' | 'manager' | 'admin' | 'owner' | 'customer';
 export type Login = z.infer<typeof loginSchema>;
 export type Register = z.infer<typeof registerSchema>;
 export type PasswordResetRequest = z.infer<typeof passwordResetRequestSchema>;

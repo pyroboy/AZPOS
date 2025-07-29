@@ -1,6 +1,5 @@
 <script lang="ts">
-	import { get } from 'svelte/store';
-	import { users } from '$lib/stores/userStore.svelte';
+	import { useUsers } from '$lib/data/user';
 	import type { Role, User } from '$lib/schemas/models';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Input } from '$lib/components/ui/input';
@@ -19,6 +18,9 @@
 
 	let pin = $state('');
 	let error = $state('');
+
+	// Initialize users hook
+	const { users } = useUsers();
 
 	function verifyPin() {
 		error = '';

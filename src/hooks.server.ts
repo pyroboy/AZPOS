@@ -64,7 +64,7 @@ export const handle: Handle = async ({ event, resolve }) => {
 	// Handle authentication first
 	await handleAuth(event);
 	
-	// Handle Telefunc requests
+	// Handle Telefunc API calls only (not client script)
 	if (event.url.pathname === '/_telefunc') {
 		const context = {
 			user: event.locals.user,

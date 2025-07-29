@@ -4,7 +4,7 @@ import { useProducts } from '$lib/data/product';
 
 	// Initialize product hook
 	const productHook = useProducts();
-	const products = $derived(productHook.products);
+	const products = $derived(productHook.products());
 	import { Button } from '$lib/components/ui/button';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';

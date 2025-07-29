@@ -8,7 +8,9 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import type { ActionData } from './$types';
 	import { enhance } from '$app/forms';
-	import { users } from '$lib/stores/userStore.svelte';
+	// TODO: Replace with proper user management hook
+	// import { users } from '$lib/stores/userStore.svelte';
+	const users: any[] = [];
 
 	let { form }: { form: ActionData | undefined } = $props();
 
