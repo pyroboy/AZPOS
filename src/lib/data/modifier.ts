@@ -16,7 +16,7 @@ const onUpdateModifier = async (id: string, data: ModifierInput): Promise<Modifi
 	return onUpdateModifier(id, data);
 };
 
-const onValidateModifierSelection = async (validationData: ValidateModifierSelection): Promise<any> => {
+const onValidateModifierSelection = async (validationData: ValidateModifierSelection): Promise<ValidateModifierSelection> => {
 	const { onValidateModifierSelection } = await import('$lib/server/telefuncs/modifier.telefunc');
 	return onValidateModifierSelection(validationData);
 };

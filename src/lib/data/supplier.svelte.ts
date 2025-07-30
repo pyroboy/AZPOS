@@ -1,5 +1,5 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
-
+import { SvelteDate } from 'svelte/reactivity';
 // Dynamic import wrappers for Telefunc functions (avoids SSR import issues)
 /**
  * A wrapper for the onGetSuppliers telefunc to avoid SSR import issues.
@@ -78,7 +78,7 @@ const onGetSupplierProducts = async (id: string): Promise<SupplierProduct[]> => 
  * @param {string} supplierId - The parameters for the telefunc.
  * @returns {Promise<any>} The result from the telefunc.
  */
-const onDeleteSupplier = async (supplierId: string): Promise<any> => {
+const onDeleteSupplier = async (supplierId: string): Promise<void> => {
 	const { onDeleteSupplier } = await import('$lib/server/telefuncs/supplier.telefunc.js');
 	return onDeleteSupplier(supplierId);
 };
@@ -392,7 +392,7 @@ export function useOptimisticSupplierUpdate() {
 						...oldData,
 						suppliers: oldData.suppliers.map((supplier) =>
 							supplier.id === supplierId
-								? { ...supplier, ...updates, updated_at: new Date().toISOString() }
+								? { ...supplier, ...updates, updated_at: new SvelteDate().toISOString() }
 								: supplier
 						)
 					};
@@ -402,7 +402,7 @@ export function useOptimisticSupplierUpdate() {
 			// Update detail cache if it exists
 			queryClient.setQueriesData<Supplier>({ queryKey: supplierQueryKeys.details() }, (oldData) =>
 				oldData?.id === supplierId
-					? { ...oldData, ...updates, updated_at: new Date().toISOString() }
+					? { ...oldData, ...updates, updated_at: new SvelteDate().toISOString() }
 					: oldData
 			);
 		},
@@ -417,7 +417,7 @@ export function useOptimisticSupplierUpdate() {
 						...oldData,
 						suppliers: oldData.suppliers.map((supplier) =>
 							supplier.id === supplierId
-								? { ...supplier, is_active: isActive, updated_at: new Date().toISOString() }
+								? { ...supplier, is_active: isActive, updated_at: new SvelteDate().toISOString() }
 								: supplier
 						)
 					};

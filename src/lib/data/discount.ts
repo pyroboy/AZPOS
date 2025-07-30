@@ -4,7 +4,9 @@ import type {
 	DiscountFilters,
 	PaginatedDiscounts,
 	DiscountStats,
-	ValidateDiscount
+	ValidateDiscount,
+	Discount,
+	DiscountApplication
 } from '$lib/types/discount.schema';
 
 /**
@@ -22,7 +24,7 @@ const onGetDiscounts = async (filters: DiscountFilters): Promise<PaginatedDiscou
  * @param {DiscountInput} discountData - The discount data for creation.
  * @returns {Promise<any>} The result from the telefunc.
  */
-const onCreateDiscount = async (discountData: DiscountInput): Promise<any> => {
+const onCreateDiscount = async (discountData: DiscountInput): Promise<Discount> => {
 	const { onCreateDiscount } = await import('$lib/server/telefuncs/discount.telefunc');
 	return onCreateDiscount(discountData);
 };
@@ -32,7 +34,7 @@ const onCreateDiscount = async (discountData: DiscountInput): Promise<any> => {
  * @param {ValidateDiscount} validationData - The validation data for discount.
  * @returns {Promise<any>} The result from the telefunc.
  */
-const onValidateDiscount = async (validationData: ValidateDiscount): Promise<any> => {
+const onValidateDiscount = async (validationData: ValidateDiscount): Promise<DiscountApplication> => {
 	const { onValidateDiscount } = await import('$lib/server/telefuncs/discount.telefunc');
 	return onValidateDiscount(validationData);
 };

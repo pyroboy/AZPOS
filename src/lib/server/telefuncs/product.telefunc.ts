@@ -1,4 +1,7 @@
-import { getContext } from 'telefunc';
+// Custom context getter for our custom telefunc server
+function getContext() {
+	return global.telefuncContext || {};
+}
 import {
 	productInputSchema,
 	productFiltersSchema,

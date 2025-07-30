@@ -68,7 +68,7 @@ const inventoryQuery = createQuery<InventoryItem[]>({
 		console.log('🔄 [TANSTACK QUERY] Starting inventory items query with filters:', filters);
 		try {
 			const result = onGetInventoryItems(filters);
-			console.log('✅ [TANSTACK QUERY] Inventory items query successful, count:', result.length);
+			console.log('✅ [TANSTACK QUERY] Inventory items query successful, count:', result.then((res) => res.entries.length) || 0);
 			return result;
 		} catch (error) {
 			console.error('❌ [TANSTACK QUERY] Inventory items query failed:', error);

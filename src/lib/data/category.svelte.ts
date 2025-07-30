@@ -1,6 +1,6 @@
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
 import { browser } from '$app/environment';
-
+import { SvelteDate } from 'svelte/reactivity';
 import type {
 	Category,
 	CategoryTree,
@@ -260,7 +260,7 @@ export function useOptimisticCategoryUpdate() {
 				(oldData) =>
 					oldData?.map((category) =>
 						category.id === categoryId
-							? { ...category, ...updates, updated_at: new Date().toISOString() }
+							? { ...category, ...updates, updated_at: new SvelteDate().toISOString() }
 							: category
 					) || []
 			);

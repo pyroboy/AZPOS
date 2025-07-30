@@ -10,13 +10,14 @@
 	import { page } from '$app/stores';
 
 	// TanStack Query for server-centric state management
-	import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
+		import { QueryClient, QueryClientProvider } from '@tanstack/svelte-query';
+	import { SvelteQueryDevtools } from '@tanstack/svelte-query-devtools';
 	import { browser } from '$app/environment';
 
 	// Configure Telefunc client-side
 	if (browser) {
 		import('telefunc/client').then(({ config }) => {
-			config.telefuncUrl = '/_telefunc';
+			config.telefuncUrl = '/api/telefunc';
 		});
 	}
 
@@ -72,4 +73,5 @@
 			{@render children()}
 		</main>
 	{/if}
+	<SvelteQueryDevtools />
 </QueryClientProvider>

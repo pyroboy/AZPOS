@@ -1,472 +1,859 @@
+import { derived } from 'svelte/store';
+
 import { createQuery, createMutation, useQueryClient } from '@tanstack/svelte-query';
+
 import { browser } from '$app/environment';
+
 import type {
-	Product,
-	ProductInput,
-	ProductFilters,
-	ProductMeta,
-	PaginatedProducts,
-	BulkProductUpdate,
-	StockAdjustment
+
+Product,
+
+ProductInput,
+
+ProductFilters,
+
+ProductMeta,
+
+PaginatedProducts,
+
+BulkProductUpdate,
+
+StockAdjustment
+
 } from '$lib/types/product.schema';
 
-/**
- * A wrapper for the onGetProducts telefunc to avoid SSR import issues.
- * @param {ProductFilters} filters - The filters for getting products.
- * @returns {Promise<PaginatedProducts>} The result from the telefunc.
- */
-const onGetProducts = async (filters?: ProductFilters): Promise<PaginatedProducts> => {
-	console.log('📡 [CLIENT] Fetching products with filters:', filters);
-	const { onGetProducts } = await import('$lib/server/telefuncs/product.telefunc');
-	return onGetProducts(filters);
-};
+
+
+
 
 /**
- * A wrapper for the onGetProductById telefunc to avoid SSR import issues.
- * @param {string} productId - The product ID to retrieve.
- * @returns {Promise<Product | null>} The result from the telefunc.
- */
-const onGetProductById = async (productId: string): Promise<Product | null> => {
-	const { onGetProductById } = await import('$lib/server/telefuncs/product.telefunc');
-	return onGetProductById(productId);
-};
 
-/**
- * A wrapper for the onCreateProduct telefunc to avoid SSR import issues.
- * @param {ProductInput} productData - The product data for creation.
- * @returns {Promise<Product>} The result from the telefunc.
- */
-const onCreateProduct = async (productData: ProductInput): Promise<Product> => {
-	const { onCreateProduct } = await import('$lib/server/telefuncs/product.telefunc');
-	return onCreateProduct(productData);
-};
+* Normalizes filter object for consistent query key generation
 
-/**
- * A wrapper for the onUpdateProduct telefunc to avoid SSR import issues.
- * @param {string} productId - The product ID to update.
- * @param {Partial<ProductInput>} productData - The product data for update.
- * @returns {Promise<Product>} The result from the telefunc.
- */
-const onUpdateProduct = async (productId: string, productData: Partial<ProductInput>): Promise<Product> => {
-	const { onUpdateProduct } = await import('$lib/server/telefuncs/product.telefunc');
-	return onUpdateProduct(productId, productData);
-};
+* Handles null/undefined values and ensures stable serialization
 
-/**
- * A wrapper for the onGetProductMeta telefunc to avoid SSR import issues.
- * @returns {Promise<ProductMeta>} The result from the telefunc.
- */
-const onGetProductMeta = async (): Promise<ProductMeta> => {
-	const { onGetProductMeta } = await import('$lib/server/telefuncs/product.telefunc');
-	return onGetProductMeta();
-};
+*/
 
-/**
- * A wrapper for the onBulkUpdateProducts telefunc to avoid SSR import issues.
- * @param {BulkProductUpdate} updateData - The bulk update data.
- * @returns {Promise<Product[]>} The result from the telefunc.
- */
-const onBulkUpdateProducts = async (updateData: BulkProductUpdate): Promise<Product[]> => {
-	const { onBulkUpdateProducts } = await import('$lib/server/telefuncs/product.telefunc');
-	return onBulkUpdateProducts(updateData);
-};
+function normalizeFilters(filters?: ProductFilters | null): Record<string, unknown> | null {
 
-/**
- * A wrapper for the onAdjustStock telefunc to avoid SSR import issues.
- * @param {StockAdjustment} adjustmentData - The stock adjustment data.
- * @returns {Promise<Product>} The result from the telefunc.
- */
-const onAdjustStock = async (adjustmentData: StockAdjustment): Promise<Product> => {
-	const { onAdjustStock } = await import('$lib/server/telefuncs/product.telefunc');
-	return onAdjustStock(adjustmentData);
-};
+if (!filters || typeof filters !== 'object') {
 
-/**
- * A wrapper for the onDeleteProduct telefunc to avoid SSR import issues.
- * @param {string} productId - The product ID to delete.
- * @returns {Promise<void>} The result from the telefunc.
- */
-const onDeleteProduct = async (productId: string): Promise<void> => {
-	const { onDeleteProduct } = await import('$lib/server/telefuncs/product.telefunc');
-	return onDeleteProduct(productId);
-};
+return null;
+
+}
+
+
+
+// Remove undefined values and sort keys for consistency
+
+const normalized: Record<string, unknown> = {};
+
+const keys = Object.keys(filters).sort();
+
+
+for (const key of keys) {
+
+const value = filters[key as keyof ProductFilters];
+
+
+// Skip undefined values but keep null, false, 0, and empty strings
+
+if (value !== undefined) {
+
+// For arrays, sort them for consistency
+
+if (Array.isArray(value)) {
+
+normalized[key] = [...value].sort();
+
+} else {
+
+normalized[key] = value;
+
+}
+
+}
+
+}
+
+
+
+// Return null if no meaningful filters are present
+
+return Object.keys(normalized).length > 0 ? normalized : null;
+
+}
+
+
+
+// Helper function to call Telefunc functions via TanStack Query
+
+async function callTelefunc(functionName: string, args: any[] = []) {
+
+const response = await fetch('/api/telefunc', {
+
+method: 'POST',
+
+headers: {
+
+'Content-Type': 'application/json'
+
+},
+
+body: JSON.stringify({
+
+telefuncName: functionName,
+
+telefuncArgs: args
+
+})
+
+});
+
+
+
+if (!response.ok) {
+
+throw new Error(`Telefunc call failed: ${response.statusText}`);
+
+}
+
+
+
+const result = await response.json();
+
+return result.ret; // Unwrap the Telefunc response
+
+}
+
+
+
+// Use Telefunc to fetch products with filters
+
+async function fetchProducts(filters?: ProductFilters): Promise<PaginatedProducts> {
+
+console.log('📡 [TELEFUNC] Fetching products with filters:', filters);
+
+// Pass an empty array if filters are not provided, otherwise pass the filters.
+
+return callTelefunc('onGetProducts', filters ? [filters] : []);
+
+}
+
+
 
 // Query keys for consistent cache management
+
 const productQueryKeys = {
-	all: ['products'] as const,
-	lists: () => [...productQueryKeys.all, 'list'] as const,
-	list: (filters?: ProductFilters) => [...productQueryKeys.lists(), filters] as const,
-	details: () => [...productQueryKeys.all, 'detail'] as const,
-	detail: (id: string) => [...productQueryKeys.details(), id] as const,
-	meta: () => [...productQueryKeys.all, 'meta'] as const
+
+all: ['products'] as const,
+
+lists: () => [...productQueryKeys.all, 'list'] as const,
+
+list: (filters?: ProductFilters | null) => {
+
+const normalizedFilters = normalizeFilters(filters);
+
+return [...productQueryKeys.lists(), normalizedFilters] as const;
+
+},
+
+details: () => [...productQueryKeys.all, 'detail'] as const,
+
+detail: (id: string) => [...productQueryKeys.details(), id] as const,
+
+meta: () => [...productQueryKeys.all, 'meta'] as const
+
 };
 
+
+
 export function useProducts(filters?: ProductFilters) {
-	const queryClient = useQueryClient();
 
-	console.log('🔧 [TANSTACK] Query setup debug:', {
-		browser,
-		filters,
-		queryKey: productQueryKeys.list(filters),
-		environment: typeof window !== 'undefined' ? 'client' : 'server'
-	});
+const queryClient = useQueryClient();
 
-	// Query to fetch paginated products with filters
-	const productsQuery = createQuery<PaginatedProducts>({
-		queryKey: productQueryKeys.list(filters),
-		queryFn: async () => {
-			console.log('🔄 [TANSTACK] Starting product query with filters:', filters);
-			try {
-				const result = await onGetProducts(filters);
-				console.log('✅ [TANSTACK] Product query successful. Count:', result.products?.length || 0);
-				return result;
-			} catch (error) {
-				console.error('🚨 [TANSTACK] Product query failed:', error);
-				throw error;
-			}
-		},
-		staleTime: 1000 * 60 * 2, // 2 minutes
-		gcTime: 1000 * 60 * 10, // 10 minutes
-		enabled: browser, // Only run on client-side
-		retry: 3,
-		retryDelay: 1000
-	});
 
-	console.log('🔍 [TANSTACK] Query created with state:', {
-		status: productsQuery.status,
-		fetchStatus: productsQuery.fetchStatus,
-		isPending: productsQuery.isPending,
-		isError: productsQuery.isError,
-		isSuccess: productsQuery.isSuccess,
-		data: productsQuery.data,
-		error: productsQuery.error
-	});
 
-	// Query to fetch product meta information
-	const metaQuery = createQuery<ProductMeta>({
-		queryKey: productQueryKeys.meta(),
-		queryFn: onGetProductMeta,
-		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 15, // 15 minutes
-		enabled: browser // Only run on client-side
-	});
+console.log('🔧 [TANSTACK] Query setup debug:', {
 
-	// Mutation to create a new product
-	const createProductMutation = createMutation({
-		mutationFn: (productData: ProductInput) => onCreateProduct(productData),
-		onSuccess: (newProduct) => {
-			// Invalidate and refetch products list
-			queryClient.invalidateQueries({ queryKey: productQueryKeys.lists() });
-			queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
+browser,
 
-			// Optimistically add the new product to cache
-			queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
-				if (!oldData)
-					return {
-						products: [newProduct],
-						pagination: { page: 1, limit: 20, total: 1, total_pages: 1, has_more: false }
-					};
-				return {
-					...oldData,
-					products: [newProduct, ...oldData.products],
-					pagination: {
-						...oldData.pagination,
-						total: oldData.pagination.total + 1
-					}
-				};
-			});
-		},
-		onError: (error) => {
-			console.error('Failed to create product:', error);
-		}
-	});
+filters,
 
-	// Mutation to update a product
-	const updateProductMutation = createMutation({
-		mutationFn: ({
-			productId,
-			productData
-		}: {
-			productId: string;
-			productData: Partial<ProductInput>;
-		}) => onUpdateProduct(productId, productData),
-		onSuccess: (updatedProduct) => {
-			// Update the specific product in all relevant queries
-			queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
-				if (!oldData) return oldData;
-				return {
-					...oldData,
-					products: oldData.products.map((product) =>
-						product.id === updatedProduct.id ? updatedProduct : product
-					)
-				};
-			});
+queryKey: productQueryKeys.list(filters),
 
-			// Update detail cache if it exists
-			queryClient.setQueryData(productQueryKeys.detail(updatedProduct.id), updatedProduct);
+environment: typeof window !== 'undefined' ? 'client' : 'server'
 
-			// Invalidate meta to get fresh calculations
-			queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
-		},
-		onError: (error) => {
-			console.error('Failed to update product:', error);
-		}
-	});
+});
 
-	// Mutation for bulk product updates
-	const bulkUpdateMutation = createMutation({
-		mutationFn: (updateData: BulkProductUpdate) => onBulkUpdateProducts(updateData),
-		onSuccess: (updatedProducts) => {
-			// Update all affected products in cache
-			queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
-				if (!oldData) return oldData;
-				const updatedProductsMap = new Map(updatedProducts.map((p) => [p.id, p]));
-				return {
-					...oldData,
-					products: oldData.products.map((product) => updatedProductsMap.get(product.id) || product)
-				};
-			});
 
-			// Update individual detail caches
-			updatedProducts.forEach((product) => {
-				queryClient.setQueryData(productQueryKeys.detail(product.id), product);
-			});
 
-			// Invalidate meta
-			queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
-		},
-		onError: (error) => {
-			console.error('Failed to bulk update products:', error);
-		}
-	});
+// Query to fetch paginated products with filters
 
-	// Mutation for stock adjustment
-	const adjustStockMutation = createMutation({
-		mutationFn: (adjustmentData: StockAdjustment) => onAdjustStock(adjustmentData),
-		onSuccess: (updatedProduct) => {
-			// Update product in all relevant caches
-			queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
-				if (!oldData) return oldData;
-				return {
-					...oldData,
-					products: oldData.products.map((product) =>
-						product.id === updatedProduct.id ? updatedProduct : product
-					)
-				};
-			});
+const productsQuery = createQuery<PaginatedProducts>({
 
-			// Update detail cache
-			queryClient.setQueryData(productQueryKeys.detail(updatedProduct.id), updatedProduct);
+queryKey: productQueryKeys.list(filters),
 
-			// Invalidate meta for fresh stock calculations
-			queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
-		},
-		onError: (error) => {
-			console.error('Failed to adjust stock:', error);
-		}
-	});
+queryFn: async () => {
 
-	// Mutation to delete a product
-	const deleteProductMutation = createMutation({
-		mutationFn: (productId: string) => onDeleteProduct(productId),
-		onSuccess: (_, productId) => {
-			// Remove from all lists (or mark as archived)
-			queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
-				if (!oldData) return oldData;
-				return {
-					...oldData,
-					products: oldData.products.map((product) =>
-						product.id === productId ? { ...product, is_archived: true, is_active: false } : product
-					),
-					pagination: {
-						...oldData.pagination,
-						total: oldData.pagination.total - 1
-					}
-				};
-			});
+console.log('🔄 [TANSTACK] Starting product query with filters:', filters);
 
-			// Update detail cache to show archived status
-			queryClient.setQueryData<Product>(productQueryKeys.detail(productId), (oldData) =>
-				oldData ? { ...oldData, is_archived: true, is_active: false } : oldData
-			);
+try {
 
-			// Invalidate meta
-			queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
-		},
-		onError: (error) => {
-			console.error('Failed to delete product:', error);
-		}
-	});
+const result = await fetchProducts(filters);
 
-	// Reactive data getters (compatible with both Svelte 4 and 5)
-	const getProducts = () => productsQuery.data?.products ?? [];
-	const getPagination = () => productsQuery.data?.pagination;
-	const getMeta = () => metaQuery.data;
+console.log('✅ [TANSTACK] Product query successful. Count:', result.products?.length || 0);
 
-	// Filtered state getters
-	const getActiveProducts = () => {
-		const products = getProducts();
-		return products.filter((p: Product) => p.is_active && !p.is_archived);
-	};
-	const getArchivedProducts = () => {
-		const products = getProducts();
-		return products.filter((p: Product) => p.is_archived);
-	};
-	const getBundleProducts = () => {
-		const products = getProducts();
-		return products.filter((p: Product) => p.is_bundle);
-	};
-	const getLowStockProducts = () => {
-		const products = getProducts();
-		return products.filter((p: Product) => p.min_stock_level && p.stock_quantity < p.min_stock_level);
-	};
-	const getOutOfStockProducts = () => {
-		const products = getProducts();
-		return products.filter((p: Product) => p.stock_quantity === 0);
-	};
+return result;
 
-	// Loading and error state getters
-	const getIsLoading = () => productsQuery.isPending;
-	const getIsError = () => productsQuery.isError;
-	const getError = () => productsQuery.error;
+} catch (error) {
 
-	const getIsMetaLoading = () => metaQuery.isPending;
-	const getIsMetaError = () => metaQuery.isError;
+console.error('🚨 [TANSTACK] Product query failed:', error);
 
-	return {
-		// Queries
-		productsQuery,
-		metaQuery,
+throw error;
 
-		// Reactive data getters
-		products: getProducts,
-		pagination: getPagination,
-		meta: getMeta,
-
-		// Filtered data getters
-		activeProducts: getActiveProducts,
-		archivedProducts: getArchivedProducts,
-		bundleProducts: getBundleProducts,
-		lowStockProducts: getLowStockProducts,
-		outOfStockProducts: getOutOfStockProducts,
-
-		// Loading state getters
-		isLoading: getIsLoading,
-		isError: getIsError,
-		error: getError,
-		isMetaLoading: getIsMetaLoading,
-		isMetaError: getIsMetaError,
-
-		// Mutations
-		createProduct: createProductMutation.mutate,
-		updateProduct: updateProductMutation.mutate,
-		bulkUpdate: bulkUpdateMutation.mutate,
-		adjustStock: adjustStockMutation.mutate,
-		deleteProduct: deleteProductMutation.mutate,
-
-		// Mutation state getters
-		isCreating: () => createProductMutation.isPending,
-		isUpdating: () => updateProductMutation.isPending,
-		isBulkUpdating: () => bulkUpdateMutation.isPending,
-		isAdjustingStock: () => adjustStockMutation.isPending,
-		isDeleting: () => deleteProductMutation.isPending,
-
-		createError: () => createProductMutation.error,
-		updateError: () => updateProductMutation.error,
-		bulkUpdateError: () => bulkUpdateMutation.error,
-		adjustStockError: () => adjustStockMutation.error,
-		deleteError: () => deleteProductMutation.error,
-
-		// Utility functions
-		refetch: () => queryClient.invalidateQueries({ queryKey: productQueryKeys.lists() }),
-		refetchMeta: () => queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() })
-	};
 }
+
+},
+
+staleTime: 1000 * 60 * 2, // 2 minutes
+
+gcTime: 1000 * 60 * 10, // 10 minutes
+
+enabled: browser, // Only run on client-side
+
+retry: 3,
+
+retryDelay: 1000
+
+});
+
+
+
+console.log('🔍 [TANSTACK] Query created with state:', {
+
+status: productsQuery.status,
+
+fetchStatus: productsQuery.fetchStatus,
+
+isPending: productsQuery.isPending,
+
+isError: productsQuery.isError,
+
+isSuccess: productsQuery.isSuccess,
+
+data: productsQuery.data,
+
+error: productsQuery.error
+
+});
+
+
+
+// Query to fetch product meta information
+
+const metaQuery = createQuery<ProductMeta>({
+
+queryKey: productQueryKeys.meta(),
+
+queryFn: () => callTelefunc('onGetProductMeta'),
+
+staleTime: 1000 * 60 * 5, // 5 minutes
+
+gcTime: 1000 * 60 * 15, // 15 minutes
+
+enabled: browser // Only run on client-side
+
+});
+
+
+
+// Mutation to create a new product
+
+const createProductMutation = createMutation({
+
+mutationFn: (productData: ProductInput) => callTelefunc('onCreateProduct', [productData]),
+
+onSuccess: (newProduct) => {
+
+// Invalidate and refetch products list
+
+queryClient.invalidateQueries({ queryKey: productQueryKeys.lists() });
+
+queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
+
+
+
+// Optimistically add the new product to cache
+
+queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
+
+if (!oldData)
+
+return {
+
+products: [newProduct],
+
+pagination: { page: 1, limit: 20, total: 1, total_pages: 1, has_more: false }
+
+};
+
+return {
+
+...oldData,
+
+products: [newProduct, ...oldData.products],
+
+pagination: {
+
+...oldData.pagination,
+
+total: oldData.pagination.total + 1
+
+}
+
+};
+
+});
+
+},
+
+onError: (error) => {
+
+console.error('Failed to create product:', error);
+
+}
+
+});
+
+
+
+// Mutation to update a product
+
+const updateProductMutation = createMutation({
+
+mutationFn: ({
+
+productId,
+
+productData
+
+}: {
+
+productId: string;
+
+productData: Partial<ProductInput>;
+
+}) => callTelefunc('onUpdateProduct', [productId, productData]),
+
+onSuccess: (updatedProduct) => {
+
+// Update the specific product in all relevant queries
+
+queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
+
+if (!oldData) return oldData;
+
+return {
+
+...oldData,
+
+products: oldData.products.map((product) =>
+
+product.id === updatedProduct.id ? updatedProduct : product
+
+)
+
+};
+
+});
+
+
+
+// Update detail cache if it exists
+
+queryClient.setQueryData(productQueryKeys.detail(updatedProduct.id), updatedProduct);
+
+
+
+// Invalidate meta to get fresh calculations
+
+queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
+
+},
+
+onError: (error) => {
+
+console.error('Failed to update product:', error);
+
+}
+
+});
+
+
+
+// Mutation for bulk product updates
+
+const bulkUpdateMutation = createMutation({
+
+mutationFn: (updateData: BulkProductUpdate) => callTelefunc('onBulkUpdateProducts', [updateData]),
+
+onSuccess: (updatedProducts) => {
+
+// Update all affected products in cache
+
+queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
+
+if (!oldData) return oldData;
+
+const updatedProductsMap = new Map(updatedProducts.map((p) => [p.id, p]));
+
+return {
+
+...oldData,
+
+products: oldData.products.map((product) => updatedProductsMap.get(product.id) || product)
+
+};
+
+});
+
+
+
+// Update individual detail caches
+
+updatedProducts.forEach((product) => {
+
+queryClient.setQueryData(productQueryKeys.detail(product.id), product);
+
+});
+
+
+
+// Invalidate meta
+
+queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
+
+},
+
+onError: (error) => {
+
+console.error('Failed to bulk update products:', error);
+
+}
+
+});
+
+
+
+// Mutation for stock adjustment
+
+const adjustStockMutation = createMutation({
+
+mutationFn: (adjustmentData: StockAdjustment) => callTelefunc('onAdjustStock', [adjustmentData]),
+
+onSuccess: (updatedProduct) => {
+
+// Update product in all relevant caches
+
+queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
+
+if (!oldData) return oldData;
+
+return {
+
+...oldData,
+
+products: oldData.products.map((product) =>
+
+product.id === updatedProduct.id ? updatedProduct : product
+
+)
+
+};
+
+});
+
+
+
+// Update detail cache
+
+queryClient.setQueryData(productQueryKeys.detail(updatedProduct.id), updatedProduct);
+
+
+
+// Invalidate meta for fresh stock calculations
+
+queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
+
+},
+
+onError: (error) => {
+
+console.error('Failed to adjust stock:', error);
+
+}
+
+});
+
+
+
+// Mutation to delete a product
+
+const deleteProductMutation = createMutation({
+
+mutationFn: (productId: string) => callTelefunc('onDeleteProduct', [productId]),
+
+onSuccess: (_, productId) => {
+
+// Remove from all lists (or mark as archived)
+
+queryClient.setQueryData<PaginatedProducts>(productQueryKeys.list(filters), (oldData) => {
+
+if (!oldData) return oldData;
+
+return {
+
+...oldData,
+
+products: oldData.products.map((product) =>
+
+product.id === productId ? { ...product, is_archived: true, is_active: false } : product
+
+),
+
+pagination: {
+
+...oldData.pagination,
+
+total: oldData.pagination.total - 1
+
+}
+
+};
+
+});
+
+
+
+// Update detail cache to show archived status
+
+queryClient.setQueryData<Product>(productQueryKeys.detail(productId), (oldData) =>
+
+oldData ? { ...oldData, is_archived: true, is_active: false } : oldData
+
+);
+
+
+
+// Invalidate meta
+
+queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() });
+
+},
+
+onError: (error) => {
+
+console.error('Failed to delete product:', error);
+
+}
+
+});
+
+
+
+// Derived stores for reactive state management
+
+const products = derived(productsQuery, ($query) => $query.data?.products ?? []);
+
+const pagination = derived(productsQuery, ($query) => $query.data?.pagination);
+
+const isLoading = derived(productsQuery, ($query) => $query.isPending);
+
+const isError = derived(productsQuery, ($query) => $query.isError);
+
+const error = derived(productsQuery, ($query) => $query.error);
+
+
+
+const meta = derived(metaQuery, ($query) => $query.data);
+
+const isMetaLoading = derived(metaQuery, ($query) => $query.isPending);
+
+const isMetaError = derived(metaQuery, ($query) => $query.isError);
+
+
+
+const activeProducts = derived(products, ($products) =>
+
+$products.filter((p) => p.is_active && !p.is_archived)
+
+);
+
+const archivedProducts = derived(products, ($products) =>
+
+$products.filter((p) => p.is_archived)
+
+);
+
+const bundleProducts = derived(products, ($products) =>
+
+$products.filter((p) => p.is_bundle)
+
+);
+
+const lowStockProducts = derived(products, ($products) =>
+
+$products.filter((p) => p.min_stock_level && p.stock_quantity < p.min_stock_level)
+
+);
+
+const outOfStockProducts = derived(products, ($products) =>
+
+$products.filter((p) => p.stock_quantity === 0)
+
+);
+
+
+
+return {
+
+// Original queries
+
+productsQuery,
+
+metaQuery,
+
+
+
+// Derived state stores
+
+products,
+
+pagination,
+
+isLoading,
+
+isError,
+
+error,
+
+meta,
+
+isMetaLoading,
+
+isMetaError,
+
+
+
+// Derived filtered lists
+
+activeProducts,
+
+archivedProducts,
+
+bundleProducts,
+
+lowStockProducts,
+
+outOfStockProducts,
+
+
+
+// Mutations (returning the whole mutation store)
+
+createProduct: createProductMutation,
+
+updateProduct: updateProductMutation,
+
+bulkUpdate: bulkUpdateMutation,
+
+adjustStock: adjustStockMutation,
+
+deleteProduct: deleteProductMutation,
+
+
+
+// Utility functions
+
+refetch: () => queryClient.invalidateQueries({ queryKey: productQueryKeys.lists() }),
+
+refetchMeta: () => queryClient.invalidateQueries({ queryKey: productQueryKeys.meta() })
+
+};
+
+}
+
+
 
 // Hook for fetching a single product by ID
+
 export function useProduct(productId: string) {
-	const queryClient = useQueryClient();
 
-	const productQuery = createQuery<Product | null>({
-		queryKey: productQueryKeys.detail(productId),
-		queryFn: () => onGetProductById(productId),
-		staleTime: 1000 * 60 * 5, // 5 minutes
-		gcTime: 1000 * 60 * 15, // 15 minutes
-		enabled: browser && !!productId // Only run on client-side
-	});
+const queryClient = useQueryClient();
 
-	// Reactive data getters
-	const getProduct = () => productQuery.data;
-	const getIsLoading = () => productQuery.isPending;
-	const getIsError = () => productQuery.isError;
-	const getError = () => productQuery.error;
 
-	return {
-		productQuery,
-		product: getProduct,
-		isLoading: getIsLoading,
-		isError: getIsError,
-		error: getError,
-		refetch: () => queryClient.invalidateQueries({ queryKey: productQueryKeys.detail(productId) })
-	};
+
+const productQuery = createQuery<Product | null>({
+
+queryKey: productQueryKeys.detail(productId),
+
+queryFn: () => callTelefunc('onGetProductById', [productId]),
+
+staleTime: 1000 * 60 * 5, // 5 minutes
+
+gcTime: 1000 * 60 * 15, // 15 minutes
+
+enabled: browser && !!productId // Only run on client-side
+
+});
+
+
+
+const product = derived(productQuery, ($query) => $query.data);
+
+const isLoading = derived(productQuery, ($query) => $query.isPending);
+
+const isError = derived(productQuery, ($query) => $query.isError);
+
+const error = derived(productQuery, ($query) => $query.error);
+
+
+
+return {
+
+productQuery,
+
+product,
+
+isLoading,
+
+isError,
+
+error,
+
+refetch: () => queryClient.invalidateQueries({ queryKey: productQueryKeys.detail(productId) })
+
+};
+
 }
+
+
 
 // Hook for optimistic product updates
+
 export function useOptimisticProductUpdate() {
-	const queryClient = useQueryClient();
 
-	return {
-		// Optimistically update product in cache before server response
-		updateProductOptimistic: (productId: string, updates: Partial<Product>) => {
-			// Update all relevant queries optimistically
-			queryClient.setQueriesData<PaginatedProducts>(
-				{ queryKey: productQueryKeys.lists() },
-				(oldData) => {
-					if (!oldData) return oldData;
-					return {
-						...oldData,
-						products: oldData.products.map((product) =>
-							product.id === productId
-								? { ...product, ...updates, updated_at: new Date().toISOString() }
-								: product
-						)
-					};
-				}
-			);
+const queryClient = useQueryClient();
 
-			// Update detail cache if it exists
-			queryClient.setQueriesData<Product>({ queryKey: productQueryKeys.details() }, (oldData) =>
-				oldData?.id === productId
-					? { ...oldData, ...updates, updated_at: new Date().toISOString() }
-					: oldData
-			);
-		},
 
-		// Optimistically adjust stock
-		adjustStockOptimistic: (productId: string, newQuantity: number) => {
-			queryClient.setQueriesData<PaginatedProducts>(
-				{ queryKey: productQueryKeys.lists() },
-				(oldData) => {
-					if (!oldData) return oldData;
-					return {
-						...oldData,
-						products: oldData.products.map((product) =>
-							product.id === productId
-								? { ...product, stock_quantity: newQuantity, updated_at: new Date().toISOString() }
-								: product
-						)
-					};
-				}
-			);
 
-			queryClient.setQueriesData<Product>({ queryKey: productQueryKeys.details() }, (oldData) =>
-				oldData?.id === productId
-					? { ...oldData, stock_quantity: newQuantity, updated_at: new Date().toISOString() }
-					: oldData
-			);
-		}
-	};
+return {
+
+// Optimistically update product in cache before server response
+
+updateProductOptimistic: (productId: string, updates: Partial<Product>) => {
+
+// Update all relevant queries optimistically
+
+queryClient.setQueriesData<PaginatedProducts>(
+
+{ queryKey: productQueryKeys.lists() },
+
+(oldData) => {
+
+if (!oldData) return oldData;
+
+return {
+
+...oldData,
+
+products: oldData.products.map((product) =>
+
+product.id === productId
+
+? { ...product, ...updates, updated_at: new Date().toISOString() }
+
+: product
+
+)
+
+};
+
 }
 
+);
+
+
+
+// Update detail cache if it exists
+
+queryClient.setQueriesData<Product>({ queryKey: productQueryKeys.details() }, (oldData) =>
+
+oldData?.id === productId
+
+? { ...oldData, ...updates, updated_at: new Date().toISOString() }
+
+: oldData
+
+);
+
+},
+
+
+
+// Optimistically adjust stock
+
+adjustStockOptimistic: (productId: string, newQuantity: number) => {
+
+queryClient.setQueriesData<PaginatedProducts>(
+
+{ queryKey: productQueryKeys.lists() },
+
+(oldData) => {
+
+if (!oldData) return oldData;
+
+return {
+
+...oldData,
+
+products: oldData.products.map((product) =>
+
+product.id === productId
+
+? { ...product, stock_quantity: newQuantity, updated_at: new Date().toISOString() }
+
+: product
+
+)
+
+};
+
+}
+
+);
+
+
+
+queryClient.setQueriesData<Product>({ queryKey: productQueryKeys.details() }, (oldData) =>
+
+oldData?.id === productId
+
+? { ...oldData, stock_quantity: newQuantity, updated_at: new Date().toISOString() }
+
+: oldData
+
+);
+
+}
+
+};
+
+}
+
+
+
 // Note: Product search with debouncing should be implemented in Svelte components
+
 // using $derived and $effect runes, as they can only be used in .svelte files
