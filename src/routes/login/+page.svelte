@@ -38,15 +38,14 @@
 				<p class="text-xs text-muted-foreground mb-2 text-center font-medium">🚧 TEMPORARY: Quick Login (Development Only)</p>
 				<div class="grid gap-2">
 					{#each testUsers as user}
-						<Button 
-							variant="outline" 
-							size="sm" 
-							class="justify-between text-xs"
-							onclick={() => quickLogin(user)}
+						<button 
+							type="button"
+							class="w-full flex items-center justify-between p-2 text-xs bg-background border border-input rounded-md hover:bg-accent hover:text-accent-foreground transition-colors"
+							on:click={() => quickLogin(user)}
 						>
 							<span>{user.name}</span>
 							<Badge variant="secondary" class="text-xs">{user.role}</Badge>
-						</Button>
+						</button>
 					{/each}
 				</div>
 			</div>
