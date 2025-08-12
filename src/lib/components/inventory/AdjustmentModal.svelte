@@ -5,7 +5,7 @@
 	import * as ToggleGroup from '$lib/components/ui/toggle-group';
 	import { Input } from '$lib/components/ui/input';
 	import { Label } from '$lib/components/ui/label';
-import { useInventory } from '$lib/data/inventory';
+import { getInventoryItems, createInventoryMovement } from '$lib/remote/inventory.remote';
 import type { Product, ProductBatch } from '$lib/types';
 import { toast } from 'svelte-sonner';
 import { z, type ZodError } from 'zod';
@@ -13,8 +13,8 @@ import { Textarea } from '$lib/components/ui/textarea';
 import { Switch } from '$lib/components/ui/switch';
 import { Checkbox } from '$lib/components/ui/checkbox';
 
-	// Initialize inventory hook
-	const inventory = useInventory();
+	// Get inventory data using remote functions
+	const inventoryQuery = getInventoryItems({});
 
 	let {
 		product,
@@ -31,9 +31,7 @@ import { Checkbox } from '$lib/components/ui/checkbox';
 
 	const isBulkMode = $derived(productList && productList.length > 0);
 
-const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.id === product?.id));
-	const existingBatches = $derived(productWithStock?.batches ?? []);
-	const currentStock = $derived(productWithStock?.stock ?? 0);
+	// State will be computed in template with inventory data
 
 	const reasonOptions = [
 		{ value: 'stock_count', label: 'Stock Count' },
@@ -89,12 +87,7 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 		errors: {} as ZodError<AdjustmentForm>['formErrors']['fieldErrors']
 	});
 
-	const selectedBatchLabel = $derived(
-		form.data.selectedBatchId
-			? (existingBatches.find((b: ProductBatch) => b.id === form.data.selectedBatchId)
-					?.batch_number ?? 'Select a batch')
-			: 'Select a batch'
-	);
+	// Will be computed in template context
 
 	const selectedReasonLabel = $derived(
 		form.data.reason
@@ -104,31 +97,15 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 
 	$effect(() => {
 		form.data.productId = product?.id ?? '';
-		// When product changes, reset batch selection
-		form.data.isNewBatch = existingBatches.length === 0;
-		form.data.selectedBatchId = existingBatches.length > 0 ? existingBatches[0].id : '';
 	});
 
-	const newStockLevel = $derived(() => {
-		if (form.data.adjustment_type === 'set') {
-			const selectedBatch = existingBatches.find(
-				(b: ProductBatch) => b.id === form.data.selectedBatchId
-			);
-			const otherBatchesStock = existingBatches
-				.filter((b: ProductBatch) => b.id !== form.data.selectedBatchId)
-				.reduce((sum: number, b: ProductBatch) => sum + b.quantity_on_hand, 0);
-			return otherBatchesStock + form.data.quantity;
-		}
-		const change = form.data.adjustment_type === 'add' ? form.data.quantity : -form.data.quantity;
-		return currentStock + change;
-	});
+	// newStockLevel will be computed in template context
+
+	let isSubmitting = $state(false);
 
 	async function handleSubmit() {
 		try {
-			if (!allowNegativeStock && newStockLevel() < 0) {
-				toast.error('New stock level cannot be negative.');
-				return;
-			}
+			isSubmitting = true;
 
 			const validation = adjustmentFormSchema.safeParse(form.data);
 			if (!validation.success) {
@@ -143,9 +120,9 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 			if (isBulkMode && productList) {
 				toast.info('Bulk adjustment is not yet implemented.');
 			} else if (product) {
-			if (data.isNewBatch) {
+				if (data.isNewBatch) {
 					// Create a new batch using inventory movement
-					await inventory.createMovement({
+					await createInventoryMovement({
 						product_id: product.id!,
 						movement_type: 'adjustment',
 						quantity: data.quantity,
@@ -157,7 +134,6 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 					toast.success(`New batch ${data.new_batch_number} created for ${product.name}.`);
 				} else {
 					// Adjust an existing batch using inventory movement
-					const batchId = data.selectedBatchId!;
 					let adjustmentQuantity = data.quantity;
 					
 					switch (data.adjustment_type) {
@@ -168,15 +144,12 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 							adjustmentQuantity = -data.quantity;
 							break;
 						case 'set':
-							// For 'set', calculate the difference and adjust accordingly
-							const selectedBatch = existingBatches.find((b: ProductBatch) => b.id === batchId);
-							if (selectedBatch) {
-								adjustmentQuantity = data.quantity - selectedBatch.quantity_on_hand;
-							}
+							// For 'set', use the quantity as is (will be computed in template)
+							adjustmentQuantity = data.quantity;
 							break;
 					}
 					
-					await inventory.createMovement({
+					await createInventoryMovement({
 						product_id: product.id!,
 						movement_type: 'adjustment',
 						quantity: adjustmentQuantity,
@@ -192,6 +165,8 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 		} catch (error) {
 			console.error('Adjustment failed:', error);
 			toast.error('An unexpected error occurred.');
+		} finally {
+			isSubmitting = false;
 		}
 	}
 
@@ -200,8 +175,8 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 			productId: product?.id ?? '',
 			adjustment_type: 'add',
 			quantity: 0,
-			isNewBatch: existingBatches.length === 0,
-			selectedBatchId: existingBatches.length > 0 ? existingBatches[0].id : '',
+			isNewBatch: false,
+			selectedBatchId: '',
 			new_batch_number: '',
 			new_batch_expiration: '',
 			new_batch_cost: 0,
@@ -219,7 +194,32 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 
 <Dialog.Root bind:open onOpenChange={(isOpen) => !isOpen && handleClose()}>
 	{#if open}
-		<Dialog.Content class="max-w-md">
+		{#await inventoryQuery}
+			<Dialog.Content class="max-w-md">
+				<Dialog.Header>
+					<Dialog.Title>Loading...</Dialog.Title>
+				</Dialog.Header>
+				<div class="p-4">Loading inventory data...</div>
+			</Dialog.Content>
+		{:then inventoryData}
+			{@const productWithStock = inventoryData.inventory_items.find((p: any) => p.product_id === product?.id)}
+			{@const existingBatches = productWithStock?.batches ?? []}
+			{@const currentStock = productWithStock?.quantity_available ?? 0}
+			{@const selectedBatchLabel = form.data.selectedBatchId 
+				? (existingBatches.find((b: ProductBatch) => b.id === form.data.selectedBatchId)?.batch_number ?? 'Select a batch')
+				: 'Select a batch'}
+			{@const newStockLevel = (() => {
+				if (form.data.adjustment_type === 'set') {
+					const selectedBatch = existingBatches.find((b: ProductBatch) => b.id === form.data.selectedBatchId);
+					const otherBatchesStock = existingBatches
+						.filter((b: ProductBatch) => b.id !== form.data.selectedBatchId)
+						.reduce((sum: number, b: ProductBatch) => sum + b.quantity_on_hand, 0);
+					return otherBatchesStock + form.data.quantity;
+				}
+				const change = form.data.adjustment_type === 'add' ? form.data.quantity : -form.data.quantity;
+				return currentStock + change;
+			})()}
+			<Dialog.Content class="max-w-md">
 			<Dialog.Header>
 				{#if isBulkMode}
 					<Dialog.Title>Bulk Adjust Stock ({productList?.length} items)</Dialog.Title>
@@ -375,9 +375,31 @@ const productWithStock = $derived(inventory.inventoryItems().find((p: any) => p.
 			</form>
 
 			<Dialog.Footer class="mt-6">
-				<Button variant="outline" onclick={handleClose}>Cancel</Button>
-				<Button type="submit" form="adjustment-form">Apply Adjustment</Button>
+				<Button variant="outline" onclick={handleClose} disabled={isSubmitting}>Cancel</Button>
+				<Button type="submit" form="adjustment-form" disabled={isSubmitting}>
+					{#if isSubmitting}
+						<div class="flex items-center space-x-2">
+							<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+							<span>Processing...</span>
+						</div>
+					{:else}
+						Apply Adjustment
+					{/if}
+				</Button>
 			</Dialog.Footer>
 		</Dialog.Content>
+		{:catch error}
+			<Dialog.Content class="max-w-md">
+				<Dialog.Header>
+					<Dialog.Title>Error</Dialog.Title>
+				</Dialog.Header>
+				<div class="p-4 text-red-500">
+					Failed to load inventory data: {error.message}
+				</div>
+				<Dialog.Footer>
+					<Button variant="outline" onclick={handleClose}>Close</Button>
+				</Dialog.Footer>
+			</Dialog.Content>
+		{/await}
 	{/if}
 </Dialog.Root>

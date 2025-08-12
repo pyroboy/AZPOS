@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { createEventDispatcher } from 'svelte';
-	import { useProducts } from '$lib/data/product';
-	import { useInventory } from '$lib/data/inventory';
+	import { getProducts } from '$lib/remote/products.remote';
+	import { getInventoryItems } from '$lib/remote/inventory.remote';
 	import type { Product } from '$lib/types';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -20,20 +20,17 @@
 	let { isOpen = $bindable(false) }: { isOpen: boolean } = $props();
 
 	// Use data hooks instead of stores
-	const { activeProducts } = useProducts();
-	const { inventoryItems } = useInventory();
+	const productsQuery = getProducts();
+	const inventoryQuery = getInventoryItems({});
 
-	const allProducts = $derived(activeProducts().filter((p: Product) => !p.is_archived));
-	const allBatches = $derived(inventoryItems()); // Using inventory items as batch equivalents
+	// Data will be computed in template context
 
 	function closeModal() {
 		isOpen = false;
 		dispatch('close');
 	}
 
-	function downloadCSVTemplate() {
-		// Create sample data with current products
-
+	function downloadCSVTemplate(allProducts: Product[], allBatches: any[]) {
 		// Create sample data with current products
 		const templateData = allProducts.slice(0, 5).map((product: Product) => {
 			// Calculate current stock from inventory items
@@ -82,7 +79,7 @@
 		downloadFile(csv, 'inventory_adjustment_template.csv', 'text/csv');
 	}
 
-	function downloadCurrentInventory() {
+	function downloadCurrentInventory(allProducts: Product[], allBatches: any[]) {
 		// Export current inventory levels
 		const inventoryData = allProducts.map((product: Product) => {
 			const productInventoryItems = allBatches.filter(
@@ -123,7 +120,7 @@
 		downloadFile(csv, `inventory_report_${new Date().toISOString().split('T')[0]}.csv`, 'text/csv');
 	}
 
-	function downloadBatchReport() {
+	function downloadBatchReport(allProducts: Product[], allBatches: any[]) {
 		// Export detailed inventory item information
 		const batchData = allBatches.map(
 			(item: {
@@ -174,7 +171,16 @@
 </script>
 
 {#if isOpen}
-	<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+	{#await Promise.all([productsQuery, inventoryQuery])}
+		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+			<div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+				<div class="text-center">Loading export data...</div>
+			</div>
+		</div>
+	{:then [productsData, inventoryData]}
+		{@const allProducts = productsData.products.filter((p: Product) => !p.is_archived)}
+		{@const allBatches = inventoryData.inventory_items}
+		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
 		<div class="bg-white rounded-lg p-6 max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
 			<div class="flex justify-between items-center mb-6">
 				<h2 class="text-2xl font-bold flex items-center gap-2">
@@ -205,7 +211,7 @@
 									Includes sample data for first 5 products + empty rows
 								</p>
 							</div>
-							<Button onclick={downloadCSVTemplate} class="flex items-center gap-2">
+							<Button onclick={() => downloadCSVTemplate(allProducts, allBatches)} class="flex items-center gap-2">
 								<Download class="h-4 w-4" />
 								Download Template
 							</Button>
@@ -233,7 +239,7 @@
 								</p>
 							</div>
 							<Button
-								onclick={downloadCurrentInventory}
+								onclick={() => downloadCurrentInventory(allProducts, allBatches)}
 								variant="outline"
 								class="flex items-center gap-2"
 							>
@@ -264,7 +270,7 @@
 								</p>
 							</div>
 							<Button
-								onclick={downloadBatchReport}
+								onclick={() => downloadBatchReport(allProducts, allBatches)}
 								variant="outline"
 								class="flex items-center gap-2"
 							>
@@ -281,4 +287,15 @@
 			</div>
 		</div>
 	</div>
+	{:catch error}
+		<div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+			<div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+				<div class="text-center">
+					<h3 class="text-lg font-semibold text-red-600 mb-2">Error Loading Data</h3>
+					<p class="text-gray-600 mb-4">{error.message}</p>
+					<Button onclick={closeModal}>Close</Button>
+				</div>
+			</div>
+		</div>
+	{/await}
 {/if}

@@ -5,9 +5,9 @@
 	import { Label } from '$lib/components/ui/label';
 	import * as Select from '$lib/components/ui/select';
 	import * as Switch from '$lib/components/ui/switch/index.js';
-	import { useProducts } from '$lib/data/product';
-	import { useCategories } from '$lib/data/category.svelte';
-	import { useInventory } from '$lib/data/inventory';
+	import { getProducts, bulkUpdateProducts } from '$lib/remote/products.remote';
+	import { getCategories } from '$lib/remote/categories.remote';
+	import { getInventoryItems } from '$lib/remote/inventory.remote';
 	import type { Product, BulkProductUpdate } from '$lib/types/product.schema';
 	import type { Category } from '$lib/types/category.schema';
 	import type { InventoryItem } from '$lib/types/inventory.schema';
@@ -24,9 +24,9 @@
 		onClose?: () => void;
 	}>();
 
-	// Get TanStack Query hooks
-	const { products, bulkUpdate, isBulkUpdating, bulkUpdateError } = useProducts();
-	const { inventoryItems } = useInventory();
+	// Get data using remote functions
+	const productsQuery = getProducts();
+	const inventoryQuery = getInventoryItems({});
 
 	let category_id = $state('');
 	let reorderPoint = $state<number | undefined>(undefined);
@@ -38,24 +38,8 @@
 	);
 	const selectedProductsCount = $derived(productIds.length);
 
-	// Get selected products for preview
-	const selectedProducts = $derived(products().filter((p: Product) => productIds.includes(p.id)));
-	const selectedInventoryItems = $derived(
-		inventoryItems().filter((item: InventoryItem) => productIds.includes(item.product_id))
-	);
-
 	$effect(() => {
-		if (open && productIds.length > 0 && selectedProducts.length > 0) {
-			// Check if all selected products have batch tracking enabled
-			// Note: batch tracking is determined by the presence of batch_number in inventory items
-			const productHasBatches = selectedInventoryItems.some(
-				(item: InventoryItem) => item.batch_number
-			);
-
-			// For now, we'll default to 'indeterminate' since requires_batch_tracking
-			// is not part of the current product schema
-			requiresBatchTracking = 'indeterminate';
-		} else if (!open) {
+		if (!open) {
 			// Reset form when dialog closes
 			category_id = '';
 			reorderPoint = undefined;
@@ -64,44 +48,53 @@
 		}
 	});
 
-	function handleSubmit() {
+	let isSubmitting = $state(false);
+	let submitError = $state<string | null>(null);
+
+	async function handleSubmit() {
 		if (!productIds.length) return;
 
-		// Build the updates object based on the schema
-		const updates: BulkProductUpdate['updates'] = {};
+		isSubmitting = true;
+		submitError = null;
 
-		if (category_id.trim()) {
-			updates.category_id = category_id.trim();
-		}
-		if (reorderPoint !== undefined && reorderPoint !== null) {
-			// Note: reorder_point might need to be handled separately as it's not in the bulk update schema
-			// For now, we'll include it as a custom field
-			(updates as any).reorder_point = reorderPoint;
-		}
-		if (requiresBatchTracking !== 'indeterminate') {
-			// Note: requires_batch_tracking might need to be handled separately as it's not in the bulk update schema
-			(updates as any).requires_batch_tracking = requiresBatchTracking === 'yes';
-		}
-		if (price !== undefined && price !== null) {
-			updates.selling_price = price;
-		}
+		try {
+			// Build the updates object based on the schema
+			const updates: BulkProductUpdate['updates'] = {};
 
-		if (Object.keys(updates).length > 0) {
-			const bulkUpdateData: BulkProductUpdate = {
-				product_ids: productIds,
-				updates: updates
-			};
+			if (category_id.trim()) {
+				updates.category_id = category_id.trim();
+			}
+			if (reorderPoint !== undefined && reorderPoint !== null) {
+				(updates as any).reorder_point = reorderPoint;
+			}
+			if (requiresBatchTracking !== 'indeterminate') {
+				(updates as any).requires_batch_tracking = requiresBatchTracking === 'yes';
+			}
+			if (price !== undefined && price !== null) {
+				updates.selling_price = price;
+			}
 
-			bulkUpdate(bulkUpdateData);
+			if (Object.keys(updates).length > 0) {
+				const bulkUpdateData: BulkProductUpdate = {
+					product_ids: productIds,
+					updates: updates
+				};
+
+				await bulkUpdateProducts(bulkUpdateData);
+			}
+
+			// Reset form and close modal
+			category_id = '';
+			reorderPoint = undefined;
+			requiresBatchTracking = 'indeterminate';
+			price = undefined;
+			open = false;
+			onClose?.();
+		} catch (error: any) {
+			submitError = error.message || 'Failed to update products';
+		} finally {
+			isSubmitting = false;
 		}
-
-		// Reset form and close modal
-		category_id = '';
-		reorderPoint = undefined;
-		requiresBatchTracking = 'indeterminate';
-		price = undefined;
-		open = false;
-		onClose?.();
 	}
 </script>
 
@@ -120,7 +113,7 @@
 				<Label for="category_id" class="text-right">Category</Label>
 				<div class="col-span-3">
 					<Select.Root type="single" bind:value={category_id}>
-						<Select.Trigger class="w-full" disabled={isBulkUpdating()}>
+						<Select.Trigger class="w-full" disabled={isSubmitting}>
 							{selectedCategoryLabel || 'Select category...'}
 						</Select.Trigger>
 						<Select.Content>
@@ -140,7 +133,7 @@
 					class="col-span-3"
 					placeholder="e.g. 20"
 					min="0"
-					disabled={isBulkUpdating()}
+					disabled={isSubmitting}
 				/>
 			</div>
 			<div class="grid grid-cols-4 items-center gap-4">
@@ -154,7 +147,7 @@
 							: requiresBatchTracking === 'yes'
 								? 'checked'
 							: 'unchecked'}
-					disabled={isBulkUpdating()}
+					disabled={isSubmitting}
 					onCheckedChange={(checked) => {
 							requiresBatchTracking = checked ? 'yes' : 'no';
 						}}
@@ -179,25 +172,25 @@
 						placeholder="e.g. 29.99"
 						step="0.01"
 						min="0"
-						disabled={isBulkUpdating()}
+						disabled={isSubmitting}
 					/>
 				</div>
 			</div>
 		</div>
 
-		{#if bulkUpdateError}
+		{#if submitError}
 			<div class="text-red-500 text-sm mb-4 px-4">
 			<strong>Error:</strong>
-			{bulkUpdateError()?.message || 'Failed to update products'}
+			{submitError}
 		</div>
 		{/if}
 
 		<Dialog.Footer>
-		<Button variant="outline" onclick={() => (open = false)} disabled={isBulkUpdating()}>
+		<Button variant="outline" onclick={() => (open = false)} disabled={isSubmitting}>
 			Cancel
 		</Button>
-		<Button onclick={handleSubmit} disabled={isBulkUpdating() || selectedProductsCount === 0}>
-			{#if isBulkUpdating()}
+		<Button onclick={handleSubmit} disabled={isSubmitting || selectedProductsCount === 0}>
+			{#if isSubmitting}
 				<div class="flex items-center space-x-2">
 						<div class="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
 						<span>Updating...</span>

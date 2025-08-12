@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { EnhancedReturnRecord } from '$lib/types/returns.schema';
-	import { useReturns } from '$lib/data/returns.svelte';
+	// import { useReturns } from '$lib/data/returns.svelte'; // Temporarily disabled
 	import * as Dialog from '$lib/components/ui/dialog';
 	import { Button } from '$lib/components/ui/button';
 	import { Badge } from '$lib/components/ui/badge';
@@ -8,7 +8,8 @@
 	import { toast } from 'svelte-sonner';
 
 	// Get TanStack Query hook for updating returns
-	const { updateStatus, isUpdating } = useReturns();
+	// const { updateStatus, isUpdating } = useReturns(); // Temporarily disabled
+	const isUpdating = false; // Mock state
 
 	let {
 		open = $bindable(false),

@@ -1,23 +1,11 @@
 <script lang="ts">
-	import { useProducts } from '$lib/data/product';
+	import { getProducts } from '$lib/remote/products.remote';
 	import * as Table from '$lib/components/ui/table';
 	import { currency } from '$lib/utils/currency';
 	import type { Product } from '$lib/types/product.schema';
 
-	// Get products using TanStack Query hook
-	const { products, isLoading, isError, error } = useProducts();
-
-	// Sort once by internal created_at DESC and take the first 10 rows.
-	const recentProducts = $derived(
-		products()
-			.slice() // Create a shallow copy to avoid mutating the original
-			.sort((a: Product, b: Product) => {
-				const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
-				const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
-				return bDate - aDate;
-			})
-			.slice(0, 10)
-	);
+	// Get products using remote function
+	const productsQuery = getProducts();
 </script>
 
 <Table.Root>
@@ -31,38 +19,48 @@
 		</Table.Row>
 	</Table.Header>
 	<Table.Body>
-		{#if isLoading()}
+		{#await productsQuery}
 			<Table.Row>
 				<Table.Cell colspan={5} class="text-center">Loading products...</Table.Cell>
 			</Table.Row>
-		{:else if isError()}
+		{:then data}
+			{@const recentProducts = data.products
+				.slice() // Create a shallow copy to avoid mutating the original
+				.sort((a: Product, b: Product) => {
+					const aDate = a.created_at ? new Date(a.created_at).getTime() : 0;
+					const bDate = b.created_at ? new Date(b.created_at).getTime() : 0;
+					return bDate - aDate;
+				})
+				.slice(0, 10)}
+			{#if recentProducts.length > 0}
+				{#each recentProducts as product (product.id)}
+					<Table.Row>
+						<Table.Cell>
+							<img
+								src={product.image_url || 'https://via.placeholder.com/40'}
+								alt={product.name}
+								class="h-10 w-10 rounded-full object-cover"
+							/>
+						</Table.Cell>
+						<Table.Cell class="font-bold">{product.name}</Table.Cell>
+						<Table.Cell class="font-mono">{product.sku}</Table.Cell>
+						<Table.Cell class="text-right">{product.stock_quantity}</Table.Cell>
+						<Table.Cell class="text-right">{currency(product.selling_price)}</Table.Cell>
+					</Table.Row>
+				{/each}
+			{:else}
+				<Table.Row>
+					<Table.Cell colspan={5} class="text-center">
+						No products yet. Add one to see it here.
+					</Table.Cell>
+				</Table.Row>
+			{/if}
+		{:catch error}
 			<Table.Row>
 				<Table.Cell colspan={5} class="text-center text-red-500">
-					Error loading products: {error()?.message || 'Unknown error'}
+					Error loading products: {error.message || 'Unknown error'}
 				</Table.Cell>
 			</Table.Row>
-		{:else if recentProducts.length > 0}
-			{#each recentProducts as product (product.id)}
-				<Table.Row>
-					<Table.Cell>
-						<img
-							src={product.image_url || 'https://via.placeholder.com/40'}
-							alt={product.name}
-							class="h-10 w-10 rounded-full object-cover"
-						/>
-					</Table.Cell>
-					<Table.Cell class="font-bold">{product.name}</Table.Cell>
-					<Table.Cell class="font-mono">{product.sku}</Table.Cell>
-					<Table.Cell class="text-right">{product.stock_quantity}</Table.Cell>
-					<Table.Cell class="text-right">{currency(product.selling_price)}</Table.Cell>
-				</Table.Row>
-			{/each}
-		{:else}
-			<Table.Row>
-				<Table.Cell colspan={5} class="text-center">
-					No products yet. Add one to see it here.
-				</Table.Cell>
-			</Table.Row>
-		{/if}
+		{/await}
 	</Table.Body>
 </Table.Root>

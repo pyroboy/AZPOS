@@ -20,6 +20,7 @@ export const productInputSchema = z.object({
 	stock_quantity: z.number().min(0).int(),
 	min_stock_level: z.number().min(0).int().optional(),
 	max_stock_level: z.number().min(0).int().optional(),
+	reorder_point: z.number().min(0).int().optional(),
 	barcode: z.string().optional(),
 	image_url: z.string().url().optional(),
 	is_active: z.boolean().default(true),
@@ -37,7 +38,8 @@ export const productInputSchema = z.object({
 		.optional(),
 	tax_rate: z.number().min(0).max(1).optional(),
 	discount_eligible: z.boolean().default(true),
-	track_inventory: z.boolean().default(true)
+	track_inventory: z.boolean().default(true),
+	aisle_location: z.string().optional()
 });
 
 // Full product schema (from database)
@@ -142,6 +144,30 @@ export const productAnalyticsSchema = z.object({
 	profit_margin: z.number(),
 	velocity: z.number(), // Sales per time period
 	trend: z.enum(['up', 'down', 'stable'])
+});
+
+// Schema for updating a product (combines productId and productData)
+export const updateProductSchema = z.object({
+	productId: z.string(),
+	productData: productInputSchema.partial()
+});
+
+// Schema for bulk updating products (combines productIds and updates)
+export const bulkUpdateProductsSchema = z.object({
+	productIds: z.array(z.string()),
+	updates: productInputSchema.partial()
+});
+
+// Schema for adjusting stock (combines productId, adjustment, and reason)
+export const adjustStockSchema = z.object({
+	productId: z.string(),
+	adjustment: z.number(),
+	reason: z.string().optional()
+});
+
+// Schema for deleting a product (combines productId)
+export const deleteProductSchema = z.object({
+	productId: z.string()
 });
 
 // Export inferred types

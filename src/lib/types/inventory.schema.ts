@@ -89,7 +89,7 @@ export const inventoryFiltersSchema = z.object({
 	expiring_soon: z.boolean().optional(), // Within 30 days
 	batch_number: z.string().optional(),
 	search: z.string().optional(),
-	sort_by: z.enum(['product_name', 'quantity', 'value', 'last_movement', 'expiry_date']).optional(),
+	sort_by: z.enum(['product_name', 'quantity', 'last_movement', 'created_at', 'updated_at']).optional(),
 	sort_order: z.enum(['asc', 'desc']).optional()
 });
 
@@ -154,6 +154,12 @@ export const inventoryAlertSchema = z.object({
 	acknowledged_by: z.string().optional(),
 	acknowledged_at: z.string().datetime().optional(),
 	created_at: z.string().datetime()
+});
+
+// Schema for inventory movements filter
+export const inventoryMovementsFilterSchema = z.object({
+	productId: z.string().optional(),
+	locationId: z.string().optional()
 });
 
 // Export inferred types

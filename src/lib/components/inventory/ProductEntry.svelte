@@ -2,11 +2,10 @@
 	import { z } from 'zod';
 	import { superForm } from 'sveltekit-superforms/client';
 	import { zod } from 'sveltekit-superforms/adapters';
-	import { productSchema } from '$lib/schemas/models';
-	import type { Product, Supplier } from '$lib/schemas/models';
-	import { useProducts } from '$lib/data/product';
-	import { useSuppliers } from '$lib/data/supplier.svelte';
-	import { useCategories } from '$lib/data/category.svelte';
+	import { productInputSchema, type Product, type ProductInput } from '$lib/types/product.schema';
+	import { getProducts, createProduct } from '$lib/remote/products.remote';
+	import { getSuppliers } from '$lib/remote/suppliers.remote';
+	import { getCategories } from '$lib/remote/categories.remote';
 	import { Button } from '$lib/components/ui/button/index.js';
 	import { Input } from '$lib/components/ui/input/index.js';
 	import { Label } from '$lib/components/ui/label/index.js';
@@ -25,12 +24,11 @@
 	let imageUrlPreview = $state('');
 	let skuStatus: 'idle' | 'checking' | 'taken' | 'available' = $state('idle');
 
-	// Get data and actions from the hooks
-	const { products, createProduct, isCreating } = useProducts();
-
-	const { suppliers, isLoading: isSuppliersLoading } = useSuppliers();
-
-	const { categories, isLoading: isCategoriesLoading } = useCategories();
+	// Remote function data fetching
+	const productsQuery = getProducts();
+	const suppliersQuery = getSuppliers();
+	const categoriesQuery = getCategories();
+	let isCreating = $state(false);
 
 	// Variant state
 	let enableVariants = $state(false);
@@ -43,22 +41,7 @@
 	let selectedComponents: BundleComponent[] = $state([]);
 	let bundleSearchTerm = $state('');
 
-	let bundleSearchResults = $derived(
-		(() => {
-			if (!bundleSearchTerm) return [];
-			const lowerCaseSearch = bundleSearchTerm.toLowerCase();
-			const selectedIds = new Set(selectedComponents.map((c) => c.id));
-
-		return products()
-				.filter(
-					(p: Product) =>
-						!selectedIds.has(p.id) &&
-						(p.name.toLowerCase().includes(lowerCaseSearch) ||
-							p.sku.toLowerCase().includes(lowerCaseSearch))
-				)
-				.slice(0, 10); // Limit results for performance
-		})()
-	);
+	// Bundle search will be handled in template with await pattern
 
 	const addBundleComponent = (product: Product) => {
 		selectedComponents = [...selectedComponents, { ...product, quantity: 1 }];
@@ -115,70 +98,78 @@
 		})()
 	);
 
-	const checkSkuUniqueness = (sku: string) => {
+	const checkSkuUniqueness = async (sku: string) => {
 		if (!sku || sku.length < 3) {
 			skuStatus = 'idle';
 			return;
 		}
 		skuStatus = 'checking';
-		const isTaken = products().some((p: Product) => p.sku.toLowerCase() === sku.toLowerCase());
-		setTimeout(() => {
-			// Simulate network latency
+		try {
+			const data = await productsQuery;
+			const isTaken = data?.products?.some((p: Product) => p.sku.toLowerCase() === sku.toLowerCase());
 			skuStatus = isTaken ? 'taken' : 'available';
-		}, 500);
+		} catch (error) {
+			skuStatus = 'idle';
+		}
 	};
 
 	const debouncedSkuCheck = debounce(checkSkuUniqueness, 300);
 
-	const defaultData: z.infer<typeof productSchema> = {
-		id: '',
-		sku: '',
+	const defaultData: z.infer<typeof productInputSchema> = {
 		name: '',
+		sku: '',
 		description: '',
 		category_id: '',
 		supplier_id: '',
-		price: 0,
-		average_cost: 0,
-		base_unit: 'piece',
-		product_type: 'standard',
-		storage_requirement: 'room_temperature',
-		image_url: '',
-		aisle: '',
+		cost_price: 0,
+		selling_price: 0,
+		stock_quantity: 0,
+		min_stock_level: 0,
+		max_stock_level: 100,
 		reorder_point: 0,
-		requires_batch_tracking: false,
+		barcode: '',
+		image_url: '',
+		is_active: true,
 		is_archived: false,
-		stock: 0,
-		created_at: '',
-		updated_at: ''
+		is_bundle: false,
+		bundle_components: [],
+		tags: [],
+		weight: 0,
+		dimensions: undefined,
+		tax_rate: 0,
+		discount_eligible: true,
+		track_inventory: true,
+		aisle_location: ''
 	};
 
 	const form = superForm(defaultData, {
-		validators: zod(productSchema),
-		onUpdated: ({ form }) => {
+		validators: zod(productInputSchema),
+		onUpdated: async ({ form }) => {
 			if (form.valid) {
-				const productData = {
-					...$formData,
-					sku: $formData.sku,
-					price: Number($formData.price) || 0,
-					bundle_components:
-						enableBundle && selectedComponents.length > 0
-							? selectedComponents.map((c) => ({ product_id: c.id, quantity: c.quantity }))
-							: undefined
-				};
+				isCreating = true;
+				try {
+					const productData = {
+						...$formData,
+						selling_price: Number($formData.selling_price) || 0,
+						cost_price: Number($formData.cost_price) || 0,
+						bundle_components:
+							enableBundle && selectedComponents.length > 0
+								? selectedComponents.map((c) => ({ product_id: c.id, quantity: c.quantity }))
+								: undefined
+					};
 
-				createProduct(productData, {
-					onSuccess: () => {
-						toast.success(`Product "${$formData.name}" has been added.`);
-						if (closeOnSave) {
-							open = false; // Close dialog on success
-						} else {
-							resetComponentState();
-						}
-					},
-					onError: (error: any) => {
-						toast.error(`Failed to add product: ${error.message}`);
+					await createProduct(productData);
+					toast.success(`Product "${$formData.name}" has been added.`);
+					if (closeOnSave) {
+						open = false; // Close dialog on success
+					} else {
+						resetComponentState();
 					}
-				});
+				} catch (error: any) {
+					toast.error(`Failed to add product: ${error.message}`);
+				} finally {
+					isCreating = false;
+				}
 			}
 		}
 	});
@@ -199,29 +190,24 @@
 	// DERIVED STATE & EFFECTS HOOKED TO FORM DATA
 	// These must be declared *after* `formData` is initialized by `superForm`.
 
-	const selectedSupplier = $derived(
-		suppliers.find((s: Supplier) => s.id === $formData.supplier_id)
-	);
-	const selectedSupplierLabel = $derived(selectedSupplier?.name ?? 'Select a supplier');
-	const selectedCategory = $derived(categories.find((c: any) => c.id === $formData.category_id));
-	const selectedCategoryLabel = $derived(selectedCategory?.name ?? 'Select a category');
+	// Derived state will be computed in template with await pattern
 
 	$effect(() => {
 		// A product can be a variant or a bundle, but not both.
 		if (enableVariants) {
 			enableBundle = false;
-			$formData.product_type = 'variant';
+			// Note: product_type field removed from new schema
 		} else if (!enableBundle) {
-			$formData.product_type = 'standard';
+			// Note: product_type field removed from new schema
 		}
 	});
 
 	$effect(() => {
 		if (enableBundle) {
 			enableVariants = false;
-			$formData.product_type = 'bundle';
+			$formData.is_bundle = true;
 		} else if (!enableVariants) {
-			$formData.product_type = 'standard';
+			$formData.is_bundle = false;
 		}
 	});
 
@@ -304,36 +290,64 @@
 							<div class="grid md:grid-cols-2 gap-6">
 								<div class="grid gap-2">
 									<Label for="category_id">Category</Label>
-									<Select.Root type="single" bind:value={$formData.category_id}>
-										<Select.Trigger class="w-full">
-											{selectedCategoryLabel}
-										</Select.Trigger>
-										<Select.Content>
-											{#each categories as category}
-												<Select.Item value={category.id} label={category.name}
-													>{category.name}</Select.Item
-												>
-											{/each}
-										</Select.Content>
-									</Select.Root>
+									{#await categoriesQuery}
+										<Select.Root type="single" bind:value={$formData.category_id}>
+											<Select.Trigger class="w-full">
+												Loading categories...
+											</Select.Trigger>
+											<Select.Content>
+												<!-- Loading state -->
+											</Select.Content>
+										</Select.Root>
+									{:then categories}
+										{@const selectedCategory = categories.find(c => c.id === $formData.category_id)}
+										<Select.Root type="single" bind:value={$formData.category_id}>
+											<Select.Trigger class="w-full">
+												{selectedCategory?.name ?? 'Select a category'}
+											</Select.Trigger>
+											<Select.Content>
+												{#each categories as category}
+													<Select.Item value={category.id} label={category.name}
+														>{category.name}</Select.Item
+													>
+												{/each}
+											</Select.Content>
+										</Select.Root>
+									{:catch error}
+										<p class="text-sm text-destructive">Error loading categories: {error.message}</p>
+									{/await}
 									{#if $errors.category_id}<span class="text-sm text-destructive"
 											>{$errors.category_id[0]}</span
 										>{/if}
 								</div>
 								<div class="grid gap-2">
 									<Label for="supplier_id">Supplier</Label>
-									<Select.Root type="single" bind:value={$formData.supplier_id}>
-										<Select.Trigger class="w-full">
-											{selectedSupplierLabel}
-										</Select.Trigger>
-										<Select.Content>
-											{#each suppliers as supplier}
-												<Select.Item value={supplier.id} label={supplier.name}
-													>{supplier.name}</Select.Item
-												>
-											{/each}
-										</Select.Content>
-									</Select.Root>
+									{#await suppliersQuery}
+										<Select.Root type="single" bind:value={$formData.supplier_id}>
+											<Select.Trigger class="w-full">
+												Loading suppliers...
+											</Select.Trigger>
+											<Select.Content>
+												<!-- Loading state -->
+											</Select.Content>
+										</Select.Root>
+									{:then suppliers}
+										{@const selectedSupplier = suppliers.find(s => s.id === $formData.supplier_id)}
+										<Select.Root type="single" bind:value={$formData.supplier_id}>
+											<Select.Trigger class="w-full">
+												{selectedSupplier?.name ?? 'Select a supplier'}
+											</Select.Trigger>
+											<Select.Content>
+												{#each suppliers as supplier}
+													<Select.Item value={supplier.id} label={supplier.name}
+														>{supplier.name}</Select.Item
+													>
+												{/each}
+											</Select.Content>
+										</Select.Root>
+									{:catch error}
+										<p class="text-sm text-destructive">Error loading suppliers: {error.message}</p>
+									{/await}
 
 									{#if $errors.supplier_id}<span class="text-sm text-destructive"
 											>{$errors.supplier_id[0]}</span
@@ -341,16 +355,29 @@
 								</div>
 								<div class="grid grid-cols-2 gap-4">
 									<div class="grid gap-2">
-										<Label for="price">Price</Label>
+										<Label for="selling_price">Selling Price</Label>
 										<Input
-											id="price"
-											name="price"
+											id="selling_price"
+											name="selling_price"
 											type="number"
 											step="0.01"
-											bind:value={$formData.price}
+											bind:value={$formData.selling_price}
 										/>
-										{#if $errors.price}<span class="text-sm text-destructive"
-												>{$errors.price[0]}</span
+										{#if $errors.selling_price}<span class="text-sm text-destructive"
+												>{$errors.selling_price[0]}</span
+											>{/if}
+									</div>
+									<div class="grid gap-2">
+										<Label for="cost_price">Cost Price</Label>
+										<Input
+											id="cost_price"
+											name="cost_price"
+											type="number"
+											step="0.01"
+											bind:value={$formData.cost_price}
+										/>
+										{#if $errors.cost_price}<span class="text-sm text-destructive"
+												>{$errors.cost_price[0]}</span
 											>{/if}
 									</div>
 								</div>
@@ -498,22 +525,34 @@
 							</p>
 							<div class="relative">
 								<Input placeholder="Search for products to add..." bind:value={bundleSearchTerm} />
-								{#if bundleSearchResults.length > 0 && bundleSearchTerm}
-									<div
-										class="absolute z-10 w-full bg-background border rounded-md mt-1 max-h-60 overflow-y-auto"
-									>
-										{#each bundleSearchResults as product}
-											<button
-												type="button"
-												onclick={() => addBundleComponent(product)}
-												class="w-full text-left p-2 hover:bg-muted text-sm"
-											>
-												{product.name}
-												<span class="text-xs text-muted-foreground">({product.sku})</span>
-											</button>
-										{/each}
-									</div>
-								{/if}
+								{#await productsQuery}
+									<!-- Loading state -->
+								{:then data}
+									{@const filteredProducts = bundleSearchTerm.length > 2 
+										? data.products.filter(p => 
+											p.name.toLowerCase().includes(bundleSearchTerm.toLowerCase()) || 
+											p.sku.toLowerCase().includes(bundleSearchTerm.toLowerCase())
+										).slice(0, 10)
+										: []}
+									{#if filteredProducts.length > 0 && bundleSearchTerm}
+										<div
+											class="absolute z-10 w-full bg-background border rounded-md mt-1 max-h-60 overflow-y-auto"
+										>
+											{#each filteredProducts as product}
+												<button
+													type="button"
+													onclick={() => addBundleComponent(product)}
+													class="w-full text-left p-2 hover:bg-muted text-sm"
+												>
+													{product.name}
+													<span class="text-xs text-muted-foreground">({product.sku})</span>
+												</button>
+											{/each}
+										</div>
+									{/if}
+								{:catch error}
+									<!-- Error state -->
+								{/await}
 							</div>
 
 							{#if selectedComponents.length > 0}

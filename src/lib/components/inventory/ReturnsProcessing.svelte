@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useReturns } from '$lib/data/returns.svelte';
+	// import { useReturns } from '$lib/data/returns.svelte'; // Temporarily disabled
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
 	import { Button } from '$lib/components/ui/button';
@@ -9,7 +9,8 @@
 	import type { EnhancedReturnRecord } from '$lib/types/returns.schema';
 
 	// Get returns using TanStack Query hook
-	const { returns, isLoading, isError, error } = useReturns();
+	// const { returns, isLoading, isError, error } = useReturns(); // Temporarily disabled
+	const returns: EnhancedReturnRecord[] = []; // Mock data
 
 	let searchTerm = $state('');
 	let isModalOpen = $state(false);

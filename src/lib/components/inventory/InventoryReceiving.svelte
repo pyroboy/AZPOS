@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { usePurchaseOrders } from '$lib/data/purchaseOrder.svelte';
+	// import { usePurchaseOrders } from '$lib/data/purchaseOrder.svelte'; // Temporarily disabled
 	import type { PurchaseOrder } from '$lib/types/purchaseOrder.schema';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
@@ -12,10 +12,14 @@
 	let selectedPO: PurchaseOrder | null = $state(null);
 
 	// Get data and actions from the hook
-	const { purchaseOrdersQuery, purchaseOrders, isLoading, error } = usePurchaseOrders({
-		status: 'approved'
-	}); // Note: May need to adjust filter logic based on actual hook implementation
+	// Temporarily disable TanStack Query
+	// const { purchaseOrdersQuery, purchaseOrders, isLoading, error } = usePurchaseOrders({
+	//	status: 'approved'
+	// }); // Note: May need to adjust filter logic based on actual hook implementation
 
+	// Temporary mock data
+	const purchaseOrders: PurchaseOrder[] = [];
+	
 	const filteredPOs = $derived(
 		purchaseOrders.filter((po: PurchaseOrder) => {
 			const search = searchTerm.toLowerCase();
@@ -81,17 +85,19 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				{#if $purchaseOrdersQuery.isPending}
-					<Table.Row>
-						<Table.Cell colspan={6} class="h-24 text-center">Loading purchase orders...</Table.Cell>
-					</Table.Row>
-				{:else if $purchaseOrdersQuery.isError}
-					<Table.Row>
-						<Table.Cell colspan={6} class="h-24 text-center text-destructive">
-							Error: {$purchaseOrdersQuery.error?.message || 'Failed to load purchase orders'}
-						</Table.Cell>
-					</Table.Row>
-				{:else if filteredPOs.length === 0}
+				<!-- Temporarily disabled TanStack Query states -->
+				<!-- {#if $purchaseOrdersQuery.isPending} -->
+				<!--	<Table.Row> -->
+				<!--		<Table.Cell colspan={6} class="h-24 text-center">Loading purchase orders...</Table.Cell> -->
+				<!--	</Table.Row> -->
+				<!-- {:else if $purchaseOrdersQuery.isError} -->
+				<!--	<Table.Row> -->
+				<!--		<Table.Cell colspan={6} class="h-24 text-center text-destructive"> -->
+				<!--			Error: {$purchaseOrdersQuery.error?.message || 'Failed to load purchase orders'} -->
+				<!--		</Table.Cell> -->
+				<!--	</Table.Row> -->
+				<!-- {:else  -->
+				{#if filteredPOs.length === 0}
 					<Table.Row>
 						<Table.Cell colspan={6} class="h-24 text-center">No purchase orders found.</Table.Cell>
 					</Table.Row>

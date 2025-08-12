@@ -7,9 +7,7 @@
 	import { Label } from '$lib/components/ui/label';
 	import { Textarea } from '$lib/components/ui/textarea';
 	import * as ToggleGroup from '$lib/components/ui/toggle-group';
-	import { usePurchaseOrders } from '$lib/data/purchaseOrder.svelte';
-	import { useInventory } from '$lib/data/inventory';
-	import { useProductBatches } from '$lib/data/productBatch.svelte';
+	import { createInventoryMovement } from '$lib/remote/inventory.remote';
 	import { toast } from 'svelte-sonner';
 	import { cn } from '$lib/utils';
 	import * as Table from '$lib/components/ui/table';
@@ -43,15 +41,18 @@
 	let notes = $state('');
 	let isSubmitting = $state(false);
 
-	// Initialize data hooks
-	const purchaseOrdersHook = usePurchaseOrders();
-	const inventoryHook = useInventory();
-	const productBatchesHook = useProductBatches();
-
-	// Extract reactive data from hooks
-	const { updatePurchaseOrder } = purchaseOrdersHook;
-	const { createBatch } = productBatchesHook;
-	const inventoryData = $derived(inventoryHook.inventoryQuery.data ?? []);
+	let isProcessing = $state(false);
+	
+	// Functions will be implemented with remote functions
+	async function updatePurchaseOrder(data: any) {
+		// TODO: Implement with remote function
+		console.log('Updating purchase order:', data);
+	}
+	
+	async function createBatch(data: any) {
+		// TODO: Implement with remote function  
+		console.log('Creating batch:', data);
+	}
 
 	$effect(() => {
 		if (po) {

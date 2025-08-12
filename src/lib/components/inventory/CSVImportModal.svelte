@@ -1,6 +1,6 @@
 <script lang="ts">
-	import { useProducts } from '$lib/data/product';
-	import { useInventory } from '$lib/data/inventory';
+	import { getProducts } from '$lib/remote/products.remote';
+	import { createInventoryMovement } from '$lib/remote/inventory.remote';
 	import type { CsvAdjustment } from '$lib/schemas/models';
 	import { Button } from '$lib/components/ui/button';
 	import {
@@ -27,10 +27,10 @@
 	} = $props();
 
 	// Use data hooks instead of stores
-	const { activeProducts } = useProducts();
-	const { createMovement, isCreatingMovement } = useInventory();
+	const productsQuery = getProducts();
+	let isProcessing = $state(false);
 
-	const allProducts = $derived(activeProducts);
+	// Data will be computed in template
 	const validReasons = Object.values(adjustmentReasons);
 
 	let selectedFile = $state<File | null>(null);

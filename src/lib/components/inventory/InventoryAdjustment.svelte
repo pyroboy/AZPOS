@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useInventory } from '$lib/data/inventory';
+	import { getInventoryItems } from '$lib/remote/inventory.remote';
 	import type { InventoryItem } from '$lib/types/inventory.schema';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
@@ -9,8 +9,8 @@
 	import { Checkbox } from '$lib/components/ui/checkbox';
 	import { Label } from '$lib/components/ui/label';
 
-	// Use data hooks instead of stores
-	const { inventoryItems } = useInventory();
+	// Use remote functions
+	const inventoryQuery = getInventoryItems({});
 
 	let searchTerm = $state('');
 	let isModalOpen = $state(false);
@@ -18,24 +18,11 @@
 	let isBulkMode = $state(false);
 	let selectedProductIds = $state(new Set<string>());
 
-	const filteredProducts = $derived(
-		inventoryItems().filter((item: InventoryItem) => {
-			const search = searchTerm.toLowerCase();
-			// Note: inventory items may need product info joined
-			// This is a simplified version - you may need to adjust based on your data structure
-			return (
-				item.product_id.toLowerCase().includes(search) ||
-				(item.batch_number && item.batch_number.toLowerCase().includes(search))
-			);
-		})
-	);
+	// Will be computed in template
 
-	const areAllFilteredSelected = $derived(
-		filteredProducts.length > 0 &&
-			filteredProducts.every((item: InventoryItem) => selectedProductIds.has(item.id))
-	);
+	// Will be computed in template
 
-	function toggleSelectAll() {
+	function toggleSelectAll(filteredProducts: any[], areAllFilteredSelected: boolean) {
 		if (areAllFilteredSelected) {
 			filteredProducts.forEach((item: InventoryItem) => selectedProductIds.delete(item.id));
 		} else {
@@ -76,7 +63,22 @@
 	});
 </script>
 
-<div class="p-4 space-y-4">
+{#await inventoryQuery}
+	<div class="p-4 space-y-4">
+		<div class="text-center">Loading inventory...</div>
+	</div>
+{:then inventoryData}
+	{@const inventoryItems = inventoryData.inventory_items}
+	{@const filteredProducts = inventoryItems.filter((item) => {
+		const search = searchTerm.toLowerCase();
+		return (
+			item.product_id.toLowerCase().includes(search) ||
+			(item.batch_number && item.batch_number.toLowerCase().includes(search))
+		);
+	})}
+	{@const areAllFilteredSelected = filteredProducts.length > 0 && 
+		filteredProducts.every((item) => selectedProductIds.has(item.id))}
+	<div class="p-4 space-y-4">
 	<div class="flex justify-between items-center">
 		<h1 class="text-2xl font-bold">Inventory Adjustments</h1>
 		<div class="flex items-center space-x-4">
@@ -102,7 +104,7 @@
 				<Table.Row>
 					{#if isBulkMode}
 						<Table.Head class="w-[50px]">
-							<Checkbox onclick={toggleSelectAll} checked={areAllFilteredSelected} />
+							<Checkbox onclick={() => toggleSelectAll(filteredProducts, areAllFilteredSelected)} checked={areAllFilteredSelected} />
 						</Table.Head>
 					{/if}
 					<Table.Head class="w-[150px]">Product ID</Table.Head>
@@ -158,6 +160,13 @@
 		</Table.Root>
 	</div>
 </div>
+{:catch error}
+	<div class="p-4 space-y-4">
+		<div class="text-center text-red-500">
+			Error loading inventory: {error.message}
+		</div>
+	</div>
+{/await}
 
 <AdjustmentModal
 	bind:open={isModalOpen}

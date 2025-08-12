@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { useProducts } from '$lib/data/product';
 	import * as Table from '$lib/components/ui/table/index.js';
 	import ImagePreview from '$lib/components/inventory/ImagePreview.svelte';
 	import { Checkbox } from '$lib/components/ui/checkbox';
