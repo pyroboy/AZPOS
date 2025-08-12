@@ -15,27 +15,24 @@
 	let {
 		open = $bindable(),
 		productIds,
-		categories = [],
 		onClose
 	} = $props<{
 		open: boolean;
 		productIds: string[];
-		categories?: Category[];
 		onClose?: () => void;
 	}>();
 
 	// Get data using remote functions
 	const productsQuery = getProducts();
 	const inventoryQuery = getInventoryItems({});
+	const categoriesQuery = getCategories();
 
 	let category_id = $state('');
 	let reorderPoint = $state<number | undefined>(undefined);
-	let requiresBatchTracking = $state<'yes' | 'no' | 'indeterminate'>('indeterminate');
+	let trackInventory = $state<'yes' | 'no' | 'indeterminate'>('indeterminate');
 	let price = $state<number | undefined>(undefined);
 
-	const selectedCategoryLabel = $derived(
-		categories.find((category: Category) => category.id === category_id)?.name
-	);
+	// This will be computed in template context with await pattern
 	const selectedProductsCount = $derived(productIds.length);
 
 	$effect(() => {
@@ -43,7 +40,7 @@
 			// Reset form when dialog closes
 			category_id = '';
 			reorderPoint = undefined;
-			requiresBatchTracking = 'indeterminate';
+			trackInventory = 'indeterminate';
 			price = undefined;
 		}
 	});
@@ -65,10 +62,10 @@
 				updates.category_id = category_id.trim();
 			}
 			if (reorderPoint !== undefined && reorderPoint !== null) {
-				(updates as any).reorder_point = reorderPoint;
+				updates.reorder_point = reorderPoint;
 			}
-			if (requiresBatchTracking !== 'indeterminate') {
-				(updates as any).requires_batch_tracking = requiresBatchTracking === 'yes';
+			if (trackInventory !== 'indeterminate') {
+				updates.track_inventory = trackInventory === 'yes';
 			}
 			if (price !== undefined && price !== null) {
 				updates.selling_price = price;
@@ -86,7 +83,7 @@
 			// Reset form and close modal
 			category_id = '';
 			reorderPoint = undefined;
-			requiresBatchTracking = 'indeterminate';
+			trackInventory = 'indeterminate';
 			price = undefined;
 			open = false;
 			onClose?.();
@@ -112,16 +109,28 @@
 			<div class="grid grid-cols-4 items-center gap-4">
 				<Label for="category_id" class="text-right">Category</Label>
 				<div class="col-span-3">
-					<Select.Root type="single" bind:value={category_id}>
-						<Select.Trigger class="w-full" disabled={isSubmitting}>
-							{selectedCategoryLabel || 'Select category...'}
-						</Select.Trigger>
-						<Select.Content>
-							{#each categories as category}
-								<Select.Item value={category.id} label={category.name}>{category.name}</Select.Item>
-							{/each}
-						</Select.Content>
-					</Select.Root>
+					{#await categoriesQuery}
+						<Select.Root type="single" bind:value={category_id} disabled>
+							<Select.Trigger class="w-full">
+								Loading categories...
+							</Select.Trigger>
+							<Select.Content></Select.Content>
+						</Select.Root>
+					{:then categories}
+						{@const selectedCategoryLabel = categories.find(c => c.id === category_id)?.name}
+						<Select.Root type="single" bind:value={category_id}>
+							<Select.Trigger class="w-full" disabled={isSubmitting}>
+								{selectedCategoryLabel || 'Select category...'}
+							</Select.Trigger>
+							<Select.Content>
+								{#each categories as category}
+									<Select.Item value={category.id} label={category.name}>{category.name}</Select.Item>
+								{/each}
+							</Select.Content>
+						</Select.Root>
+					{:catch error}
+						<p class="text-sm text-destructive">Error loading categories: {error.message}</p>
+					{/await}
 				</div>
 			</div>
 			<div class="grid grid-cols-4 items-center gap-4">
@@ -137,26 +146,26 @@
 				/>
 			</div>
 			<div class="grid grid-cols-4 items-center gap-4">
-				<Label for="requires-batch-tracking" class="text-right">Batch Tracking</Label>
+				<Label for="track-inventory" class="text-right">Track Inventory</Label>
 				<div class="col-span-3 flex items-center space-x-2">
 					<Switch.Root
-						id="requires-batch-tracking"
-						checked={requiresBatchTracking === 'yes'}
-						data-state={requiresBatchTracking === 'indeterminate'
+						id="track-inventory"
+						checked={trackInventory === 'yes'}
+						data-state={trackInventory === 'indeterminate'
 							? 'indeterminate'
-							: requiresBatchTracking === 'yes'
+							: trackInventory === 'yes'
 								? 'checked'
 							: 'unchecked'}
 					disabled={isSubmitting}
 					onCheckedChange={(checked) => {
-							requiresBatchTracking = checked ? 'yes' : 'no';
+							trackInventory = checked ? 'yes' : 'no';
 						}}
 					/>
 					<span class="text-sm text-muted-foreground">
-						{#if requiresBatchTracking === 'indeterminate'}
+						{#if trackInventory === 'indeterminate'}
 							Mixed
 						{:else}
-							{requiresBatchTracking === 'yes' ? 'Enabled' : 'Disabled'}
+							{trackInventory === 'yes' ? 'Enabled' : 'Disabled'}
 						{/if}
 					</span>
 				</div>

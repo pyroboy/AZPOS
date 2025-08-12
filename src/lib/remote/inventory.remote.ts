@@ -26,7 +26,7 @@ function getAuthenticatedUser(required = true) {
 // Remote query to get inventory items with filters
 export const getInventoryItems = query(
 	inventoryFiltersSchema.optional(), // Pass schema as first argument
-	async (validatedFilters): Promise<InventoryItem[]> => {
+	async (validatedFilters): Promise<{ inventory_items: InventoryItem[] }> => {
 		console.log('📦 [REMOTE - getInventoryItems] Starting inventory items query with validated filters:', validatedFilters);
 		
 		const user = getAuthenticatedUser(false); // Optional for read operations
@@ -106,22 +106,32 @@ export const getInventoryItems = query(
 		console.log('✅ [REMOTE - getInventoryItems] Supabase returned', items?.length || 0, 'inventory items');
 		console.log('📋 [REMOTE - getInventoryItems] Sample item:', items?.[0] ? { id: items[0].id, product_id: items[0].product_id, quantity_available: items[0].quantity_available } : 'No items');
 
-		return (
-			items?.map((item) => ({
-				id: item.id,
-				product_id: item.product_id,
-				location_id: item.location_id,
-				batch_id: item.batch_id, // Use correct field name
-				quantity_on_hand: item.quantity_on_hand,
-				quantity_reserved: item.quantity_reserved,
-				quantity_available: item.quantity_available,
-				cost_per_unit: item.cost_per_unit,
-				last_counted_at: item.last_counted_at,
-				last_movement_at: item.last_movement_at,
-				created_at: item.created_at,
-				updated_at: item.updated_at
-			})) || []
-		);
+		const inventory_items = items?.map((item) => ({
+			id: item.id,
+			product_id: item.product_id,
+			location_id: item.location_id,
+			batch_id: item.batch_id, // Use correct field name
+			batch_number: item.batch_id, // Also add for component compatibility
+			quantity_on_hand: item.quantity_on_hand,
+			quantity_reserved: item.quantity_reserved,
+			quantity_available: item.quantity_available,
+			cost_per_unit: item.cost_per_unit ? parseFloat(item.cost_per_unit.toString()) : 0,
+			last_counted_at: item.last_counted_at,
+			last_movement_at: item.last_movement_at,
+			created_at: item.created_at,
+			updated_at: item.updated_at,
+			// Include product info for easier access
+			product: item.products
+		})) || [];
+
+		console.log('✅ [REMOTE - getInventoryItems] Transformed data structure:', {
+			total_items: inventory_items.length,
+			sample_item: inventory_items[0]
+		});
+
+		return {
+			inventory_items
+		};
 	}
 );
 

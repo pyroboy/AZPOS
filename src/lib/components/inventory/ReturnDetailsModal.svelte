@@ -7,9 +7,7 @@
 	import * as Table from '$lib/components/ui/table';
 	import { toast } from 'svelte-sonner';
 
-	// Get TanStack Query hook for updating returns
-	// const { updateStatus, isUpdating } = useReturns(); // Temporarily disabled
-	const isUpdating = false; // Mock state
+	import { updateReturnStatus } from '$lib/remote/returns.remote';
 
 	let {
 		open = $bindable(false),
@@ -22,20 +20,46 @@
 	} = $props();
 
 	let rejectionNotes = $state('');
+	let isUpdating = $state(false);
 
-	function approveReturn() {
+	async function approveReturn() {
 		if (!record) return;
-		updateStatus({ id: record.id, status: 'approved' });
-		toast.success(`Return ${record.id} has been approved.`);
-		onClose();
+		
+		isUpdating = true;
+		try {
+			await updateReturnStatus({ 
+				return_id: record.id, 
+				status: 'approved' 
+			});
+			toast.success(`Return ${record.id} has been approved.`);
+			onClose();
+		} catch (error) {
+			console.error('Failed to approve return:', error);
+			toast.error(`Failed to approve return: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		} finally {
+			isUpdating = false;
+		}
 	}
 
-	function rejectReturn() {
+	async function rejectReturn() {
 		if (!record) return;
-		updateStatus({ id: record.id, status: 'rejected', admin_notes: rejectionNotes });
-		toast.error(`Return ${record.id} has been rejected.`);
-		rejectionNotes = '';
-		onClose();
+		
+		isUpdating = true;
+		try {
+			await updateReturnStatus({ 
+				return_id: record.id, 
+				status: 'rejected', 
+				admin_notes: rejectionNotes 
+			});
+			toast.success(`Return ${record.id} has been rejected.`);
+			rejectionNotes = '';
+			onClose();
+		} catch (error) {
+			console.error('Failed to reject return:', error);
+			toast.error(`Failed to reject return: ${error instanceof Error ? error.message : 'Unknown error'}`);
+		} finally {
+			isUpdating = false;
+		}
 	}
 </script>
 
@@ -68,8 +92,7 @@
 								pending: 'secondary',
 								approved: 'success',
 								rejected: 'destructive',
-								completed: 'default',
-								processing: 'default'
+								processed: 'default'
 							}[record.status] as 'secondary' | 'success' | 'destructive' | 'default'}
 						>
 							{record.status}

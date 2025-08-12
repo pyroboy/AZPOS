@@ -1,5 +1,5 @@
 <script lang="ts">
-	// import { usePurchaseOrders } from '$lib/data/purchaseOrder.svelte'; // Temporarily disabled
+	import { getPurchaseOrders } from '$lib/remote/purchaseOrders.remote';
 	import type { PurchaseOrder } from '$lib/types/purchaseOrder.schema';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
@@ -11,34 +11,19 @@
 	let isWizardOpen = $state(false);
 	let selectedPO: PurchaseOrder | null = $state(null);
 
-	// Get data and actions from the hook
-	// Temporarily disable TanStack Query
-	// const { purchaseOrdersQuery, purchaseOrders, isLoading, error } = usePurchaseOrders({
-	//	status: 'approved'
-	// }); // Note: May need to adjust filter logic based on actual hook implementation
-
-	// Temporary mock data
-	const purchaseOrders: PurchaseOrder[] = [];
+	// Get data using remote functions
+	const purchaseOrdersQuery = getPurchaseOrders({ 
+		status: 'confirmed'
+	});
 	
-	const filteredPOs = $derived(
-		purchaseOrders.filter((po: PurchaseOrder) => {
-			const search = searchTerm.toLowerCase();
-			return (
-				po.id.toLowerCase().includes(search) ||
-				(po.supplier_id && po.supplier_id.toLowerCase().includes(search))
-			);
-		})
-	);
 
 	const getStatusVariant = (status: PurchaseOrder['status']) => {
 		switch (status) {
 			case 'draft':
 				return 'secondary';
-			case 'pending':
+			case 'sent':
 				return 'secondary';
-			case 'approved':
-				return 'default';
-			case 'ordered':
+			case 'confirmed':
 				return 'default';
 			case 'partially_received':
 				return 'outline';
@@ -85,47 +70,54 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				<!-- Temporarily disabled TanStack Query states -->
-				<!-- {#if $purchaseOrdersQuery.isPending} -->
-				<!--	<Table.Row> -->
-				<!--		<Table.Cell colspan={6} class="h-24 text-center">Loading purchase orders...</Table.Cell> -->
-				<!--	</Table.Row> -->
-				<!-- {:else if $purchaseOrdersQuery.isError} -->
-				<!--	<Table.Row> -->
-				<!--		<Table.Cell colspan={6} class="h-24 text-center text-destructive"> -->
-				<!--			Error: {$purchaseOrdersQuery.error?.message || 'Failed to load purchase orders'} -->
-				<!--		</Table.Cell> -->
-				<!--	</Table.Row> -->
-				<!-- {:else  -->
-				{#if filteredPOs.length === 0}
+				{#await purchaseOrdersQuery}
 					<Table.Row>
-						<Table.Cell colspan={6} class="h-24 text-center">No purchase orders found.</Table.Cell>
+						<Table.Cell colspan={6} class="h-24 text-center">Loading purchase orders...</Table.Cell>
 					</Table.Row>
-				{:else}
-					{#each filteredPOs as po (po.id)}
+				{:then data}
+					{@const filteredPOs = data.purchaseOrders.filter((po) => {
+						const search = searchTerm.toLowerCase();
+						return (
+							po.id.toLowerCase().includes(search) ||
+							(po.supplier_id && po.supplier_id.toLowerCase().includes(search))
+						);
+					})}
+					{#if filteredPOs.length === 0}
 						<Table.Row>
-							<Table.Cell class="font-medium">{po.id}</Table.Cell>
-							<Table.Cell>{po.supplier_id || 'Unknown Supplier'}</Table.Cell>
-							<Table.Cell>{new Date(po.order_date).toLocaleDateString()}</Table.Cell>
-							<Table.Cell
-								>{po.expected_delivery_date
-									? new Date(po.expected_delivery_date).toLocaleDateString()
-									: 'N/A'}</Table.Cell
-							>
-							<Table.Cell>
-								<Badge variant={getStatusVariant(po.status)}>{po.status.replace('_', ' ')}</Badge>
-							</Table.Cell>
-							<Table.Cell class="text-right">
-								<Button
-									onclick={() => receivePO(po)}
-									disabled={!['approved', 'ordered', 'partially_received'].includes(po.status)}
-								>
-									Receive
-								</Button>
-							</Table.Cell>
+							<Table.Cell colspan={6} class="h-24 text-center">No purchase orders found.</Table.Cell>
 						</Table.Row>
-					{/each}
-				{/if}
+					{:else}
+						{#each filteredPOs as po (po.id)}
+							<Table.Row>
+								<Table.Cell class="font-medium">{po.po_number}</Table.Cell>
+								<Table.Cell>{po.supplier_id || 'Unknown Supplier'}</Table.Cell>
+								<Table.Cell>{new Date(po.order_date).toLocaleDateString()}</Table.Cell>
+								<Table.Cell
+									>{po.expected_delivery_date
+										? new Date(po.expected_delivery_date).toLocaleDateString()
+										: 'N/A'}</Table.Cell
+								>
+								<Table.Cell>
+									<Badge variant={getStatusVariant(po.status)}>{po.status.replace('_', ' ')}</Badge>
+								</Table.Cell>
+								<Table.Cell class="text-right">
+									<Button
+										onclick={() => receivePO(po)}
+										disabled={!['confirmed', 'sent', 'partially_received'].includes(po.status)}
+									>
+										Receive
+									</Button>
+								</Table.Cell>
+							</Table.Row>
+						{/each}
+					{/if}
+				{:catch error}
+					<Table.Row>
+						<Table.Cell colspan={6} class="h-24 text-center text-destructive">
+							Error: {error?.message || 'Failed to load purchase orders'}
+						</Table.Cell>
+					</Table.Row>
+				{/await}
 			</Table.Body>
 		</Table.Root>
 	</div>

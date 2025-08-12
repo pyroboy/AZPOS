@@ -4,6 +4,24 @@
 	import { page } from '$app/stores';
 	import { goto } from '$app/navigation';
 
+	// Import shared remote functions at parent level
+	import { getProducts } from '$lib/remote/products.remote';
+	import { getInventoryItems } from '$lib/remote/inventory.remote';
+	import { getReturns } from '$lib/remote/returns.remote';
+	import { getPurchaseOrders } from '$lib/remote/purchaseOrders.remote';
+	import { getSuppliers } from '$lib/remote/suppliers.remote';
+	import { getCategories } from '$lib/remote/categories.remote';
+
+	// Shared queries - cached at parent level
+	const sharedQueries = {
+		products: getProducts(),
+		inventory: getInventoryItems({}),
+		returns: getReturns(),
+		purchaseOrders: getPurchaseOrders({ status: 'confirmed' }),
+		suppliers: getSuppliers(),
+		categories: getCategories()
+	};
+
 	// Dynamically import tab components for code-splitting
 	const tabComponents = {
 		stock: () => import('$lib/components/inventory/StockStatus.svelte'),
@@ -46,7 +64,7 @@
 			<TabsContent value={tabName} class="pt-6">
 				{#if activeTab === tabName}
 					{#await componentPromise() then { default: Component }}
-						<svelte:component this={Component} />
+						<svelte:component this={Component} queries={sharedQueries} />
 					{:catch error}
 						<p class="text-destructive">Error loading component: {error.message}</p>
 					{/await}

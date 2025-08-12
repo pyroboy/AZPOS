@@ -426,11 +426,11 @@
 						<div class="border-t pt-6">
 							<div class="flex items-center space-x-2">
 								<Switch.Root
-									id="requires-batch-tracking"
-									name="requires_batch_tracking"
-									bind:checked={$formData.requires_batch_tracking}
+									id="track-inventory"
+									name="track_inventory"
+									bind:checked={$formData.track_inventory}
 								/>
-								<Label for="requires-batch-tracking">Enforce Batch & Expiry Tracking</Label>
+								<Label for="track-inventory">Track Inventory</Label>
 							</div>
 							<p class="text-sm text-muted-foreground mt-2">
 								If enabled, a batch number must be assigned when receiving stock and selected when

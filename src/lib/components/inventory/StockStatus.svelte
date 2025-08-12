@@ -40,20 +40,18 @@
 
 	let viewMode = $state<'card' | 'table'>('card');
 
-	// --- REMOTE FUNCTIONS DATA FETCHING ---
+	// Accept shared queries from parent
+	let { queries }: { queries?: any } = $props();
 
-	// Use SvelteKit remote functions directly with await
-	const initialFilters = undefined; // No filters passed in this component
+	// Use shared queries if provided, otherwise create new ones (fallback)
+	const productsQuery = queries?.products || getProducts();
+	const inventoryQuery = queries?.inventory || getInventoryItems({});
 
-	console.log('🔍 [StockStatus] Using remote functions for data fetching', {
-		filters: initialFilters,
+	console.log('🔍 [StockStatus] Using data fetching', {
+		usingSharedQueries: !!queries,
 		timestamp: new Date().toISOString(),
 		component: 'StockStatus.svelte'
 	});
-
-	// Remote functions return promises that can be awaited directly
-	const productsQuery = getProducts(initialFilters);
-	const inventoryQuery = getInventoryItems({});
 	
 	// const { updateViewState, getFilterState, getSortState, getSelectionState } = useView(); // Temporarily disabled
 	// Mock functions
@@ -67,7 +65,12 @@
 	// Categories will be computed in template
 
 	// Function to filter and sort products
-	function filterAndSortProducts(products: Product[]) {
+	function filterAndSortProducts(products: Product[] | null | undefined) {
+		if (!products || !Array.isArray(products)) {
+			console.log('🔄 [StockStatus] No products or invalid data', { products });
+			return [];
+		}
+		
 		console.log('🔄 [StockStatus] Filtering and sorting products', { products: products.length });
 
 		let filtered = products;
@@ -246,17 +249,24 @@
 		<div class="flex flex-wrap items-center justify-between gap-2">
 			{#await productsQuery then productsData}
 				{@const products = productsData?.products ?? []}
-				{@const categories = [...new Set(products.map((p) => p.category_id).filter(Boolean))]}
+				{@const uniqueCategories = products
+					.filter(p => p.category && p.category.name)
+					.reduce((acc, p) => {
+						if (!acc.some(c => c.id === p.category.id)) {
+							acc.push(p.category);
+						}
+						return acc;
+					}, [])}
 				<div class="flex items-center gap-2 flex-wrap">
 					<p class="text-sm font-medium">Categories:</p>
 
-					{#each categories as category}
+					{#each uniqueCategories as category}
 						<Button
-							variant={activeCategories.includes(category as string) ? 'default' : 'outline'}
+							variant={activeCategories.includes(category.id) ? 'default' : 'outline'}
 							size="sm"
-							onclick={() => toggleCategory(category as string)}
+							onclick={() => toggleCategory(category.id)}
 						>
-							{category}
+							{category.name}
 						</Button>
 					{/each}
 

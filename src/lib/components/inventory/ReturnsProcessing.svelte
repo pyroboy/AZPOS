@@ -1,5 +1,5 @@
 <script lang="ts">
-	// import { useReturns } from '$lib/data/returns.svelte'; // Temporarily disabled
+	import { getReturns } from '$lib/remote/returns.remote';
 	import { Input } from '$lib/components/ui/input';
 	import * as Table from '$lib/components/ui/table';
 	import { Button } from '$lib/components/ui/button';
@@ -8,25 +8,13 @@
 	import ReturnDetailsModal from './ReturnDetailsModal.svelte';
 	import type { EnhancedReturnRecord } from '$lib/types/returns.schema';
 
-	// Get returns using TanStack Query hook
-	// const { returns, isLoading, isError, error } = useReturns(); // Temporarily disabled
-	const returns: EnhancedReturnRecord[] = []; // Mock data
+	// Get returns using remote functions
+	const returnsQuery = getReturns();
 
 	let searchTerm = $state('');
 	let isModalOpen = $state(false);
 	let selectedReturn: EnhancedReturnRecord | null = $state(null);
 
-	const filteredReturns = $derived(
-		returns.filter((r: EnhancedReturnRecord) => {
-			const lowerSearch = searchTerm.toLowerCase();
-			if (!lowerSearch) return true;
-			return (
-				r.id.toLowerCase().includes(lowerSearch) ||
-				r.order_id.toLowerCase().includes(lowerSearch) ||
-				r.customer_name.toLowerCase().includes(lowerSearch)
-			);
-		})
-	);
 
 	function formatDate(dateString: string) {
 		return new Date(dateString).toLocaleDateString('en-US', {
@@ -72,64 +60,74 @@
 				</Table.Row>
 			</Table.Header>
 			<Table.Body>
-				{#if isLoading}
+				{#await returnsQuery}
 					<Table.Row>
 						<Table.Cell colspan={7} class="h-24 text-center">Loading returns...</Table.Cell>
 					</Table.Row>
-				{:else if isError}
+				{:then data}
+					{@const filteredReturns = data.returns.filter((r) => {
+						const lowerSearch = searchTerm.toLowerCase();
+						if (!lowerSearch) return true;
+						return (
+							r.id.toLowerCase().includes(lowerSearch) ||
+							r.order_id.toLowerCase().includes(lowerSearch) ||
+							r.customer_name.toLowerCase().includes(lowerSearch)
+						);
+					})}
+					{#if filteredReturns.length === 0}
+						<Table.Row>
+							<Table.Cell colspan={7} class="h-24 text-center">No returns found.</Table.Cell>
+						</Table.Row>
+					{:else}
+						{#each filteredReturns as ret (ret.id)}
+							<Table.Row class="cursor-pointer hover:bg-muted/50" onclick={() => viewDetails(ret)}>
+								<Table.Cell class="font-medium">{ret.id}</Table.Cell>
+								<Table.Cell>{ret.order_id}</Table.Cell>
+								<Table.Cell>{ret.customer_name}</Table.Cell>
+								<Table.Cell
+									>{ret.items.reduce((sum, i) => sum + i.quantity, 0)}</Table.Cell
+								>
+								<Table.Cell>{formatDate(ret.return_date)}</Table.Cell>
+								<Table.Cell>
+									<Badge
+										variant={(() => {
+											const statusMap: Record<
+												string,
+												'secondary' | 'success' | 'destructive' | 'default'
+											> = {
+												pending: 'secondary',
+												approved: 'success',
+												rejected: 'destructive',
+												processed: 'default'
+											};
+											return statusMap[ret.status] || 'secondary';
+										})()}
+									>
+										{ret.status}
+									</Badge>
+								</Table.Cell>
+								<Table.Cell class="text-right">
+									<Button
+										variant="ghost"
+										size="icon"
+										onclick={(e) => {
+											e.stopPropagation();
+											viewDetails(ret);
+										}}
+									>
+										<Eye class="h-4 w-4" />
+									</Button>
+								</Table.Cell>
+							</Table.Row>
+						{/each}
+					{/if}
+				{:catch error}
 					<Table.Row>
 						<Table.Cell colspan={7} class="h-24 text-center text-red-500">
 							Error loading returns: {error?.message || 'Unknown error'}
 						</Table.Cell>
 					</Table.Row>
-				{:else if filteredReturns.length === 0}
-					<Table.Row>
-						<Table.Cell colspan={7} class="h-24 text-center">No returns found.</Table.Cell>
-					</Table.Row>
-				{:else}
-					{#each filteredReturns as ret (ret.id)}
-						<Table.Row class="cursor-pointer hover:bg-muted/50" onclick={() => viewDetails(ret)}>
-							<Table.Cell class="font-medium">{ret.id}</Table.Cell>
-							<Table.Cell>{ret.order_id}</Table.Cell>
-							<Table.Cell>{ret.customer_name}</Table.Cell>
-							<Table.Cell
-								>{ret.items.reduce((sum: number, i: any) => sum + i.quantity, 0)}</Table.Cell
-							>
-							<Table.Cell>{formatDate(ret.return_date)}</Table.Cell>
-							<Table.Cell>
-								<Badge
-									variant={(() => {
-										const statusMap: Record<
-											string,
-											'secondary' | 'success' | 'destructive' | 'default'
-										> = {
-											pending: 'secondary',
-											approved: 'success',
-											rejected: 'destructive',
-											completed: 'default',
-											processing: 'default'
-										};
-										return statusMap[ret.status] || 'secondary';
-									})()}
-								>
-									{ret.status}
-								</Badge>
-							</Table.Cell>
-							<Table.Cell class="text-right">
-								<Button
-									variant="ghost"
-									size="icon"
-									onclick={(e) => {
-										e.stopPropagation();
-										viewDetails(ret);
-									}}
-								>
-									<Eye class="h-4 w-4" />
-								</Button>
-							</Table.Cell>
-						</Table.Row>
-					{/each}
-				{/if}
+				{/await}
 			</Table.Body>
 		</Table.Root>
 	</div>

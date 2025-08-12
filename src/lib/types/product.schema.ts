@@ -48,7 +48,16 @@ export const productSchema = productInputSchema.extend({
 	created_at: z.string().datetime(),
 	updated_at: z.string().datetime(),
 	created_by: z.string().optional(),
-	updated_by: z.string().optional()
+	updated_by: z.string().optional(),
+	// Include joined data from remote functions
+	category: z.object({
+		id: z.string(),
+		name: z.string()
+	}).optional(),
+	supplier: z.object({
+		id: z.string(),
+		name: z.string()
+	}).optional()
 });
 
 // Schema for product filters/queries
@@ -105,6 +114,8 @@ export const bulkProductUpdateSchema = z.object({
 		supplier_id: z.string().optional(),
 		cost_price: z.number().min(0).optional(),
 		selling_price: z.number().min(0).optional(),
+		reorder_point: z.number().min(0).int().optional(),
+		track_inventory: z.boolean().optional(),
 		is_active: z.boolean().optional(),
 		is_archived: z.boolean().optional(),
 		tags: z.array(z.string()).optional(),

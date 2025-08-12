@@ -116,7 +116,7 @@ export const getProducts = query(
 		// Calculate pagination info
 		const totalPages = Math.ceil((count || 0) / limit);
 
-		// Transform products to match schema
+		// Transform products to match schema and include joined data
 		const transformedProducts =
 			products?.map((product) => ({
 				id: product.id,
@@ -147,6 +147,9 @@ export const getProducts = query(
 				created_at: product.created_at,
 				updated_at: product.updated_at,
 				created_by: product.created_by,
+				// Include joined category and supplier data
+				category: product.category,
+				supplier: product.supplier,
 				updated_by: product.updated_by
 			})) || [];
 

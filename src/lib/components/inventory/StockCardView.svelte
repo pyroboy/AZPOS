@@ -93,14 +93,33 @@
 						{product.stock_quantity || 0} in stock
 					</Badge>
 				</div>
-				<CardDescription>
-					{product.sku} &bull; {product.category_id}
+				<CardDescription class="space-y-1">
+					<div class="flex items-center gap-2">
+						<span class="font-mono text-xs">{product.sku}</span>
+						{#if product.category?.name}
+							<Badge variant="outline" class="text-xs">{product.category.name}</Badge>
+						{/if}
+					</div>
+					{#if product.aisle_location}
+						<div class="text-xs text-muted-foreground">
+							📍 Aisle: {product.aisle_location}
+						</div>
+					{/if}
 				</CardDescription>
 			</CardContent>
 
 			<CardFooter class="p-4 pt-0">
-				<div class="text-xl font-semibold w-full text-right">
-					${(product.selling_price || 0).toFixed(2)}
+				<div class="flex justify-between items-center w-full">
+					<div class="text-sm text-muted-foreground">
+						{#if (product.stock_quantity || 0) < (product.reorder_point || product.min_stock_level || 10)}
+							<Badge variant="destructive" class="text-xs">Reorder</Badge>
+						{:else if product.supplier?.name}
+							<span class="text-xs">by {product.supplier.name}</span>
+						{/if}
+					</div>
+					<div class="text-xl font-semibold">
+						${(product.selling_price || 0).toFixed(2)}
+					</div>
 				</div>
 			</CardFooter>
 		</Card>

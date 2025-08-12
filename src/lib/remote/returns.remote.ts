@@ -1,6 +1,5 @@
-import { query, mutation } from '@sveltejs/kit';
-import { createSupabaseClient } from '$lib/supabase/client';
-import { getAuthenticatedUser } from '$lib/auth/server';
+import { query, command, getRequestEvent } from '$app/server';
+import { createSupabaseClient } from '$lib/server/db';
 import { 
     returnFiltersSchema, 
     newReturnSchema, 
@@ -14,16 +13,29 @@ import {
 import { z } from 'zod';
 
 console.log('🔄 [returns.remote] Loading returns remote functions');
+// Updated: 2025-08-12 - fixed exports
+
+// Helper to get authenticated user context (optional for read operations)
+function getAuthenticatedUser(required = true) {
+	const event = getRequestEvent();
+	const user = event.locals.user;
+	if (required && !user) {
+		throw new Error('Authentication required');
+	}
+	return user;
+}
 
 // ========================
 // QUERY FUNCTIONS
 // ========================
 
-export const getReturns = query(async (filters?: ReturnFilters): Promise<{
-    returns: EnhancedReturnRecord[];
-    total: number;
-    stats: ReturnStats;
-}> => {
+export const getReturns = query(
+    returnFiltersSchema.optional(),
+    async (filters?: ReturnFilters): Promise<{
+        returns: EnhancedReturnRecord[];
+        total: number;
+        stats: ReturnStats;
+    }> => {
     console.log('🔍 [getReturns] Fetching returns with filters', { filters, timestamp: new Date().toISOString() });
     
     const user = getAuthenticatedUser(false);
@@ -33,19 +45,32 @@ export const getReturns = query(async (filters?: ReturnFilters): Promise<{
         .from('returns')
         .select(`
             id,
-            order_id,
+            return_number,
             customer_name,
-            items,
-            return_date,
+            customer_email,
+            customer_phone,
             status,
             reason,
-            notes,
-            admin_notes,
+            description,
+            total_refund_amount,
             processed_by,
             processed_at,
-            user_id,
+            notes,
             created_at,
-            updated_at
+            updated_at,
+            return_items (
+                id,
+                product_id,
+                quantity,
+                unit_price,
+                refund_amount,
+                condition,
+                notes,
+                products (
+                    name,
+                    sku
+                )
+            )
         `)
         .order('created_at', { ascending: false });
 
@@ -62,11 +87,11 @@ export const getReturns = query(async (filters?: ReturnFilters): Promise<{
         }
         
         if (validatedFilters.date_from) {
-            queryBuilder = queryBuilder.gte('return_date', validatedFilters.date_from);
+            queryBuilder = queryBuilder.gte('created_at', validatedFilters.date_from);
         }
         
         if (validatedFilters.date_to) {
-            queryBuilder = queryBuilder.lte('return_date', validatedFilters.date_to);
+            queryBuilder = queryBuilder.lte('created_at', validatedFilters.date_to);
         }
         
         if (validatedFilters.customer_name) {
@@ -74,7 +99,7 @@ export const getReturns = query(async (filters?: ReturnFilters): Promise<{
         }
         
         if (validatedFilters.order_id) {
-            queryBuilder = queryBuilder.ilike('order_id', `%${validatedFilters.order_id}%`);
+            queryBuilder = queryBuilder.ilike('return_number', `%${validatedFilters.order_id}%`);
         }
     }
 
@@ -88,7 +113,7 @@ export const getReturns = query(async (filters?: ReturnFilters): Promise<{
     // Get stats separately
     const { data: statsData, error: statsError } = await supabase
         .from('returns')
-        .select('status, items')
+        .select('status, total_refund_amount')
         .order('created_at', { ascending: false });
 
     if (statsError) {
@@ -102,11 +127,33 @@ export const getReturns = query(async (filters?: ReturnFilters): Promise<{
         pending_count: statsData?.filter(r => r.status === 'pending').length || 0,
         approved_count: statsData?.filter(r => r.status === 'approved').length || 0,
         rejected_count: statsData?.filter(r => r.status === 'rejected').length || 0,
-        completed_count: statsData?.filter(r => r.status === 'completed').length || 0,
-        processing_count: statsData?.filter(r => r.status === 'processing').length || 0,
-        total_value: 0, // Would need to calculate from items and product prices
+        processed_count: statsData?.filter(r => r.status === 'processed').length || 0,
+        total_value: statsData?.reduce((sum, r) => sum + (r.total_refund_amount || 0), 0) || 0,
         avg_processing_time: undefined // Would need to calculate from processed_at - created_at
     };
+
+    // Transform returns to match expected interface
+    const transformedReturns = returns?.map(returnRecord => ({
+        id: returnRecord.id,
+        order_id: returnRecord.return_number, // Map return_number to order_id for compatibility
+        customer_name: returnRecord.customer_name || '',
+        items: returnRecord.return_items?.map((item: any) => ({
+            product_id: item.product_id,
+            product_name: item.products?.name || 'Unknown Product',
+            product_sku: item.products?.sku || 'Unknown SKU',
+            quantity: item.quantity
+        })) || [],
+        return_date: returnRecord.created_at, // Use created_at as return_date
+        status: returnRecord.status,
+        reason: returnRecord.reason,
+        notes: returnRecord.description || '', // Map description to notes
+        admin_notes: returnRecord.notes || '', // Map notes to admin_notes
+        processed_by: returnRecord.processed_by,
+        processed_at: returnRecord.processed_at,
+        user_id: returnRecord.created_by, // Assuming created_by is the user_id
+        created_at: returnRecord.created_at,
+        updated_at: returnRecord.updated_at
+    })) || [];
 
     console.log('✅ [getReturns] Successfully fetched returns', {
         count: returns?.length || 0,
@@ -115,13 +162,15 @@ export const getReturns = query(async (filters?: ReturnFilters): Promise<{
     });
 
     return {
-        returns: returns || [],
-        total: returns?.length || 0,
+        returns: transformedReturns,
+        total: transformedReturns.length,
         stats
     };
 });
 
-export const getReturnById = query(async (returnId: string): Promise<EnhancedReturnRecord | null> => {
+export const getReturnById = query(
+    z.string(),
+    async (returnId: string): Promise<EnhancedReturnRecord | null> => {
     console.log('🔍 [getReturnById] Fetching return by ID', { returnId, timestamp: new Date().toISOString() });
     
     const user = getAuthenticatedUser(false);
@@ -151,7 +200,9 @@ export const getReturnById = query(async (returnId: string): Promise<EnhancedRet
 // MUTATION FUNCTIONS  
 // ========================
 
-export const createReturn = mutation(async (returnData: NewReturnInput): Promise<EnhancedReturnRecord> => {
+export const createReturn = command(
+    newReturnSchema,
+    async (returnData: NewReturnInput): Promise<EnhancedReturnRecord> => {
     console.log('🔧 [createReturn] Creating new return', { returnData, timestamp: new Date().toISOString() });
     
     const user = getAuthenticatedUser(true);
@@ -191,17 +242,20 @@ export const createReturn = mutation(async (returnData: NewReturnInput): Promise
     return createdReturn;
 });
 
-export const updateReturnStatus = mutation(async (updateData: UpdateReturnStatusInput): Promise<EnhancedReturnRecord> => {
+// Update return status command function
+export const updateReturnStatus = command(
+    updateReturnStatusSchema,
+    async (updateData: UpdateReturnStatusInput): Promise<EnhancedReturnRecord> => {
     console.log('🔧 [updateReturnStatus] Updating return status', { updateData, timestamp: new Date().toISOString() });
     
     const user = getAuthenticatedUser(true);
     const supabase = createSupabaseClient();
     
-    const validatedData = updateReturnStatusSchema.parse(updateData);
+    // updateData is already validated by the command schema
     
     const updateFields = {
-        status: validatedData.status,
-        admin_notes: validatedData.admin_notes,
+        status: updateData.status,
+        admin_notes: updateData.admin_notes,
         processed_by: user.id,
         processed_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -210,7 +264,7 @@ export const updateReturnStatus = mutation(async (updateData: UpdateReturnStatus
     const { data: updatedReturn, error } = await supabase
         .from('returns')
         .update(updateFields)
-        .eq('id', validatedData.return_id)
+        .eq('id', updateData.return_id)
         .select()
         .single();
 
@@ -228,7 +282,9 @@ export const updateReturnStatus = mutation(async (updateData: UpdateReturnStatus
     return updatedReturn;
 });
 
-export const deleteReturn = mutation(async (returnId: string): Promise<void> => {
+export const deleteReturn = command(
+    z.string(),
+    async (returnId: string): Promise<void> => {
     console.log('🗑️ [deleteReturn] Deleting return', { returnId, timestamp: new Date().toISOString() });
     
     const user = getAuthenticatedUser(true);
@@ -254,9 +310,17 @@ export const deleteReturn = mutation(async (returnId: string): Promise<void> => 
 // BULK OPERATIONS
 // ========================
 
-export const bulkUpdateReturnStatus = mutation(async (data: {
+const bulkUpdateSchema = z.object({
+    returnIds: z.array(z.string()).min(1),
+    status: z.enum(['pending', 'approved', 'rejected', 'processed']),
+    adminNotes: z.string().optional()
+});
+
+export const bulkUpdateReturnStatus = command(
+    bulkUpdateSchema,
+    async (data: {
     returnIds: string[];
-    status: 'pending' | 'approved' | 'rejected' | 'completed' | 'processing';
+    status: 'pending' | 'approved' | 'rejected' | 'processed';
     adminNotes?: string;
 }): Promise<EnhancedReturnRecord[]> => {
     console.log('🔧 [bulkUpdateReturnStatus] Bulk updating return statuses', { 

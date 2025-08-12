@@ -20,7 +20,7 @@ export const newReturnSchema = z.object({
 // Schema for updating return status
 export const updateReturnStatusSchema = z.object({
 	return_id: z.string(),
-	status: z.enum(['pending', 'approved', 'rejected', 'completed', 'processing']),
+	status: z.enum(['pending', 'approved', 'rejected', 'processed']),
 	admin_notes: z.string().optional()
 });
 
@@ -31,7 +31,7 @@ export const enhancedReturnSchema = z.object({
 	customer_name: z.string(),
 	items: z.array(returnItemSchema),
 	return_date: z.string().datetime(),
-	status: z.enum(['pending', 'approved', 'rejected', 'completed', 'processing']),
+	status: z.enum(['pending', 'approved', 'rejected', 'processed']),
 	reason: z.enum(['defective', 'wrong_item', 'changed_mind', 'other', 'no_longer_needed']),
 	notes: z.string().optional(),
 	admin_notes: z.string().optional(),
@@ -44,7 +44,7 @@ export const enhancedReturnSchema = z.object({
 
 // Schema for return filters/queries
 export const returnFiltersSchema = z.object({
-	status: z.enum(['all', 'pending', 'approved', 'rejected', 'completed', 'processing']).optional(),
+	status: z.enum(['all', 'pending', 'approved', 'rejected', 'processed']).optional(),
 	reason: z
 		.enum(['all', 'defective', 'wrong_item', 'changed_mind', 'other', 'no_longer_needed'])
 		.optional(),
@@ -60,8 +60,7 @@ export const returnStatsSchema = z.object({
 	pending_count: z.number(),
 	approved_count: z.number(),
 	rejected_count: z.number(),
-	completed_count: z.number(),
-	processing_count: z.number(),
+	processed_count: z.number(),
 	total_value: z.number(),
 	avg_processing_time: z.number().optional() // in hours
 });

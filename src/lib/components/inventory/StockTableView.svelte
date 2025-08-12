@@ -79,7 +79,9 @@
 			<Table.Head>Name</Table.Head>
 			<Table.Head>SKU</Table.Head>
 			<Table.Head>Category</Table.Head>
+			<Table.Head>Location</Table.Head>
 			<Table.Head class="text-right">Stock</Table.Head>
+			<Table.Head>Supplier</Table.Head>
 			<Table.Head class="text-right">Price</Table.Head>
 		</Table.Row>
 	</Table.Header>
@@ -112,10 +114,39 @@
 					{/if}
 				</Table.Cell>
 				<Table.Cell class="font-medium">{product.name}</Table.Cell>
-				<Table.Cell>{product.sku}</Table.Cell>
-				<Table.Cell>{product.category_id}</Table.Cell>
-				<Table.Cell class="text-right">{product.stock_quantity || 0}</Table.Cell>
-				<Table.Cell class="text-right">${(product.selling_price || 0).toFixed(2)}</Table.Cell>
+				<Table.Cell class="font-mono text-sm">{product.sku}</Table.Cell>
+				<Table.Cell>
+					{#if product.category?.name}
+						<div class="flex items-center gap-1">
+							<span class="text-sm">{product.category.name}</span>
+						</div>
+					{:else}
+						<span class="text-muted-foreground text-sm">No category</span>
+					{/if}
+				</Table.Cell>
+				<Table.Cell>
+					{#if product.aisle_location}
+						<span class="text-sm">📍 {product.aisle_location}</span>
+					{:else}
+						<span class="text-muted-foreground text-sm">-</span>
+					{/if}
+				</Table.Cell>
+				<Table.Cell class="text-right">
+					<div class="flex flex-col items-end">
+						<span class="font-medium">{product.stock_quantity || 0}</span>
+						{#if (product.stock_quantity || 0) < (product.reorder_point || product.min_stock_level || 10)}
+							<span class="text-xs text-red-500">Low stock</span>
+						{/if}
+					</div>
+				</Table.Cell>
+				<Table.Cell>
+					{#if product.supplier?.name}
+						<span class="text-sm text-muted-foreground">{product.supplier.name}</span>
+					{:else}
+						<span class="text-muted-foreground text-sm">-</span>
+					{/if}
+				</Table.Cell>
+				<Table.Cell class="text-right font-medium">${(product.selling_price || 0).toFixed(2)}</Table.Cell>
 			</Table.Row>
 		{/each}
 	</Table.Body>

@@ -26,9 +26,8 @@ export const updatePurchaseOrderSchema = z.object({
 	status: z
 		.enum([
 			'draft',
-			'pending',
-			'approved',
-			'ordered',
+			'sent',
+			'confirmed',
 			'partially_received',
 			'received',
 			'cancelled'
@@ -47,9 +46,8 @@ export const purchaseOrderSchema = z.object({
 	supplier_id: z.string(),
 	status: z.enum([
 		'draft',
-		'pending',
-		'approved',
-		'ordered',
+		'sent',
+		'confirmed',
 		'partially_received',
 		'received',
 		'cancelled'
@@ -76,9 +74,8 @@ export const purchaseOrderFiltersSchema = z.object({
 		.enum([
 			'all',
 			'draft',
-			'pending',
-			'approved',
-			'ordered',
+			'sent',
+			'confirmed',
 			'partially_received',
 			'received',
 			'cancelled'
