@@ -16,9 +16,11 @@
 	type Props = {
 		products: Product[];
 		selectedProductIds?: string[];
+		isDragging?: boolean;
+		dragBox?: { x: number; y: number; width: number; height: number } | null;
 	};
 
-	let { products, selectedProductIds = $bindable([]) }: Props = $props();
+	let { products, selectedProductIds = $bindable([]), isDragging = false, dragBox = null }: Props = $props();
 
 	const colors = [
 		'#ffadad',
@@ -60,30 +62,47 @@
 			selectedProductIds = selectedProductIds.filter((id) => id !== productId);
 		}
 	}
+
+	// Check if a product is currently being selected during drag
+	function isProductBeingSelected(productId: string): boolean {
+		if (!isDragging || !dragBox) return false;
+		
+		// This will be enhanced later with proper intersection logic
+		return selectedProductIds.includes(productId);
+	}
 </script>
 
 <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
 	{#each products as product (product.id)}
-		<Card class="relative">
-			<div class="absolute top-2 left-2 z-10">
-				<Checkbox
-					checked={selectedProductIds.includes(product.id)}
-					onCheckedChange={(checked) => handleSelectProduct(product.id, checked)}
-					aria-label={`Select ${product.name}`}
-					class="bg-white border-2"
-				/>
-			</div>
+		<Card
+			id="product-{product.id}"
+			class="relative cursor-pointer transition-all duration-200 {selectedProductIds.includes(product.id) 
+				? 'ring-2 ring-blue-500 shadow-lg' 
+				: isProductBeingSelected(product.id) 
+					? 'ring-2 ring-blue-300 shadow-md' 
+					: 'hover:shadow-md'
+			}"
+			onclick={() => handleSelectProduct(product.id, !selectedProductIds.includes(product.id))}
+		>
 			<CardHeader class="p-0">
-				{#if product.image_url}
-					<ImagePreview src={product.image_url} {product} fallbackSrc={product.image_url} />
-				{:else}
-					<div
-						class="flex h-48 w-full items-center justify-center rounded-t-lg text-2xl font-bold text-white"
-						style="background-color: {getRandomColor(product.id)}"
-					>
-						{getInitials(product.name)}
+				<div class="relative w-full h-48">
+					{#if product.image_url}
+						<ImagePreview src={product.image_url} {product} fallbackSrc="/placeholder.svg" />
+					{:else}
+						<div
+							class="flex h-full w-full items-center justify-center rounded-t-lg text-2xl font-bold text-white"
+							style="background-color: {getRandomColor(product.id)}"
+						>
+							{getInitials(product.name)}
+						</div>
+					{/if}
+					<div class="absolute top-2 left-2 z-10">
+						<Checkbox checked={selectedProductIds.includes(product.id)}
+							onCheckedChange={(checked) => handleSelectProduct(product.id, checked)}
+							aria-label={`Select ${product.name}`}
+							class="bg-white border-2" />
 					</div>
-				{/if}
+				</div>
 			</CardHeader>
 
 			<CardContent class="p-4 space-y-2">

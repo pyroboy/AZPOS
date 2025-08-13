@@ -72,7 +72,7 @@
 	});
 </script>
 
-<div class={cn('relative overflow-hidden rounded-md bg-muted', sizeClasses[size], className)}>
+<div class={cn('relative overflow-hidden rounded-md bg-muted h-48 shadow-sm border border-border', sizeClasses[size], className)}>
 	{#if loading}
 		<div class="h-full w-full animate-pulse bg-secondary"></div>
 	{/if}

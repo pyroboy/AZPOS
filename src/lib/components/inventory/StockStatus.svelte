@@ -1,6 +1,7 @@
 <script lang="ts">
     import { getProducts } from '$lib/remote/products.remote';
     import { getInventoryItems } from '$lib/remote/inventory.remote';
+	// import { useView } from '$lib/data/view'; // Temporarily disabled
     import { goto } from '$app/navigation';
 
     import { Button } from '$lib/components/ui/button';
@@ -13,7 +14,6 @@
     import { LayoutGrid, List, Trash2, X } from 'lucide-svelte';
     import { SORT_OPTIONS, STOCK_STATUS_FILTERS } from '$lib/constants/inventory';
     import type { Product } from '$lib/types/product.schema';
-    import { dragSelect } from '../../actions/dragSelect';
 
     // Local state for filters and selections
     let searchTerm = $state('');
@@ -29,12 +29,6 @@
     let isBulkEditModalOpen = $state(false);
 
     let viewMode = $state<'card' | 'table'>('card');
-    
-    // Drag selection state
-    let isDragging = $state(false);
-    let dragBox = $state<{ x: number; y: number; width: number; height: number } | null>(null);
-    let dragSelectionArea = $state<{ x: number; y: number; width: number; height: number } | null>(null);
-    let modifierKeys = $state({ shift: false, ctrl: false, meta: false });
 
     // Accept shared queries from parent
     let { queries }: { queries?: any } = $props();
@@ -42,34 +36,6 @@
     // Use shared queries if provided, otherwise create new ones (fallback)
     const productsQuery = queries?.products || getProducts({});
     const inventoryQuery = queries?.inventory || getInventoryItems({});
-
-    // Track modifier keys for selection behavior
-    function updateModifierKeys(event: KeyboardEvent) {
-        modifierKeys = {
-            shift: event.shiftKey,
-            ctrl: event.ctrlKey,
-            meta: event.metaKey
-        };
-    }
-
-    // Add keyboard event listeners
-    if (typeof window !== 'undefined') {
-        window.addEventListener('keydown', updateModifierKeys);
-        window.addEventListener('keyup', updateModifierKeys);
-    }
-
-    // Cleanup function for event listeners
-    function cleanup() {
-        if (typeof window !== 'undefined') {
-            window.removeEventListener('keydown', updateModifierKeys);
-            window.removeEventListener('keyup', updateModifierKeys);
-        }
-    }
-
-    // Cleanup on component destroy
-    if (typeof window !== 'undefined') {
-        window.addEventListener('beforeunload', cleanup);
-    }
 
     console.log('🔍 [StockStatus] Using data fetching', {
         usingSharedQueries: !!queries,
@@ -192,80 +158,6 @@
 
     function setViewMode(mode: 'card' | 'table') {
         viewMode = mode;
-    }
-
-    // --- DRAG SELECTION LOGIC ---
-    
-    function handleDragStart(detail: { x: number; y: number }) {
-        isDragging = true;
-        
-        // Check if modifier keys are pressed
-        const isShiftPressed = modifierKeys.shift;
-        const isCtrlPressed = modifierKeys.ctrl || modifierKeys.meta;
-        
-        // Only clear selection if no modifier keys are pressed
-        if (!isShiftPressed && !isCtrlPressed) {
-            selectedProductIds = [];
-        }
-        
-        console.log('🖱️ [StockStatus] Drag started at:', detail, { isShiftPressed, isCtrlPressed });
-    }
-
-    function handleDragMove(detail: { x: number; y: number; width: number; height: number }) {
-        dragBox = detail;
-        dragSelectionArea = detail; // For visual feedback
-        console.log('🖱️ [StockStatus] Drag move:', dragBox);
-
-        // Get the current filtered products to check against
-        const currentProducts = productsQuery?.data?.products || [];
-        const filteredProducts = filterAndSortProducts(currentProducts);
-        
-        if (!dragBox || filteredProducts.length === 0) return;
-
-        const currentSelected: string[] = [];
-
-        filteredProducts.forEach((product) => {
-            const element = document.getElementById(`product-${product.id}`);
-            if (element && dragBox) {
-                const rect = element.getBoundingClientRect();
-                
-                // Convert element position to page coordinates
-                const elementPageX = rect.left + window.scrollX;
-                const elementPageY = rect.top + window.scrollY;
-                const elementPageRight = elementPageX + rect.width;
-                const elementPageBottom = elementPageY + rect.height;
-                
-                // Check for intersection with the dragBox (using page coordinates)
-                if (
-                    elementPageX < dragBox.x + dragBox.width &&
-                    elementPageRight > dragBox.x &&
-                    elementPageY < dragBox.y + dragBox.height &&
-                    elementPageBottom > dragBox.y
-                ) {
-                    currentSelected.push(product.id);
-                }
-            }
-        });
-        
-        // Update selection based on modifier keys
-        let newSelection: string[];
-        if (modifierKeys.shift || modifierKeys.ctrl || modifierKeys.meta) {
-            // Add to existing selection
-            newSelection = [...new Set([...selectedProductIds, ...currentSelected])];
-        } else {
-            // Replace selection
-            newSelection = currentSelected;
-        }
-        
-        selectedProductIds = newSelection;
-        console.log('🖱️ [StockStatus] Selected products:', selectedProductIds);
-    }
-
-    function handleDragEnd() {
-        isDragging = false;
-        dragBox = null;
-        dragSelectionArea = null; // Clear visual feedback
-        console.log('🖱️ [StockStatus] Drag ended, final selection:', selectedProductIds);
     }
 </script>
 
@@ -408,38 +300,11 @@
         {@const filteredProducts = filterAndSortProducts(products)}
         
         {#if filteredProducts.length > 0}
-            <div
-                class="mt-0 relative"
-                use:dragSelect={{
-                    onDragStart: handleDragStart,
-                    onDragMove: handleDragMove,
-                    onDragEnd: handleDragEnd
-                }}
-            >
                 {#if viewMode === 'card'}
-                    <StockCardView 
-                        products={filteredProducts} 
-                        bind:selectedProductIds 
-                        isDragging={isDragging}
-                        dragBox={dragBox}
-                    />
+				<StockCardView products={filteredProducts} bind:selectedProductIds />
                 {:else}
-                    <StockTableView 
-                        products={filteredProducts} 
-                        bind:selectedProductIds 
-                        isDragging={isDragging}
-                        dragBox={dragBox}
-                    />
+				<StockTableView products={filteredProducts} bind:selectedProductIds />
                 {/if}
-                
-                <!-- Drag Selection Visual Overlay -->
-                {#if dragSelectionArea}
-                    <div
-                        class="absolute pointer-events-none z-50 border-2 border-blue-500 bg-blue-500/10 rounded"
-                        style="left: {dragSelectionArea.x - window.scrollX}px; top: {dragSelectionArea.y - window.scrollY}px; width: {dragSelectionArea.width}px; height: {dragSelectionArea.height}px;"
-                    />
-                {/if}
-            </div>
         {:else}
             <div
                 class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center"
