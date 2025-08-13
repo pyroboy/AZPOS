@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { Button } from '$lib/components/ui/button';
 	import Receipt from './Receipt.svelte';
-	import { useReceipts } from '$lib/data/receipt';
+	import { generateReceipt } from '$lib/remote/receipts.remote';
 	import { Printer, X } from 'lucide-svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 	import type { GeneratedReceipt } from '$lib/types/receipt.schema';
@@ -14,8 +14,8 @@
 
 	let { open, onClose }: Props = $props();
 
-	// Get receipt operations from TanStack Query hook
-	const { generateReceipt, generateReceiptStatus } = useReceipts();
+	// Modern Svelte 5 state management
+	let generateReceiptStatus = $state<'idle' | 'pending' | 'success' | 'error'>('idle');
 
 	function printReceipt() {
 		const printableArea = document.getElementById('receipt-printable-area');

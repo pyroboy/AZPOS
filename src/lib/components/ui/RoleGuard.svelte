@@ -1,13 +1,12 @@
 <!-- Agent: agent_coder | File: RoleGuard.svelte | Last Updated: 2025-07-28T10:41:46+08:00 -->
 <script lang="ts">
-	import { useAuth } from '$lib/data/auth';
+	import { authStore } from '$lib/stores/auth.svelte';
 import type { AuthUser } from '$lib/types/auth.schema';
 
 // Define UserRole type inline since it's not exported from auth hook
 type UserRole = AuthUser['role'];
 
-	// Initialize auth hook
-	const auth = useAuth();
+	// Modern Svelte 5 auth store
 
 	// Props
 	let {
@@ -22,8 +21,9 @@ type UserRole = AuthUser['role'];
 	// Check if user has required role
 	let hasRequiredRole = $derived(() => {
 		if (roles.length === 0) return true;
+		if (!authStore.user) return false;
 
-		const userRole = auth.user.role;
+		const userRole = authStore.user.role;
 		return roles.includes(userRole);
 	});
 
@@ -32,20 +32,20 @@ type UserRole = AuthUser['role'];
 		if (permissions.length === 0) return true;
 
 		return permissions.every((permission) => {
-			return auth.hasPermission(permission);
+			return authStore.hasPermission(permission);
 		});
 	});
 
 	// Check if staff mode is required and active
 	let staffModeCheck = $derived(() => {
 		if (!requireStaffMode) return true;
-		return auth.isStaffMode;
+		return authStore.isStaffMode;
 	});
 
 	// Check if authentication is required
 	let authCheck = $derived(() => {
 		if (!requireAuthentication) return true;
-		return auth.isAuthenticated;
+		return authStore.isAuthenticated;
 	});
 
 	// Final access check

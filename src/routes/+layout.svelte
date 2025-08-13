@@ -4,6 +4,8 @@
 	import '../app.css';
 	import { Toaster } from '$lib/components/ui/sonner';
 	import { themeStore } from '$lib/stores/themeStore.svelte';
+	import { authStore } from '$lib/stores/auth.svelte';
+	import { onMount } from 'svelte';
 
 	// import SessionManager from '$lib/components/SessionManager.svelte';
 	import type { LayoutData } from './$types';
@@ -44,8 +46,18 @@
 		}
 	});
 
+	// Initialize modern Svelte 5 auth store
+
 	// The `data` prop is reactive and contains the `user` from the load function.
 	const { data, children } = $props<{ data: LayoutData; children: () => void }>();
+
+	// Initialize auth store with server data
+	onMount(() => {
+		// Set user from server-side data if available
+		if (data.user) {
+			authStore.user = data.user;
+		}
+	});
 </script>
 
 <!-- Provide TanStack Query client to all components -->

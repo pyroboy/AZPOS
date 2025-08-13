@@ -15,11 +15,10 @@
 	import { Alert, AlertDescription, AlertTitle } from '$lib/components/ui/alert';
 	import { AlertTriangle } from 'lucide-svelte';
 
-	// Import TanStack Query hooks according to Component Integration Guide
-	import { useTransactions } from '$lib/data/transaction';
-	import { useReturns } from '$lib/data/returns.svelte';
-	import { useProducts } from '$lib/data/product';
-	import { useSessions } from '$lib/data/session';
+	// Modern Svelte 5 + Remote Functions - Following CLAUDE.md patterns
+	import { getTransactions, getTransaction } from '$lib/remote/transactions.remote';
+	import { getReturns, createReturn } from '$lib/remote/returns.remote';
+	import { getProducts } from '$lib/remote/products.remote';
 	import type { Transaction, TransactionItem } from '$lib/types/transaction.schema';
 	import type { ReturnItem, NewReturnInput } from '$lib/types/returns.schema';
 	import type { Product } from '$lib/types/product.schema';
@@ -31,42 +30,36 @@
 
 	let { open = $bindable(false) }: Props = $props();
 
-	// Get data and actions from TanStack Query hooks
-	const { useTransaction } = useTransactions();
-	const { createReturn, isCreating } = useReturns();
-	const { products } = useProducts();
-	const { currentSession } = useSessions();
-
+	// Modern Svelte 5 state management
 	let transactionIdInput = $state('');
 	let foundTransaction = $state<Transaction | null>(null);
 	let selectedItemsToReturn = $state<Set<string>>(new Set()); // Will store TransactionItem IDs
 	let errorMessage = $state<string | null>(null);
 	let step = $state<'search' | 'selection' | 'summary'>('search');
+	let isCreating = $state(false);
 
-	// Create transaction query when we have an ID - use $derived instead of $:
-	const transactionQuery = $derived(
-		transactionIdInput.trim() ? useTransaction(transactionIdInput.trim()) : null
-	);
+	// Remote function queries
+	const productsQuery = getProducts();
 
-	function findTransaction() {
+	async function findTransaction() {
 		errorMessage = null;
-		if (!transactionQuery) {
+		if (!transactionIdInput.trim()) {
 			errorMessage = 'Please enter a transaction ID.';
 			return;
 		}
 
-		// Check if transaction exists and is loaded
-		if (transactionQuery.isLoading) {
-			errorMessage = 'Loading transaction...';
-			return;
-		}
-
-		if (transactionQuery.isError || !transactionQuery.data) {
+		try {
+			const transaction = await getTransaction({ id: transactionIdInput.trim() });
+			if (transaction) {
+				foundTransaction = transaction;
+				step = 'selection';
+			} else {
+				foundTransaction = null;
+				errorMessage = 'Transaction not found. Please check the ID and try again.';
+			}
+		} catch (error) {
 			foundTransaction = null;
 			errorMessage = 'Transaction not found. Please check the ID and try again.';
-		} else {
-			foundTransaction = transactionQuery.data;
-			step = 'selection';
 		}
 	}
 

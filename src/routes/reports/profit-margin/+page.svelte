@@ -4,7 +4,7 @@
 	import { Badge } from '$lib/components/ui/badge';
 	import { Button } from '$lib/components/ui/button';
 	import { useProfitMarginReport } from '$lib/data/profitMargin';
-	import { useAuth } from '$lib/data/auth';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import RoleGuard from '$lib/components/ui/RoleGuard.svelte';
 
 	import {
@@ -19,7 +19,7 @@
 	import { onMount } from 'svelte';
 
 	// Initialize auth hook
-	const auth = useAuth();
+	// Modern Svelte 5 auth store
 
 	// Use data hooks with proper loading states
 	const {

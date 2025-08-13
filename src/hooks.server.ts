@@ -33,11 +33,27 @@ async function handleAuth(event: any) {
 			if (!userError && userData?.user) {
 				const user = userData.user;
 				
+				// Try to get user profile for role information
+				let userProfile = null;
+				try {
+					const { data: profile } = await supabase
+						.from('users')
+						.select('role, full_name, is_active')
+						.eq('id', user.id)
+						.single();
+					userProfile = profile;
+				} catch (profileError) {
+					console.log('No user profile found, using defaults');
+				}
+				
 				// Attach user to event.locals
 				event.locals.user = {
 					id: user.id,
 					email: user.email || sessionEmail,
 					username: user.email?.split('@')[0] || 'user',
+					full_name: userProfile?.full_name || user.email?.split('@')[0] || 'User',
+					role: userProfile?.role || 'pharmacist', // Default role for nav links
+					is_active: userProfile?.is_active ?? true,
 					is_verified: user.email_confirmed_at !== null,
 					permissions: ['pos:operate', 'reports:view'],
 					created_at: user.created_at,

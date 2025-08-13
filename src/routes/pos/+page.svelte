@@ -1,22 +1,21 @@
 <script lang="ts">
-	// Data Hooks & Types - Following COMPONENT_INTEGRATION_GUIDE.md
+	// Remote Functions - Following CLAUDE.md migration patterns
 	import type { Discount, Modifier, User } from '$lib/schemas/models';
 	import type { Product } from '$lib/types/product.schema';
 	import type { ProductBatch } from '$lib/types/productBatch.schema';
 	import type { EnhancedCartItem, CartItemModifier } from '$lib/types/cart.schema';
 	import type { CreateTransaction } from '$lib/types/transaction.schema';
 	import type { ReceiptGeneration } from '$lib/types/receipt.schema';
-	import { useInventory } from '$lib/data/inventory';
-	import { useTransactions } from '$lib/data/transaction';
-	import { useCart } from '$lib/data/cart';
-	import { usePayments } from '$lib/data/payment';
-	import { useReceipts } from '$lib/data/receipt';
-	import { useModifiers } from '$lib/data/modifier';
-	import { useProductBatches } from '$lib/data/productBatch.svelte';
+	import { getProducts } from '$lib/remote/products.remote';
+	import { createTransaction } from '$lib/remote/transactions.remote';
+	import { getCart, addCartItem, updateCartItemQuantity, removeCartItem, clearCart, applyCartDiscount } from '$lib/remote/cart.remote';
+	import { processPayment, isPaymentSuccessful } from '$lib/remote/payments.remote';
+	import { generateReceipt } from '$lib/remote/receipts.remote';
+	import { getModifiers } from '$lib/remote/modifiers.remote';
 	import { currency } from '$lib/utils/currency';
 	import { v4 as uuidv4 } from 'uuid';
 	// Auth pattern
-	import { useAuth } from '$lib/data/auth';
+	import { authStore } from '$lib/stores/auth.svelte';
 	import RoleGuard from '$lib/components/ui/RoleGuard.svelte';
 	import StaffModeBadge from '$lib/components/ui/StaffModeBadge.svelte';
 
@@ -40,47 +39,13 @@
 	import { Trash2, Pencil } from 'lucide-svelte';
 	import * as Dialog from '$lib/components/ui/dialog';
 
-	// Initialize data hooks - Following TanStack Query pattern
-	const auth = useAuth();
-	const {
-		inventoryQuery,
-		inventoryItems,
-		isLoading: isInventoryLoading,
-		isError: isInventoryError,
-		error: inventoryError
-	} = useInventory();
-	const {
-		transactionsQuery,
-		createTransaction,
-		isLoading: isTransactionLoading
-	} = useTransactions();
-	const {
-		cartQuery,
-		cartTotals,
-		items: cartItems,
-		addItem: addCartItem,
-		updateQuantity,
-		removeItem,
-		applyDiscount,
-		clearCart,
-		isEmpty: isCartEmpty
-	} = useCart();
-	const {
-		processPayment,
-		isPaymentSuccessful,
-		processPaymentStatus
-	} = usePayments();
-	const {
-		generateReceipt,
-		isLoading: isReceiptLoading
-	} = useReceipts();
-	const { modifiers: modifiersList } = useModifiers();
-	const {
-		batchesQuery,
-		batches,
-		activeBatches,
-		updateBatch
-	} = useProductBatches();
+	// Initialize remote function calls - Following CLAUDE.md migration pattern
+	// Modern Svelte 5 auth store (no longer using TanStack Query)
+	
+	// Data queries using remote functions
+	const productsQuery = getProducts();
+	const cartQuery = getCart();
+	const modifiersQuery = getModifiers();
 	
 	// --- Component State ---
 	let searchTerm = $state('');
@@ -118,52 +83,30 @@
 	let isPriceInputOpen = $state(false);
 	let newPriceInput = $state(0);
 
-	// --- Derived State - Using TanStack Query data ---
-	const categories = $derived([
-		'All',
-		...new Set(inventoryItems().map((p: any) => p.product?.category_id).filter((c: any): c is string => !!c))
-	] as string[]);
+	// State for payment processing
+	let processPaymentStatus = $state('idle');
 
-	const filteredProducts = $derived(
-		inventoryItems().filter((item: any) => {
-			const product = item.product;
-			if (!product || product.is_archived) return false;
-			const matchesCategory = activeCategory === 'All' || product.category_id === activeCategory;
-			const lowerSearch = searchTerm.toLowerCase();
-			const matchesSearch = lowerSearch
-				? product.name.toLowerCase().includes(lowerSearch) || product.sku.toLowerCase().includes(lowerSearch)
-				: true;
-			return matchesCategory && matchesSearch;
-		})
-	);
-
-	const finalizedCart = $derived({
-		subtotal: cartTotals.subtotal,
-		tax: cartTotals.tax,
-		discount_amount: cartTotals.discount_amount,
-		total: cartTotals.total,
-		items: cartItems
-	});
-
-	const subtotal = $derived(cartTotals.subtotal);
-
-	// --- Event Handlers - Using TanStack Query mutations ---
-	function handleProductClick(inventoryItem: any) {
-		const product = inventoryItem.product;
+	// --- Event Handlers - Using remote function calls ---
+	async function handleProductClick(product: any) {
 		if (!product) return;
 		
-		const availableModifiers = modifiersList.filter((m: any) => m.product_id === product.id);
-
-		if (availableModifiers.length > 0) {
+		// Get modifiers for this product
+		const modifiersData = await getModifiers({ product_id: product.id });
+		
+		if (modifiersData.length > 0) {
 			productForModifierSelection = product;
 			isModifierModalOpen = true;
 		} else {
 			// No modifiers, proceed to add item directly
-			addCartItem(product, 1, [], undefined);
+			await addCartItem({
+				product_id: product.id,
+				quantity: 1,
+				modifiers: []
+			});
 		}
 	}
 
-	function handleModifiersApplied(modifiers: any[]) {
+	async function handleModifiersApplied(modifiers: any[]) {
 		if (productForModifierSelection) {
 			// Convert modifier format if needed
 			const cartModifiers: CartItemModifier[] = modifiers.map((mod: any) => ({
@@ -171,15 +114,24 @@
 				modifier_name: mod.name || mod.modifier_name,
 				price_adjustment: mod.price_adjustment
 			}));
-			addCartItem(productForModifierSelection, 1, cartModifiers, undefined);
+			await addCartItem({
+				product_id: productForModifierSelection.id,
+				quantity: 1,
+				modifiers: cartModifiers
+			});
 		}
 		isModifierModalOpen = false;
 		productForModifierSelection = null;
 	}
 
-	function handleBatchSelected(batch: ProductBatch) {
+	async function handleBatchSelected(batch: ProductBatch) {
 		if (selectedProductForBatchSelection) {
-			addCartItem(selectedProductForBatchSelection, 1, selectedModifiersForCart, undefined);
+			await addCartItem({
+				product_id: selectedProductForBatchSelection.id,
+				quantity: 1,
+				modifiers: selectedModifiersForCart,
+				batch_id: batch.id
+			});
 		}
 		closeAndResetAllModals();
 	}
@@ -202,17 +154,17 @@
 		showManagerOverrideModal = false;
 	}
 
-	function handleDiscountApplied(discount: Discount) {
-		applyDiscount({
+	async function handleDiscountApplied(discount: Discount) {
+		await applyCartDiscount({
 			type: discount.type === 'fixed_amount' ? 'fixed' : 'percentage',
 			value: discount.value
 		});
 		appliedDiscount = discount; // Keep for display purposes
 	}
 
-	function removeDiscount() {
+	async function removeDiscount() {
 		// Apply null discount to remove
-		applyDiscount({ type: 'fixed', value: 0 });
+		await applyCartDiscount({ type: 'fixed', value: 0 });
 		appliedDiscount = null;
 	}
 
@@ -222,8 +174,10 @@
 	}
 
 async function handlePaymentConfirm(paymentDetails: any) {
-    // Payment processing using TanStack Query mutations
+    // Payment processing using remote functions
     try {
+        processPaymentStatus = 'pending';
+        
         const paymentData = {
             amount: paymentDetails.total,
             payment_method_id: 'some-payment-method-id',
@@ -237,19 +191,24 @@ async function handlePaymentConfirm(paymentDetails: any) {
         };
 
         const paymentResult = await processPayment(paymentData);
+        const paymentSuccessful = await isPaymentSuccessful({ payment_result: paymentResult });
 
-        if (!isPaymentSuccessful(paymentResult)) {
+        if (!paymentSuccessful) {
             console.error('Payment failed:', paymentResult.error_message);
             alert('Payment failed: ' + (paymentResult.error_message || ''));
+            processPaymentStatus = 'error';
             return;
         }
 
+        // Get current cart data
+        const cartData = await getCart();
+        
         // Create transaction using proper schema
         const transactionData: CreateTransaction = {
             customer_name: paymentDetails.customerName,
             customer_email: paymentDetails.customerEmail,
             customer_phone: paymentDetails.customerPhone,
-			items: finalizedCart.items.map((item: any) => ({
+			items: cartData.items.map((item: any) => ({
 				product_id: item.product_id,
 				product_name: item.product_name,
 				product_sku: item.product_sku,
@@ -262,16 +221,16 @@ async function handlePaymentConfirm(paymentDetails: any) {
 					modifier_id: mod.modifier_id,
 					modifier_name: mod.modifier_name,
 					selected_options: []
-				}))
+				})) || []
 			})),
-			subtotal: finalizedCart.subtotal,
-			discount_amount: finalizedCart.discount_amount,
-			tax_amount: finalizedCart.tax,
+			subtotal: cartData.totals.subtotal,
+			discount_amount: cartData.totals.discount_amount,
+			tax_amount: cartData.totals.tax,
 			tip_amount: 0,
-			total_amount: finalizedCart.total,
+			total_amount: cartData.totals.total,
             payment_methods: [{
                 type: paymentDetails.paymentMethod,
-                amount: finalizedCart.total,
+                amount: cartData.totals.total,
                 reference: paymentDetails.reference,
                 status: 'completed'
             }],
@@ -304,11 +263,13 @@ async function handlePaymentConfirm(paymentDetails: any) {
 
         // Reset state
         showPaymentModal = false;
-        clearCart();
+        await clearCart();
         appliedDiscount = null;
+        processPaymentStatus = 'success';
     } catch (error) {
         console.error('Payment processing error:', error);
         alert('An unexpected error occurred during payment processing.');
+        processPaymentStatus = 'error';
     }
 }
 
@@ -335,11 +296,14 @@ function handleReceiptClose() {
 		showPinDialog = false;
 	}
 
-	function handleNewPriceSubmit() {
+	async function handleNewPriceSubmit() {
 		if (!itemForPriceOverride) return;
-		// Note: Price override functionality would need to be implemented in cart hook
+		// Note: Price override functionality would need to be implemented in cart remote
 		// For now, we'll update the quantity to trigger a recalculation
-		updateQuantity(itemForPriceOverride.cart_item_id, itemForPriceOverride.quantity);
+		await updateCartItemQuantity({ 
+			cart_item_id: itemForPriceOverride.cart_item_id, 
+			quantity: itemForPriceOverride.quantity 
+		});
 		isPriceInputOpen = false;
 		itemForPriceOverride = null;
 	}
@@ -348,7 +312,7 @@ function handleReceiptClose() {
 		requestManagerOverride(
 			'Manager Override Required',
 			'Please enter manager PIN to remove this item.',
-			() => removeItem(item.cart_item_id)
+			async () => await removeCartItem({ cart_item_id: item.cart_item_id })
 		);
 	}
 
@@ -403,12 +367,14 @@ function handleReceiptClose() {
 
 <ReturnProcessingModal bind:open={showReturnModal} />
 
-	<PaymentModal
-		bind:open={showPaymentModal}
-		totalAmount={cartTotals.total}
-		onConfirm={handlePaymentConfirm}
-		onCancel={() => (showPaymentModal = false)}
-	/>
+	{#await cartQuery then cartData}
+		<PaymentModal
+			bind:open={showPaymentModal}
+			totalAmount={cartData.totals.total}
+			onConfirm={handlePaymentConfirm}
+			onCancel={() => (showPaymentModal = false)}
+		/>
+	{/await}
 
 <PinDialog bind:open={showPinDialog} onSuccess={handlePinSuccess} requiredRole="manager" />
 
@@ -463,57 +429,85 @@ function handleReceiptClose() {
 			<Card.Header>
 				<Card.Title>Products</Card.Title>
 				<div class="relative w-full max-w-sm">
-					<BarcodeInput
-						placeholder="Scan barcode..."
-						onscan={(code: string) => {
-							const hit = filteredProducts.find((p: any) => p.product?.sku === code || p.id === code);
-							if (hit) handleProductClick(hit);
-						}}
-					/>
+					{#await productsQuery then products}
+						{@const filteredProducts = products.filter((product: any) => {
+							if (!product || product.is_archived) return false;
+							const matchesCategory = activeCategory === 'All' || product.category_id === activeCategory;
+							const lowerSearch = searchTerm.toLowerCase();
+							const matchesSearch = lowerSearch
+								? product.name.toLowerCase().includes(lowerSearch) || product.sku.toLowerCase().includes(lowerSearch)
+								: true;
+							return matchesCategory && matchesSearch;
+						})}
+						<BarcodeInput
+							placeholder="Scan barcode..."
+							onscan={(code: string) => {
+								const hit = filteredProducts.find((p: any) => p.sku === code || p.id === code);
+								if (hit) handleProductClick(hit);
+							}}
+						/>
+					{/await}
 				</div>
 			</Card.Header>
 			<Card.Content>
-				<div class="flex gap-2 mb-4 flex-wrap">
-					{#each categories as category}
-						<Button
-							variant={activeCategory === category ? 'default' : 'outline'}
-							onclick={() => (activeCategory = category)}>{category}</Button
-						>
-					{/each}
-				</div>
+				{#await productsQuery then products}
+					{@const categories = [
+						'All',
+						...new Set(products.map((p: any) => p.category_id).filter((c: any): c is string => !!c))
+					]}
+					<div class="flex gap-2 mb-4 flex-wrap">
+						{#each categories as category}
+							<Button
+								variant={activeCategory === category ? 'default' : 'outline'}
+								onclick={() => (activeCategory = category)}>{category}</Button
+							>
+						{/each}
+					</div>
+				{/await}
 			</Card.Content>
 		</Card.Root>
-		{#if $inventoryQuery.isPending}
+		{#await productsQuery}
 			<div class="flex items-center justify-center h-64">
 				<div class="loading-spinner">Loading products...</div>
 			</div>
-		{:else if $inventoryQuery.isError}
-			<div class="flex items-center justify-center h-64 text-red-500">
-				<div>Error loading products: {inventoryError()?.message}</div>
-			</div>
-		{:else}
+		{:then products}
+			{@const categories = [
+				'All',
+				...new Set(products.map((p: any) => p.category_id).filter((c: any): c is string => !!c))
+			]}
+			{@const filteredProducts = products.filter((product: any) => {
+				if (!product || product.is_archived) return false;
+				const matchesCategory = activeCategory === 'All' || product.category_id === activeCategory;
+				const lowerSearch = searchTerm.toLowerCase();
+				const matchesSearch = lowerSearch
+					? product.name.toLowerCase().includes(lowerSearch) || product.sku.toLowerCase().includes(lowerSearch)
+					: true;
+				return matchesCategory && matchesSearch;
+			})}
 			<div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4 overflow-y-auto pr-2 h-full">
-				{#each filteredProducts as inventoryItem (inventoryItem.id)}
-					{#if inventoryItem.product}
-						<button
-							onclick={() => handleProductClick(inventoryItem)}
-							class="border rounded-lg p-2 text-center hover:bg-muted transition-colors flex flex-col items-center justify-between"
-						>
-							<img
-								src={inventoryItem.product.image_url || '/placeholder.svg'}
-								alt={inventoryItem.product.name || 'Product'}
-								class="w-24 h-24 object-cover mb-2 rounded-md"
-							/>
-							<span class="text-sm font-medium">{inventoryItem.product.name || 'Unnamed Product'}</span>
-							<span class="text-xs text-muted-foreground">{currency(inventoryItem.product.selling_price || 0)}</span>
-							<Badge variant={inventoryItem.quantity_available > 0 ? 'secondary' : 'destructive'}>
-								{inventoryItem.quantity_available || 0} in stock
-							</Badge>
-						</button>
-					{/if}
+				{#each filteredProducts as product (product.id)}
+					<button
+						onclick={() => handleProductClick(product)}
+						class="border rounded-lg p-2 text-center hover:bg-muted transition-colors flex flex-col items-center justify-between"
+					>
+						<img
+							src={product.image_url || '/placeholder.svg'}
+							alt={product.name || 'Product'}
+							class="w-24 h-24 object-cover mb-2 rounded-md"
+						/>
+						<span class="text-sm font-medium">{product.name || 'Unnamed Product'}</span>
+						<span class="text-xs text-muted-foreground">{currency(product.selling_price || 0)}</span>
+						<Badge variant={product.stock_quantity > 0 ? 'secondary' : 'destructive'}>
+							{product.stock_quantity || 0} in stock
+						</Badge>
+					</button>
 				{/each}
 			</div>
-		{/if}
+		{:catch error}
+			<div class="flex items-center justify-center h-64 text-red-500">
+				<div>Error loading products: {error?.message}</div>
+			</div>
+		{/await}
 	</main>
 
 	<div class="xl:col-span-2 bg-background rounded-lg shadow-sm flex flex-col h-full">
@@ -526,100 +520,107 @@ function handleReceiptClose() {
 			<Button
 				variant="ghost"
 				size="sm"
-				onclick={() => clearCart()}
-				disabled={isCartEmpty}>Clear Cart</Button
+				onclick={async () => await clearCart()}
+				>Clear Cart</Button
 			>
 			</div>
 		</header>
 
 		<div class="flex-1 p-4 space-y-3 overflow-y-auto">
-			{#if $cartQuery.isPending}
+			{#await cartQuery}
 				<div class="flex items-center justify-center h-full">
 					<div class="loading-spinner">Loading cart...</div>
 				</div>
-			{:else if $cartQuery.isError}
-				<div class="flex items-center justify-center h-full text-red-500">
-					<div>Error loading cart</div>
-				</div>
-			{:else if isCartEmpty}
-				<div class="flex flex-col items-center justify-center h-full text-muted-foreground">
-					<p>Your cart is empty.</p>
-					<p class="text-sm">Click on a product to add it.</p>
-				</div>
-			{:else}
-				{#each cartItems as item (item.cart_item_id)}
-					<div class="flex justify-between items-start gap-2">
-						<div class="flex items-start gap-3 flex-1">
-							<img
-								src={item.image_url || '/placeholder.svg'}
-								alt={item.product_name}
-								class="h-10 w-10 rounded-md object-cover"
-							/>
-							<div class="flex-1">
-								<p class="font-medium text-sm leading-tight">{item.product_name}</p>
-								<div class="text-xs text-muted-foreground">
-									<button
-										onclick={() => handlePriceClick(item)}
-										class="flex items-center gap-1 hover:text-primary transition-colors p-0 m-0 h-auto"
-										title="Override Price"
-									>
-										${(item.final_price / 100).toFixed(2)}
-									</button>
+			{:then cartData}
+				{#if cartData.items.length === 0}
+					<div class="flex flex-col items-center justify-center h-full text-muted-foreground">
+						<p>Your cart is empty.</p>
+						<p class="text-sm">Click on a product to add it.</p>
+					</div>
+				{:else}
+					{#each cartData.items as item (item.cart_item_id)}
+						<div class="flex justify-between items-start gap-2">
+							<div class="flex items-start gap-3 flex-1">
+								<img
+									src={item.image_url || '/placeholder.svg'}
+									alt={item.product_name}
+									class="h-10 w-10 rounded-md object-cover"
+								/>
+								<div class="flex-1">
+									<p class="font-medium text-sm leading-tight">{item.product_name}</p>
+									<div class="text-xs text-muted-foreground">
+										<button
+											onclick={() => handlePriceClick(item)}
+											class="flex items-center gap-1 hover:text-primary transition-colors p-0 m-0 h-auto"
+											title="Override Price"
+										>
+											${(item.final_price / 100).toFixed(2)}
+										</button>
+									</div>
 								</div>
 							</div>
+							<div class="flex items-center gap-2">
+								<Input
+									type="number"
+									value={item.quantity}
+									oninput={async (e) => await updateCartItemQuantity({ 
+										cart_item_id: item.cart_item_id, 
+										quantity: e.currentTarget.valueAsNumber 
+									})}
+									class="w-16 h-8 text-center"
+								/>
+								<Button
+									variant="ghost"
+									size="icon"
+									class="h-8 w-8"
+									onclick={() => handleRemoveItem(item)}
+								>
+									<Trash2 class="h-4 w-4 text-destructive" />
+								</Button>
+							</div>
 						</div>
-						<div class="flex items-center gap-2">
-							<Input
-								type="number"
-								value={item.quantity}
-								oninput={(e) => updateQuantity(item.cart_item_id, e.currentTarget.valueAsNumber)}
-								class="w-16 h-8 text-center"
-							/>
-							<Button
-								variant="ghost"
-								size="icon"
-								class="h-8 w-8"
-								onclick={() => handleRemoveItem(item)}
-							>
-								<Trash2 class="h-4 w-4 text-destructive" />
-							</Button>
-						</div>
-					</div>
-				{/each}
-			{/if}
+					{/each}
+				{/if}
+			{:catch error}
+				<div class="flex items-center justify-center h-full text-red-500">
+					<div>Error loading cart: {error?.message}</div>
+				</div>
+			{/await}
 		</div>
 
 		<footer class="p-4 mt-auto border-t space-y-3 flex-shrink-0">
-			<div class="flex justify-between">
-				<span>Subtotal</span>
-				<span>{currency(subtotal)}</span>
-			</div>
-			<div class="flex justify-between">
-				<span>Tax (12%)</span>
-				<span>{currency(finalizedCart.tax)}</span>
-			</div>
-			{#if finalizedCart.discount_amount > 0}
-				<div class="flex justify-between text-green-600">
-					<span>Discount</span>
-					<span>-{currency(finalizedCart.discount_amount)}</span>
+			{#await cartQuery then cartData}
+				<div class="flex justify-between">
+					<span>Subtotal</span>
+					<span>{currency(cartData.totals.subtotal)}</span>
 				</div>
-			{/if}
-			<div class="flex justify-between font-bold text-lg border-t pt-2 mt-2">
-				<span>Total</span>
-				<span>{currency(finalizedCart.total)}</span>
-			</div>
-			<Button 
-				class="w-full" 
-				size="lg" 
-				onclick={handleCharge} 
-				disabled={isCartEmpty || processPaymentStatus === 'pending'}
-			>
-				{#if processPaymentStatus === 'pending'}
-					Processing Payment...
-				{:else}
-					Charge
+				<div class="flex justify-between">
+					<span>Tax (12%)</span>
+					<span>{currency(cartData.totals.tax)}</span>
+				</div>
+				{#if cartData.totals.discount_amount > 0}
+					<div class="flex justify-between text-green-600">
+						<span>Discount</span>
+						<span>-{currency(cartData.totals.discount_amount)}</span>
+					</div>
 				{/if}
-			</Button>
+				<div class="flex justify-between font-bold text-lg border-t pt-2 mt-2">
+					<span>Total</span>
+					<span>{currency(cartData.totals.total)}</span>
+				</div>
+				<Button 
+					class="w-full" 
+					size="lg" 
+					onclick={handleCharge} 
+					disabled={cartData.items.length === 0 || processPaymentStatus === 'pending'}
+				>
+					{#if processPaymentStatus === 'pending'}
+						Processing Payment...
+					{:else}
+						Charge
+					{/if}
+				</Button>
+			{/await}
 		</footer>
 	</div>
 	</div>

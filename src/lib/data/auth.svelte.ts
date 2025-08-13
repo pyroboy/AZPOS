@@ -94,13 +94,16 @@ export function useAuth() {
 		enabled: browser
 	});
 
+	// Derived value for auth stats enabled state
+	const authStatsEnabled = $derived(
+		browser && !!currentUserQuery.data && ['admin', 'manager'].includes(currentUserQuery.data.role)
+	);
+
 	// Query for auth statistics (admin/manager only)
 	const authStatsQuery = createQuery<AuthStats>({
 		queryKey: authStatsQueryKey,
 		queryFn: onGetAuthStats,
-		enabled: $derived(
-			browser && !!currentUserQuery.data && ['admin', 'manager'].includes(currentUserQuery.data.role)
-		)
+		enabled: authStatsEnabled
 	});
 
 	// Mutation to login
@@ -287,6 +290,23 @@ export function useAuth() {
 		});
 	}
 
+	// Derived mutation states
+	const loginStatus = $derived(loginMutation.status);
+	const registerStatus = $derived(registerMutation.status);
+	const logoutStatus = $derived(logoutMutation.status);
+	const updateProfileStatus = $derived(updateProfileMutation.status);
+	const changePasswordStatus = $derived(changePasswordMutation.status);
+	const requestPasswordResetStatus = $derived(requestPasswordResetMutation.status);
+	const verifyEmailStatus = $derived(verifyEmailMutation.status);
+	const loginWithPinStatus = $derived(loginWithPinMutation.status);
+	const toggleStaffModeStatus = $derived(toggleStaffModeMutation.status);
+
+	// Derived loading/error states
+	const isError = $derived(currentUserQuery.isError);
+	const error = $derived(currentUserQuery.error);
+	const isStatsLoading = $derived(authStatsQuery.isPending);
+	const statsError = $derived(authStatsQuery.error);
+
 	return {
 		// Queries and their states
 		currentUserQuery,
@@ -330,25 +350,25 @@ export function useAuth() {
 		toggleStaffMode,
 
 		// Mutation states
-		loginStatus: $derived(loginMutation.status),
-		registerStatus: $derived(registerMutation.status),
-		logoutStatus: $derived(logoutMutation.status),
-		updateProfileStatus: $derived(updateProfileMutation.status),
-		changePasswordStatus: $derived(changePasswordMutation.status),
-		requestPasswordResetStatus: $derived(requestPasswordResetMutation.status),
-		verifyEmailStatus: $derived(verifyEmailMutation.status),
-		loginWithPinStatus: $derived(loginWithPinMutation.status),
-		toggleStaffModeStatus: $derived(toggleStaffModeMutation.status),
+		loginStatus,
+		registerStatus,
+		logoutStatus,
+		updateProfileStatus,
+		changePasswordStatus,
+		requestPasswordResetStatus,
+		verifyEmailStatus,
+		loginWithPinStatus,
+		toggleStaffModeStatus,
 
 		// User activity helper
 		useUserActivity,
 
 		// Loading states
-		isError: $derived(currentUserQuery.isError),
-		error: $derived(currentUserQuery.error),
+		isError,
+		error,
 
 		// Stats loading
-		isStatsLoading: $derived(authStatsQuery.isPending),
-		statsError: $derived(authStatsQuery.error)
+		isStatsLoading,
+		statsError
 	};
 }

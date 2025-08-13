@@ -1,10 +1,9 @@
 <script lang="ts">
-import { useDiscounts } from '$lib/data/discount';
+import { getActiveDiscounts } from '$lib/remote/discounts.remote';
 import type { Discount } from '$lib/types';
 
-	// Initialize discount hook
-	const discountHook = useDiscounts();
-	const discounts = $derived(discountHook.discounts);
+	// Get active discounts using remote functions
+	const discountsQuery = getActiveDiscounts();
 	import {
 		Dialog,
 		DialogContent,
@@ -26,7 +25,7 @@ import type { Discount } from '$lib/types';
 		onApply: (discount: Discount) => void;
 	} = $props();
 
-	const activeDiscounts = $derived(discounts.filter((d: Discount) => d.is_active));
+	// Removed - will use await pattern in template
 	let selectedDiscountId = $state<string | undefined>(undefined);
 	let focusContainer = $state<HTMLDivElement | undefined>(undefined);
 
@@ -38,9 +37,10 @@ import type { Discount } from '$lib/types';
 		}
 	});
 
-	function handleApply() {
+	async function handleApply() {
 		if (selectedDiscountId) {
-			const selectedDiscount = activeDiscounts.find((d: Discount) => d.id === selectedDiscountId);
+			const discounts = await discountsQuery;
+			const selectedDiscount = discounts.find((d: Discount) => d.id === selectedDiscountId);
 			if (selectedDiscount) {
 				onApply(selectedDiscount);
 				open = false;
@@ -60,14 +60,19 @@ import type { Discount } from '$lib/types';
 			<DialogDescription>Select an active discount to apply to the order.</DialogDescription>
 		</DialogHeader>
 
-		{#if activeDiscounts.length > 0}
+		{#await discountsQuery}
+			<div class="py-8 text-center text-muted-foreground">
+				<p>Loading discounts...</p>
+			</div>
+		{:then discounts}
+			{#if discounts.length > 0}
 			<div
 				bind:this={focusContainer}
 				tabindex="-1"
 				class="max-h-[60vh] overflow-y-auto py-4 outline-none"
 			>
 				<RadioGroup bind:value={selectedDiscountId} class="gap-4">
-					{#each activeDiscounts as discount (discount.id)}
+					{#each discounts as discount (discount.id)}
 						<div
 							class="flex items-center space-x-2 rounded-md border p-4 hover:bg-accent hover:text-accent-foreground"
 						>
@@ -84,15 +89,20 @@ import type { Discount } from '$lib/types';
 					{/each}
 				</RadioGroup>
 			</div>
-		{:else}
-			<div class="py-4 text-center text-muted-foreground">
-				<p>No active discounts available.</p>
+			{:else}
+				<div class="py-4 text-center text-muted-foreground">
+					<p>No active discounts available.</p>
+				</div>
+			{/if}
+		{:catch error}
+			<div class="py-4 text-center text-red-500">
+				<p>Error loading discounts: {error.message}</p>
 			</div>
-		{/if}
+		{/await}
 
 		<DialogFooter>
 			<Button variant="outline" onclick={handleCancel}>Cancel</Button>
-			<Button onclick={handleApply} disabled={!selectedDiscountId || activeDiscounts.length === 0}
+			<Button onclick={handleApply} disabled={!selectedDiscountId}
 				>Apply</Button
 			>
 		</DialogFooter>

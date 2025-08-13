@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { useDiscounts } from '$lib/data/discount';
+	import { useDiscounts } from '$lib/data/discount.svelte';
 
 	// Initialize discount hook
 	const discountHook = useDiscounts();
