@@ -88,7 +88,7 @@
 
 	<Table.Body>
 		{#each products as product (product.id)}
-			<Table.Row>
+			<Table.Row id="product-{product.id}" class="cursor-pointer" onclick={() => handleSelectProduct(product.id, !selectedProductIds.includes(product.id))}>
 				<Table.Cell>
 					<Checkbox
 						checked={selectedProductIds.includes(product.id)}

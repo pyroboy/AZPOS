@@ -1,347 +1,465 @@
 <script lang="ts">
-	import { getProducts } from '$lib/remote/products.remote';
-	import { getInventoryItems } from '$lib/remote/inventory.remote';
-	// import { useView } from '$lib/data/view'; // Temporarily disabled
-	import { goto } from '$app/navigation';
+    import { getProducts } from '$lib/remote/products.remote';
+    import { getInventoryItems } from '$lib/remote/inventory.remote';
+    import { goto } from '$app/navigation';
 
-	import { Button } from '$lib/components/ui/button';
+    import { Button } from '$lib/components/ui/button';
+    import StockKPI from './StockKPI.svelte';
+    import StockCardView from './StockCardView.svelte';
+    import StockTableView from './StockTableView.svelte';
+    import BulkEditModal from './BulkEditModal.svelte';
+    import * as Select from '$lib/components/ui/select';
+    import { Input } from '$lib/components/ui/input';
+    import { LayoutGrid, List, Trash2, X } from 'lucide-svelte';
+    import { SORT_OPTIONS, STOCK_STATUS_FILTERS } from '$lib/constants/inventory';
+    import type { Product } from '$lib/types/product.schema';
+    import { dragSelect } from '../../actions/dragSelect';
 
-	import StockKPI from './StockKPI.svelte';
+    // Local state for filters and selections
+    let searchTerm = $state('');
 
-	import StockCardView from './StockCardView.svelte';
+    let stockStatusFilter = $state('all');
 
-	import StockTableView from './StockTableView.svelte';
+    let sortOrder = $state('name_asc');
 
-	import BulkEditModal from './BulkEditModal.svelte';
+    let activeCategories = $state<string[]>([]);
 
-	import * as Select from '$lib/components/ui/select';
+    let selectedProductIds = $state<string[]>([]);
 
-	import { Input } from '$lib/components/ui/input';
+    let isBulkEditModalOpen = $state(false);
 
-	import { LayoutGrid, List, Trash2, X } from 'lucide-svelte';
+    let viewMode = $state<'card' | 'table'>('card');
+    
+    // Drag selection state
+    let isDragging = $state(false);
+    let dragBox = $state<{ x: number; y: number; width: number; height: number } | null>(null);
+    let dragSelectionArea = $state<{ x: number; y: number; width: number; height: number } | null>(null);
+    let modifierKeys = $state({ shift: false, ctrl: false, meta: false });
 
-	import { SORT_OPTIONS, STOCK_STATUS_FILTERS } from '$lib/constants/inventory';
+    // Accept shared queries from parent
+    let { queries }: { queries?: any } = $props();
 
-	import type { Product } from '$lib/types/product.schema';
+    // Use shared queries if provided, otherwise create new ones (fallback)
+    const productsQuery = queries?.products || getProducts({});
+    const inventoryQuery = queries?.inventory || getInventoryItems({});
 
-	// Local state for filters and selections
+    // Track modifier keys for selection behavior
+    function updateModifierKeys(event: KeyboardEvent) {
+        modifierKeys = {
+            shift: event.shiftKey,
+            ctrl: event.ctrlKey,
+            meta: event.metaKey
+        };
+    }
 
-	let searchTerm = $state('');
+    // Add keyboard event listeners
+    if (typeof window !== 'undefined') {
+        window.addEventListener('keydown', updateModifierKeys);
+        window.addEventListener('keyup', updateModifierKeys);
+    }
 
-	let stockStatusFilter = $state('all');
+    // Cleanup function for event listeners
+    function cleanup() {
+        if (typeof window !== 'undefined') {
+            window.removeEventListener('keydown', updateModifierKeys);
+            window.removeEventListener('keyup', updateModifierKeys);
+        }
+    }
 
-	let sortOrder = $state('name_asc');
+    // Cleanup on component destroy
+    if (typeof window !== 'undefined') {
+        window.addEventListener('beforeunload', cleanup);
+    }
 
-	let activeCategories = $state<string[]>([]);
+    console.log('🔍 [StockStatus] Using data fetching', {
+        usingSharedQueries: !!queries,
+        timestamp: new Date().toISOString(),
+        component: 'StockStatus.svelte'
+    });
+    
+    // const { updateViewState, getFilterState, getSortState, getSelectionState } = useView(); // Temporarily disabled
+    // Mock functions
+    const updateViewState = () => {};
+    const getFilterState = () => ({});
+    const getSortState = () => ({});
+    const getSelectionState = () => ({});
 
-	let selectedProductIds = $state<string[]>([]);
+    // --- END REMOTE FUNCTIONS ---
 
-	let isBulkEditModalOpen = $state(false);
+    // Categories will be computed in template
 
-	let viewMode = $state<'card' | 'table'>('card');
+    // Function to filter and sort products
+    function filterAndSortProducts(products: Product[] | null | undefined) {
+        if (!products || !Array.isArray(products)) {
+            console.log('🔄 [StockStatus] No products or invalid data', { products });
+            return [];
+        }
+        
+        console.log('🔄 [StockStatus] Filtering and sorting products', { products: products.length });
 
-	// Accept shared queries from parent
-	let { queries }: { queries?: any } = $props();
+        let filtered = products;
 
-	// Use shared queries if provided, otherwise create new ones (fallback)
-	const productsQuery = queries?.products || getProducts();
-	const inventoryQuery = queries?.inventory || getInventoryItems({});
+        // Search filter
+        if (searchTerm.trim()) {
+            const search = searchTerm.toLowerCase();
+            filtered = filtered.filter(
+                (p: Product) =>
+                    p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search)
+            );
+        }
 
-	console.log('🔍 [StockStatus] Using data fetching', {
-		usingSharedQueries: !!queries,
-		timestamp: new Date().toISOString(),
-		component: 'StockStatus.svelte'
-	});
-	
-	// const { updateViewState, getFilterState, getSortState, getSelectionState } = useView(); // Temporarily disabled
-	// Mock functions
-	const updateViewState = () => {};
-	const getFilterState = () => ({});
-	const getSortState = () => ({});
-	const getSelectionState = () => ({});
+        // Category filter
+        if (activeCategories.length > 0) {
+            filtered = filtered.filter(
+                (p: Product) => p.category_id && activeCategories.includes(p.category_id)
+            );
+        }
 
-	// --- END REMOTE FUNCTIONS ---
+        // Stock status filter
+        if (stockStatusFilter !== 'all') {
+            switch (stockStatusFilter) {
+                case 'low_stock':
+                    filtered = filtered.filter(
+                        (p: Product) =>
+                            (p.stock_quantity || 0) > 0 && (p.stock_quantity || 0) < (p.reorder_point || p.min_stock_level || 10)
+                    );
+                    break;
+                case 'out_of_stock':
+                    filtered = filtered.filter((p: Product) => (p.stock_quantity || 0) === 0);
+                    break;
+                case 'in_stock':
+                    filtered = filtered.filter((p: Product) => (p.stock_quantity || 0) > 0);
+                    break;
+            }
+        }
 
-	// Categories will be computed in template
+        // Sort products
+        switch (sortOrder) {
+            case 'name_asc':
+                filtered = filtered.sort((a: Product, b: Product) => a.name.localeCompare(b.name));
+                break;
+            case 'name_desc':
+                filtered = filtered.sort((a: Product, b: Product) => b.name.localeCompare(a.name));
+                break;
+            case 'stock_asc':
+                filtered = filtered.sort(
+                    (a: Product, b: Product) => (a.stock_quantity || 0) - (b.stock_quantity || 0)
+                );
+                break;
+            case 'stock_desc':
+                filtered = filtered.sort(
+                    (a: Product, b: Product) => (b.stock_quantity || 0) - (a.stock_quantity || 0)
+                );
+                break;
+            case 'price_asc':
+                filtered = filtered.sort(
+                    (a: Product, b: Product) => (a.selling_price || 0) - (b.selling_price || 0)
+                );
+                break;
+            case 'price_desc':
+                filtered = filtered.sort(
+                    (a: Product, b: Product) => (b.selling_price || 0) - (a.selling_price || 0)
+                );
+                break;
+        }
 
-	// Function to filter and sort products
-	function filterAndSortProducts(products: Product[] | null | undefined) {
-		if (!products || !Array.isArray(products)) {
-			console.log('🔄 [StockStatus] No products or invalid data', { products });
-			return [];
-		}
-		
-		console.log('🔄 [StockStatus] Filtering and sorting products', { products: products.length });
+        return filtered;
+    }
 
-		let filtered = products;
+    // Reactive calculation for items to reorder count
+    function getItemsToReorderCount(products: Product[]) {
+        return products.filter(
+            (p: Product) => (p.stock_quantity || 0) < (p.reorder_point || p.min_stock_level || 10)
+        ).length;
+    }
 
-		// Search filter
-		if (searchTerm.trim()) {
-			const search = searchTerm.toLowerCase();
-			filtered = filtered.filter(
-				(p: Product) =>
-					p.name.toLowerCase().includes(search) || p.sku.toLowerCase().includes(search)
-			);
-		}
+    // Helper functions
 
-		// Category filter
-		if (activeCategories.length > 0) {
-			filtered = filtered.filter(
-				(p: Product) => p.category_id && activeCategories.includes(p.category_id)
-			);
-		}
+    function toggleCategory(categoryId: string) {
+        if (activeCategories.includes(categoryId)) {
+            activeCategories = activeCategories.filter((id) => id !== categoryId);
+        } else {
+            activeCategories = [...activeCategories, categoryId];
+        }
+    }
 
-		// Stock status filter
-		if (stockStatusFilter !== 'all') {
-			switch (stockStatusFilter) {
-				case 'low_stock':
-					filtered = filtered.filter(
-						(p: Product) =>
-							(p.stock_quantity || 0) > 0 && (p.stock_quantity || 0) < (p.reorder_point || p.min_stock_level || 10)
-					);
-					break;
-				case 'out_of_stock':
-					filtered = filtered.filter((p: Product) => (p.stock_quantity || 0) === 0);
-					break;
-				case 'in_stock':
-					filtered = filtered.filter((p: Product) => (p.stock_quantity || 0) > 0);
-					break;
-			}
-		}
+    function clearFilters() {
+        searchTerm = '';
+        stockStatusFilter = 'all';
+        activeCategories = [];
+        selectedProductIds = [];
+    }
 
-		// Sort products
-		switch (sortOrder) {
-			case 'name_asc':
-				filtered = filtered.sort((a: Product, b: Product) => a.name.localeCompare(b.name));
-				break;
-			case 'name_desc':
-				filtered = filtered.sort((a: Product, b: Product) => b.name.localeCompare(a.name));
-				break;
-			case 'stock_asc':
-				filtered = filtered.sort(
-					(a: Product, b: Product) => (a.stock_quantity || 0) - (b.stock_quantity || 0)
-				);
-				break;
-			case 'stock_desc':
-				filtered = filtered.sort(
-					(a: Product, b: Product) => (b.stock_quantity || 0) - (a.stock_quantity || 0)
-				);
-				break;
-			case 'price_asc':
-				filtered = filtered.sort(
-					(a: Product, b: Product) => (a.selling_price || 0) - (b.selling_price || 0)
-				);
-				break;
-			case 'price_desc':
-				filtered = filtered.sort(
-					(a: Product, b: Product) => (b.selling_price || 0) - (a.selling_price || 0)
-				);
-				break;
-		}
+    function setViewMode(mode: 'card' | 'table') {
+        viewMode = mode;
+    }
 
-		return filtered;
-	}
+    // --- DRAG SELECTION LOGIC ---
+    
+    function handleDragStart(detail: { x: number; y: number }) {
+        isDragging = true;
+        
+        // Check if modifier keys are pressed
+        const isShiftPressed = modifierKeys.shift;
+        const isCtrlPressed = modifierKeys.ctrl || modifierKeys.meta;
+        
+        // Only clear selection if no modifier keys are pressed
+        if (!isShiftPressed && !isCtrlPressed) {
+            selectedProductIds = [];
+        }
+        
+        console.log('🖱️ [StockStatus] Drag started at:', detail, { isShiftPressed, isCtrlPressed });
+    }
 
-	// Reactive calculation for items to reorder count
-	function getItemsToReorderCount(products: Product[]) {
-		return products.filter(
-			(p: Product) => (p.stock_quantity || 0) < (p.reorder_point || p.min_stock_level || 10)
-		).length;
-	}
+    function handleDragMove(detail: { x: number; y: number; width: number; height: number }) {
+        dragBox = detail;
+        dragSelectionArea = detail; // For visual feedback
+        console.log('🖱️ [StockStatus] Drag move:', dragBox);
 
-	// Helper functions
+        // Get the current filtered products to check against
+        const currentProducts = productsQuery?.data?.products || [];
+        const filteredProducts = filterAndSortProducts(currentProducts);
+        
+        if (!dragBox || filteredProducts.length === 0) return;
 
-	function toggleCategory(categoryId: string) {
-		if (activeCategories.includes(categoryId)) {
-			activeCategories = activeCategories.filter((id) => id !== categoryId);
-		} else {
-			activeCategories = [...activeCategories, categoryId];
-		}
-	}
+        const currentSelected: string[] = [];
 
-	function clearFilters() {
-		searchTerm = '';
+        filteredProducts.forEach((product) => {
+            const element = document.getElementById(`product-${product.id}`);
+            if (element && dragBox) {
+                const rect = element.getBoundingClientRect();
+                
+                // Convert element position to page coordinates
+                const elementPageX = rect.left + window.scrollX;
+                const elementPageY = rect.top + window.scrollY;
+                const elementPageRight = elementPageX + rect.width;
+                const elementPageBottom = elementPageY + rect.height;
+                
+                // Check for intersection with the dragBox (using page coordinates)
+                if (
+                    elementPageX < dragBox.x + dragBox.width &&
+                    elementPageRight > dragBox.x &&
+                    elementPageY < dragBox.y + dragBox.height &&
+                    elementPageBottom > dragBox.y
+                ) {
+                    currentSelected.push(product.id);
+                }
+            }
+        });
+        
+        // Update selection based on modifier keys
+        let newSelection: string[];
+        if (modifierKeys.shift || modifierKeys.ctrl || modifierKeys.meta) {
+            // Add to existing selection
+            newSelection = [...new Set([...selectedProductIds, ...currentSelected])];
+        } else {
+            // Replace selection
+            newSelection = currentSelected;
+        }
+        
+        selectedProductIds = newSelection;
+        console.log('🖱️ [StockStatus] Selected products:', selectedProductIds);
+    }
 
-		stockStatusFilter = 'all';
-
-		activeCategories = [];
-
-		selectedProductIds = [];
-	}
-
-	function setViewMode(mode: 'card' | 'table') {
-		viewMode = mode;
-	}
+    function handleDragEnd() {
+        isDragging = false;
+        dragBox = null;
+        dragSelectionArea = null; // Clear visual feedback
+        console.log('🖱️ [StockStatus] Drag ended, final selection:', selectedProductIds);
+    }
 </script>
 
 <div class="space-y-6">
-	<div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-		<StockKPI />
-	</div>
+    <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <StockKPI />
+    </div>
 
-	<div class="space-y-4">
-		<div class="flex flex-wrap items-center justify-between gap-4">
-			<div class="flex flex-1 items-center gap-4">
-				<div class="relative w-full max-w-sm">
-					<Input class="max-w-sm" placeholder="Search by name or SKU..." bind:value={searchTerm} />
-				</div>
+    <div class="space-y-4">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+            <div class="flex flex-1 items-center gap-4">
+                <div class="relative w-full max-w-sm">
+                    <Input class="max-w-sm" placeholder="Search by name or SKU..." bind:value={searchTerm} />
+                </div>
 
-				{#if selectedProductIds.length > 0}
-					<div class="flex items-center gap-2">
-						<Button
-							variant="outline"
-							onclick={() => (isBulkEditModalOpen = true)}
-							disabled={selectedProductIds.length === 0}
-						>
-							Edit Selected ({selectedProductIds.length})
-						</Button>
+                {#if selectedProductIds.length > 0}
+                    <div class="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            onclick={() => (isBulkEditModalOpen = true)}
+                            disabled={selectedProductIds.length === 0}
+                        >
+                            Edit Selected ({selectedProductIds.length})
+                        </Button>
 
-						<Button variant="secondary" size="icon" onclick={() => (selectedProductIds = [])}>
-							<Trash2 class="h-4 w-4" />
-						</Button>
-					</div>
-				{/if}
-			</div>
+                        <Button variant="secondary" size="icon" onclick={() => (selectedProductIds = [])}>
+                            <Trash2 class="h-4 w-4" />
+                        </Button>
+                    </div>
+                {/if}
+            </div>
 
-			<div class="flex items-center gap-2">
-				<Select.Root type="single" bind:value={stockStatusFilter}>
-					<Select.Trigger class="w-[180px]">
-						{STOCK_STATUS_FILTERS.find((o) => o.value === stockStatusFilter)?.label ?? ''}
-					</Select.Trigger>
+            <div class="flex items-center gap-2">
+                <Select.Root type="single" bind:value={stockStatusFilter}>
+                    <Select.Trigger class="w-[180px]">
+                        {STOCK_STATUS_FILTERS.find((o) => o.value === stockStatusFilter)?.label ?? ''}
+                    </Select.Trigger>
 
-					<Select.Content>
-						{#each STOCK_STATUS_FILTERS as option (option.value)}
-							<Select.Item value={option.value}>{option.label}</Select.Item>
-						{/each}
-					</Select.Content>
-				</Select.Root>
+                    <Select.Content>
+                        {#each STOCK_STATUS_FILTERS as option (option.value)}
+                            <Select.Item value={option.value}>{option.label}</Select.Item>
+                        {/each}
+                    </Select.Content>
+                </Select.Root>
 
-				<Select.Root type="single" bind:value={sortOrder}>
-					<Select.Trigger class="w-[180px]">
-						{SORT_OPTIONS.find((o) => o.value === sortOrder)?.label ?? ''}
-					</Select.Trigger>
+                <Select.Root type="single" bind:value={sortOrder}>
+                    <Select.Trigger class="w-[180px]">
+                        {SORT_OPTIONS.find((o) => o.value === sortOrder)?.label ?? ''}
+                    </Select.Trigger>
 
-					<Select.Content>
-						{#each SORT_OPTIONS as option (option.value)}
-							<Select.Item value={option.value}>{option.label}</Select.Item>
-						{/each}
-					</Select.Content>
-				</Select.Root>
+                    <Select.Content>
+                        {#each SORT_OPTIONS as option (option.value)}
+                            <Select.Item value={option.value}>{option.label}</Select.Item>
+                        {/each}
+                    </Select.Content>
+                </Select.Root>
 
-				<Button
-					variant={viewMode === 'card' ? 'default' : 'outline'}
-					size="icon"
-					onclick={() => setViewMode('card')}
-				>
-					<LayoutGrid class="h-4 w-4" />
-				</Button>
+                <Button
+                    variant={viewMode === 'card' ? 'default' : 'outline'}
+                    size="icon"
+                    onclick={() => setViewMode('card')}
+                >
+                    <LayoutGrid class="h-4 w-4" />
+                </Button>
 
-				<Button
-					variant={viewMode === 'table' ? 'default' : 'outline'}
-					size="icon"
-					onclick={() => setViewMode('table')}
-				>
-					<List class="h-4 w-4" />
-				</Button>
-			</div>
-		</div>
+                <Button
+                    variant={viewMode === 'table' ? 'default' : 'outline'}
+                    size="icon"
+                    onclick={() => setViewMode('table')}
+                >
+                    <List class="h-4 w-4" />
+                </Button>
+            </div>
+        </div>
 
-		<div class="flex flex-wrap items-center justify-between gap-2">
-			{#await productsQuery then productsData}
-				{@const products = productsData?.products ?? []}
-				{@const uniqueCategories = products
-					.filter(p => p.category && p.category.name)
-					.reduce((acc, p) => {
-						if (!acc.some(c => c.id === p.category.id)) {
-							acc.push(p.category);
-						}
-						return acc;
-					}, [])}
-				<div class="flex items-center gap-2 flex-wrap">
-					<p class="text-sm font-medium">Categories:</p>
+        <div class="flex flex-wrap items-center justify-between gap-2">
+            {#await productsQuery then productsData}
+                {@const products = productsData?.products ?? []}
+                {@const uniqueCategories = products
+                    .filter((p: any) => p.category && p.category.name)
+                    .reduce((acc: any[], p: any) => {
+                        if (!acc.some((c: any) => c.id === p.category.id)) {
+                            acc.push(p.category);
+                        }
+                        return acc;
+                    }, [])}
+                <div class="flex items-center gap-2 flex-wrap">
+                    <p class="text-sm font-medium">Categories:</p>
 
-					{#each uniqueCategories as category}
-						<Button
-							variant={activeCategories.includes(category.id) ? 'default' : 'outline'}
-							size="sm"
-							onclick={() => toggleCategory(category.id)}
-						>
-							{category.name}
-						</Button>
-					{/each}
+                    {#each uniqueCategories as category}
+                        <Button
+                            variant={activeCategories.includes(category.id) ? 'default' : 'outline'}
+                            size="sm"
+                            onclick={() => toggleCategory(category.id)}
+                        >
+                            {category.name}
+                        </Button>
+                    {/each}
 
-					{#if activeCategories.length > 0}
-						<Button variant="ghost" size="sm" onclick={clearFilters} class="flex items-center gap-1">
-							<X class="h-4 w-4" />
+                    {#if activeCategories.length > 0}
+                        <Button variant="ghost" size="sm" onclick={clearFilters} class="flex items-center gap-1">
+                            <X class="h-4 w-4" />
+                            Clear
+                        </Button>
+                    {/if}
+                </div>
+            {/await}
 
-							Clear
-						</Button>
-					{/if}
-				</div>
-			{/await}
+            {#await productsQuery then productsData}
+                {@const products = productsData?.products ?? []}
+                {@const reorderCount = getItemsToReorderCount(products)}
+                {#if reorderCount > 0}
+                    <button
+                        onclick={() => goto('/inventory/reorder')}
+                        class="flex items-center gap-2 rounded-full bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning-foreground transition-colors hover:bg-warning/20"
+                    >
+                        <div class="relative flex h-3 w-3">
+                            <span class="relative inline-flex h-3 w-3 rounded-full bg-warning"></span>
+                        </div>
 
-			{#await productsQuery then productsData}
-				{@const products = productsData?.products ?? []}
-				{@const reorderCount = getItemsToReorderCount(products)}
-				{#if reorderCount > 0}
-					<button
-						onclick={() => goto('/inventory/reorder')}
-						class="flex items-center gap-2 rounded-full bg-warning/10 px-3 py-1.5 text-sm font-medium text-warning-foreground transition-colors hover:bg-warning/20"
-					>
-						<div class="relative flex h-3 w-3">
-							<span class="relative inline-flex h-3 w-3 rounded-full bg-warning"></span>
-						</div>
+                        <span>
+                            {reorderCount}
+                            {reorderCount === 1 ? 'item' : 'items'} to reorder
+                        </span>
+                    </button>
+                {/if}
+            {/await}
+        </div>
+    </div>
 
-						<span>
-							{reorderCount}
-							{reorderCount === 1 ? 'item' : 'items'} to reorder
-						</span>
-					</button>
-				{/if}
-			{/await}
-		</div>
-	</div>
+    {#await productsQuery}
+        <div
+            class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center pt-0 mt-0"
+        >
+            <h3 class="text-lg font-semibold">Loading Products...</h3>
+            <p class="text-sm text-muted-foreground">Please wait while we load your inventory.</p>
+        </div>
+    {:then productsData}
+        {@const products = productsData?.products ?? []}
+        {@const filteredProducts = filterAndSortProducts(products)}
+        
+        {#if filteredProducts.length > 0}
+            <div
+                class="mt-0 relative"
+                use:dragSelect={{
+                    onDragStart: handleDragStart,
+                    onDragMove: handleDragMove,
+                    onDragEnd: handleDragEnd
+                }}
+            >
+                {#if viewMode === 'card'}
+                    <StockCardView 
+                        products={filteredProducts} 
+                        bind:selectedProductIds 
+                        isDragging={isDragging}
+                        dragBox={dragBox}
+                    />
+                {:else}
+                    <StockTableView 
+                        products={filteredProducts} 
+                        bind:selectedProductIds 
+                        isDragging={isDragging}
+                        dragBox={dragBox}
+                    />
+                {/if}
+                
+                <!-- Drag Selection Visual Overlay -->
+                {#if dragSelectionArea}
+                    <div
+                        class="absolute pointer-events-none z-50 border-2 border-blue-500 bg-blue-500/10 rounded"
+                        style="left: {dragSelectionArea.x - window.scrollX}px; top: {dragSelectionArea.y - window.scrollY}px; width: {dragSelectionArea.width}px; height: {dragSelectionArea.height}px;"
+                    />
+                {/if}
+            </div>
+        {:else}
+            <div
+                class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center"
+            >
+                <h3 class="text-lg font-semibold">No Products Found</h3>
+                <p class="text-sm text-muted-foreground">Try adjusting your search or filter criteria.</p>
+            </div>
+        {/if}
+    {:catch error}
+        <div
+            class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-destructive/50 bg-destructive/5 p-8 text-center text-destructive"
+        >
+            <h3 class="text-lg font-semibold">Error Loading Products</h3>
+            <p class="text-sm">{error?.message}</p>
+        </div>
+    {/await}
 
-	{#await productsQuery}
-		<div
-			class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center"
-		>
-			<h3 class="text-lg font-semibold">Loading Products...</h3>
-
-			<p class="text-sm text-muted-foreground">Please wait while we load your inventory.</p>
-		</div>
-	{:then productsData}
-		{@const products = productsData?.products ?? []}
-		{@const filteredProducts = filterAndSortProducts(products)}
-		
-		{#if filteredProducts.length > 0}
-			{#if viewMode === 'card'}
-				<StockCardView products={filteredProducts} bind:selectedProductIds />
-			{:else}
-				<StockTableView products={filteredProducts} bind:selectedProductIds />
-			{/if}
-		{:else}
-			<div
-				class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted bg-muted/20 p-8 text-center"
-			>
-				<h3 class="text-lg font-semibold">No Products Found</h3>
-
-				<p class="text-sm text-muted-foreground">Try adjusting your search or filter criteria.</p>
-			</div>
-		{/if}
-	{:catch error}
-		<div
-			class="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-destructive/50 bg-destructive/5 p-8 text-center text-destructive"
-		>
-			<h3 class="text-lg font-semibold">Error Loading Products</h3>
-
-			<p class="text-sm">{error?.message}</p>
-		</div>
-	{/await}
-
-	<BulkEditModal
-		bind:open={isBulkEditModalOpen}
-		productIds={selectedProductIds}
-		onClose={() => (isBulkEditModalOpen = false)}
-	/>
+    <BulkEditModal
+        bind:open={isBulkEditModalOpen}
+        productIds={selectedProductIds}
+        onClose={() => (isBulkEditModalOpen = false)}
+    />
 </div>
